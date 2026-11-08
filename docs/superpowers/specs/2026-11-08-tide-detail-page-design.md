@@ -15,7 +15,7 @@ Replace the stock detail page for **movies and series** with a Tide page that fe
 
 Other item types keep the stock page: season, episode, person, collection, album, artist and the rest. A season link opens the Tide series page with that season selected (see §3.3).
 
-The release also bundles the 0.2.x home bug fixes (§6).
+The release also bundles the 0.2.x home bug fixes, animated row chevrons and app-wide smooth scrolling (§6).
 
 ## 2. Decisions
 
@@ -31,6 +31,8 @@ The release also bundles the 0.2.x home bug fixes (§6).
 | 8 | Details | **M2**: two solid panels side by side: **About** (facts) and **Your file** (quality badge + streams) |
 | 9 | Background | Ambient glow from the item's backdrop, same as home |
 | 10 | Empty sections | Hidden, never shown empty (no Next up for movies or finished shows, no row without similar items, and so on) |
+| 11 | Row chevrons (site-wide) | The ‹ › scroll buttons animate in and out and react to hover and press (§6f) |
+| 12 | Smooth scrolling (whole app) | Mouse-wheel scrolling is eased on every page; trackpads and touch keep their native feel (§6g) |
 
 Mockup (local only, contains private library images): `.superpowers/brainstorm/.../detail-final.html`. Option boards: `detail-picker.html` (P1), `detail-nextup.html` (N2), `detail-cast.html` (K4), `detail-full.html` (M2).
 
@@ -218,7 +220,7 @@ Data: `MediaSources` / `MediaStreams` from the item (or episode) request.
 
 ## 5. Server
 
-- `PluginConfiguration`: add `EnableDetails` (default `true`). Expose it in `/Tide/ClientConfig` as `enableDetails` and on the config page as a checkbox: "Tide detail page (movies & series)".
+- `PluginConfiguration`: add `EnableDetails` (default `true`) and `EnableSmoothScroll` (default `true`, see §6g). Expose it in `/Tide/ClientConfig` as `enableDetails` and on the config page as a checkbox: "Tide detail page (movies & series)".
 - No new endpoints. All data comes from stock Jellyfin APIs with the user's token.
 
 ## 6. Bundled fixes (from 0.2.0 field reports)
@@ -248,6 +250,37 @@ e. **Icons render outlined in Jellyfin Desktop.**
    - Play, check, star and info also become inline SVGs (shared `ui/svgIcons.ts`).
    - `icon()` keeps Material Symbols for the rest, but its CSS forces `font-variation-settings` again on `.tide-ms`, with `!important`, in the injected theme.
 
+f. **Row chevrons animate.**
+   - **Where:** every Tide scroller, through the shared `createScroller` CSS. That covers home rows, episode rows and More like this.
+   - **Appearing** (row hovered and that direction can scroll):
+     - opacity 0 → 1
+     - `translateX(∓10px) scale(.85)` → `translateX(0) scale(1)`
+     - .35s `--tide-ease`
+   - **Disappearing:** the same in reverse, .25s. This also runs when the row reaches its end and `can-next` / `can-prev` drops, so the button glides away instead of vanishing.
+   - **Hover:** scale 1.08, background `#3a3a3c`, and the arrow nudges 2px in its direction.
+   - **Press:** scale .92, springing back on release (.2s).
+   - Transform and opacity only, as everywhere else. With `prefers-reduced-motion`, opacity only.
+
+g. **Smooth scrolling, whole app.**
+   - **Where:** the new `web/src/theme/smoothScroll.ts`, started from `main.ts` when the theme is on. It applies on every page, stock or Tide.
+   - **Mouse wheel** (discrete notches):
+     - The wheel event is taken over, and the nearest scrollable ancestor of the event target eases toward an accumulated target. It uses a frame-based ease-out of about 450ms, with transforms untouched (the real scroll position moves).
+     - Fast repeated notches add to the target instead of restarting the animation, so scrolling stays fluid.
+     - Wheel with Shift, or a horizontal wheel over a Tide row, eases that row's `scrollLeft` the same way.
+   - **Trackpads, touch and pens** keep native scrolling, since they are already smooth.
+     - An event counts as a mouse notch when `deltaMode` is lines or pages, or when the pixel delta is ≥ 50 with no fractional part.
+     - Everything else is passed through.
+   - **Left alone:**
+     - `Ctrl`/`⌘` + wheel (zoom)
+     - the video player
+     - sliders, range inputs, `<select>`, text areas
+     - anything with `data-tide-native-scroll`
+     - elements that are already at their scroll limit in that direction: the event passes on, so nested scroll areas don't trap the page
+   - **Keyboard and programmatic scrolling** (Page Up/Down, Space, Home/End, anchor jumps): `html { scroll-behavior: smooth }` while the theme is on.
+   - **Turning it off:**
+     - `prefers-reduced-motion` turns the whole feature off.
+     - New `PluginConfiguration.EnableSmoothScroll`, default `true`. It is exposed in ClientConfig as `enableSmoothScroll` and on the config page as "Smooth scrolling".
+
 ## 7. Out of scope
 
 - Episode, season and person detail pages
@@ -269,7 +302,13 @@ e. **Icons render outlined in Jellyfin Desktop.**
   - **Your file** formatting (subtitle shortening, versions)
   - **trailer modal**
   - **fix (a)/(b) state machine**: the backdrop opacity follows player state
-- **xUnit**: `EnableDetails` default and its ClientConfig exposure.
+  - **smooth scroll**:
+    - mouse-vs-trackpad detection
+    - notch accumulation
+    - nearest scrollable ancestor
+    - passing through at scroll limits, with Ctrl, and on `data-tide-native-scroll`
+    - off under reduced motion and when the setting is off
+- **xUnit**: `EnableDetails` and `EnableSmoothScroll` defaults and their ClientConfig exposure.
 - **Playwright** (local 12.4 with the open movies; add one small open series fixture with 2 seasons):
   - a movie detail renders the header, cast and details, and the stock page is hidden
   - a series shows Next up when a next episode exists and hides it after marking all watched
@@ -281,4 +320,6 @@ e. **Icons render outlined in Jellyfin Desktop.**
   - navigating details → details (similar card) remounts with the new item
   - phone viewport layout
   - the heart is a solid red SVG when on
-- **Manual**: Jellyfin Desktop check of icons (fix e) and the trailer (fixes a/b).
+  - a chevron is fully visible after hovering a row and transparent once the row is scrolled to its end
+  - one mouse-wheel notch moves the page over several frames (not in one jump) and lands about one notch further
+- **Manual**: Jellyfin Desktop check of icons (fix e), the trailer (fixes a/b), and that wheel scrolling feels smooth and a trackpad still feels native (fix g).
