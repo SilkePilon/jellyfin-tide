@@ -1,0 +1,40 @@
+/* ── Detail page ─────────────────────────────────────────────────────────────── */
+body.tide .tide-details { position: relative; isolation: isolate; color: var(--tide-tx); padding: 40px 0 96px; min-height: 100vh;
+  --tide-gap: 22px; --tide-n: 3.4; --tide-cw: calc((100vw - 2 * var(--tide-gutter) - var(--tide-gap) * (var(--tide-n) - 1.4)) / var(--tide-n)); }
+@media (min-width: 1800px) { body.tide .tide-details { --tide-n: 4.4; } }
+@media (max-width: 1399px) { body.tide .tide-details { --tide-n: 2.6; } }
+@media (max-width: 999px) { body.tide .tide-details { --tide-n: 1.6; } }
+@media (max-width: 699px) { body.tide .tide-details { --tide-n: 1.2; --tide-gap: 14px; } }
+body.tide #itemDetailPage.tide-taken > :not(.tide-details) { display: none !important; }
+body.tide .tide-dsec { margin-top: 56px; }
+body.tide .tide-dsec-h { display: flex; align-items: center; gap: 14px; padding: 0 var(--tide-gutter); }
+body.tide .tide-dsec-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+
+/* Header (C2) */
+body.tide .tide-dh { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 56px; align-items: end; padding: 0 var(--tide-gutter); }
+body.tide .tide-dh-poster { aspect-ratio: 2/3; border-radius: 22px; background: center / cover #1d1d20; box-shadow: 0 50px 100px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.06); }
+body.tide .tide-dh-logo { display: block; max-width: min(440px, 100%); max-height: 150px; object-fit: contain; object-position: left bottom; margin-bottom: 20px; filter: drop-shadow(0 4px 24px rgba(0,0,0,.6)); }
+body.tide .tide-dh-title { margin: 0 0 18px; font-size: 48px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+body.tide .tide-dh-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 16px; font-weight: 500; color: #e5e5ea; }
+body.tide .tide-dh-meta .tide-ms { font-size: 1.1em; margin-top: -2px; }
+body.tide .tide-dh-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tide-critic); vertical-align: middle; }
+body.tide .tide-dh-tag { font-size: 13px; font-style: italic; color: #a1a1a6; margin-top: 8px; }
+body.tide .tide-dh-desc { color: #d1d1d6; font-size: 15px; line-height: 1.6; margin: 14px 0 0; max-width: 760px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+body.tide .tide-dh-desc.open { -webkit-line-clamp: unset; display: block; }
+body.tide .tide-dh-btns { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 26px; }
+body.tide .tide-dh-btns .tide-btn-lg { height: 54px; }
+body.tide .tide-dh-btns .tide-ib-xl { width: 54px; height: 54px; }
+body.tide .tide-dh-primary[disabled] { opacity: .6; cursor: default; }
+body.tide .tide-dh-morewrap { position: relative; }
+
+/* Next up strip (N2) */
+body.tide .tide-nu { display: flex; align-items: center; gap: 16px; margin-top: 22px; max-width: 560px; width: 100%; padding: 10px 20px 10px 10px; border: 0; border-radius: 18px; background: #141416; color: var(--tide-tx); cursor: pointer; text-align: left; font: inherit; transition: background-color .3s var(--tide-ease); }
+body.tide .tide-nu:is(:hover, :focus-visible) { background: #1d1d20; outline: none; }
+body.tide .tide-nu-th { position: relative; flex: 0 0 150px; aspect-ratio: 16/9; border-radius: 12px; background: center / cover #2a2a2e; overflow: hidden; }
+body.tide .tide-nu-pb { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #3a3a3c; }
+body.tide .tide-nu-pb i { display: block; height: 100%; background: #fff; transform-origin: left center; }
+body.tide .tide-nu-tx { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+body.tide .tide-nu-k { font-size: 12px; font-weight: 800; letter-spacing: .12em; color: #a1a1a6; }
+body.tide .tide-nu-t { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.tide .tide-nu-m { font-size: 13px; color: #a1a1a6; }
+body.tide .tide-nu-go { margin-left: auto; flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #000; display: flex; align-items: center; justify-content: center; }
