@@ -47,3 +47,13 @@ test('mount hides the stock OSD, renders Tide controls from the session, unmount
   expect(host.classList.contains('tide-taken')).toBe(false);
   expect(document.querySelector('.tide-player')).toBeNull();
 });
+
+test('stock Play button click starts the loading screen', async () => {
+  const { initPlayLoading } = await import('../src/player/player');
+  location.hash = '#/details?id=e1';
+  document.body.innerHTML = '<div id="itemDetailPage"><button class="btnPlay">Play</button></div>';
+  const stop = initPlayLoading(cfg as any);
+  document.querySelector<HTMLButtonElement>('.btnPlay')!.click();
+  expect(document.querySelector('.tide-ld.show')).not.toBeNull();
+  stop();
+});

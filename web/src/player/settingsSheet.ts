@@ -12,7 +12,8 @@ function split(t = ''): { label: string; sub: string } {
 }
 
 export function streamsToSheet(item: JfDetail): Pick<SheetData, 'audio' | 'subtitles'> {
-  const streams = item.MediaSources?.[0]?.MediaStreams ?? [];
+  // Full items carry streams per MediaSource; session NowPlayingItems carry them top-level.
+  const streams = item.MediaSources?.[0]?.MediaStreams ?? (item as JfDetail & { MediaStreams?: NonNullable<JfDetail['MediaSources']>[0]['MediaStreams'] }).MediaStreams ?? [];
   const pick = (type: string) => streams.filter((s) => s.Type === type).map((s) => ({ index: s.Index ?? -1, ...split(s.DisplayTitle) }));
   return { audio: pick('Audio'), subtitles: pick('Subtitle') };
 }

@@ -1,7 +1,7 @@
 import './player.css';
 import { jfApiClient } from '../api/client';
 import { play } from '../api/actions';
-import { getEpisodes, getItem } from '../api/item';
+import { getEpisodes, getItem, type JfDetail } from '../api/item';
 import { fmtRuntime, h, icon } from '../ui/dom';
 import { ROUTES, SELECTORS } from '../router/selectors';
 import type { Takeover } from '../router/hook';
@@ -35,6 +35,7 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
   let quality = 'Auto';
   let sourceHeight = 0;
   let pendingAudio: number | undefined;
+  let fullItem: JfDetail | null = null;
   let pendingSubs: number | null | undefined;
 
   const shelf = createShelf((open) => { root.classList.toggle('tide-ps-open', open); controls.setPinned(open || sheet.isOpen()); });
@@ -68,7 +69,7 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
     if (pendingAudio !== undefined && np.audioIndex === pendingAudio) pendingAudio = undefined;
     if (pendingSubs !== undefined && np.subtitleIndex === pendingSubs) pendingSubs = undefined;
     sheet.setData({
-    ...streamsToSheet(np.item), audioIndex: pendingAudio ?? np.audioIndex, subtitleIndex: pendingSubs === undefined ? np.subtitleIndex : pendingSubs,
+    ...streamsToSheet(fullItem && fullItem.Id === np.item.Id ? fullItem : np.item), audioIndex: pendingAudio ?? np.audioIndex, subtitleIndex: pendingSubs === undefined ? np.subtitleIndex : pendingSubs,
     quality: qualityChoices(sourceHeight), qualityCur: quality, speed, subSize,
     });
   };
@@ -76,6 +77,7 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
   const onItem = async (n: NowPlaying) => {
     const it = n.item;
     const full = await getItem(it.Id).catch(() => it);
+    fullItem = full;
     const runtime = (it.RunTimeTicks ?? full.RunTimeTicks ?? 0) / 1e7;
     bridge.setDuration(runtime);
     const isEp = it.Type === 'Episode';
@@ -108,7 +110,12 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
   const stopPoll = pollSession((n) => {
     if (!n) return;
     np = n;
-    if (n.item.Id !== itemKey) { itemKey = n.item.Id; void onItem(n); }
+    if (n.item.Id !== itemKey) {
+      itemKey = n.item.Id;
+      const v0 = bridge.video();
+      if (!loading.isOn() && !(v0 && v0.currentTime > 0 && !v0.paused)) { loading.show(n.item.Id); loading.update(1, null, loadingSteps(n.transcode, null)); }
+      void onItem(n);
+    }
     else sheetData();
     if (loading.isOn()) loading.update(1, loadingPercent(1, n.transcode?.completion ?? null, null), loadingSteps(n.transcode, null));
   });
@@ -200,7 +207,17 @@ export function initPlayLoading(cfg: ClientConfig): () => void {
     safety = setTimeout(() => loading.hide(), 90_000);
   };
   const onRoute = () => { if (!ROUTES.isPlayer() && loading.isOn() && !document.querySelector('.videoPlayerContainer video')) setTimeout(() => { if (!ROUTES.isPlayer()) loading.hide(); }, 15_000); };
+  // Plays started from stock buttons (detail page Play/Resume, card play overlays) never call Tide's play():
+  // start K1 on those clicks too, so the seconds before #/video appears are covered.
+  const STOCK_PLAY = '.btnPlay, .btnResume, button[data-action="play"], button[data-action="resume"], .cardOverlayFab-primary, .playButton';
+  const onClick = (e: Event) => {
+    const t = (e.target as Element | null)?.closest?.(STOCK_PLAY);
+    if (!t || t.closest('.tide-player, .tide-details, .tide-home')) return;
+    const id = t.closest<HTMLElement>('[data-id]')?.dataset.id ?? ROUTES.detailsParams()?.get('id');
+    if (id) window.dispatchEvent(new CustomEvent('tide:play', { detail: { id } }));
+  };
   window.addEventListener('tide:play', onPlay);
   window.addEventListener('hashchange', onRoute);
-  return () => { window.removeEventListener('tide:play', onPlay); window.removeEventListener('hashchange', onRoute); if (safety) clearTimeout(safety); };
+  document.addEventListener('click', onClick, true);
+  return () => { window.removeEventListener('tide:play', onPlay); window.removeEventListener('hashchange', onRoute); document.removeEventListener('click', onClick, true); if (safety) clearTimeout(safety); };
 }

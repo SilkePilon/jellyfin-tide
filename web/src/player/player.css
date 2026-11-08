@@ -186,3 +186,5 @@ body.tide .tide-rip.r { right: 0; background: radial-gradient(circle at 70% 50%,
 body.tide .tide-rip .tide-ms { font-size: 34px; }
 body.tide .tide-rip.go { animation: tide-rip .7s var(--tide-sp); }
 @keyframes tide-rip { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+/* Tide's loading screen replaces the stock spinner while it shows. */
+body.tide:has(.tide-ld.show) :is(.docspinner, .mdl-spinner, .loading-spinner) { display: none !important; }
