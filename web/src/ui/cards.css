@@ -89,7 +89,9 @@ body.tide .tide-card-sq:hover .tide-sq-img { transform: scale(1.04); }
 body.tide .tide-toggle { transition: background-color .2s var(--tide-ease), color .2s var(--tide-ease); }
 body.tide .tide-toggle[aria-pressed="true"] { background: #fff; color: #000; }
 body.tide .tide-fav-toggle, body.tide .tide-fav-toggle[aria-pressed="true"] { background: var(--tide-s3); color: #fff; }
-body.tide .tide-fav-toggle[aria-pressed="true"] { color: var(--tide-fav); }
-body.tide .tide-fav-toggle.tide-just-toggled[aria-pressed="true"] .tide-ms { animation: tide-pop .35s var(--tide-ease); }
+/* Off: white outline heart. On: solid red heart. The button itself never changes colour. */
+body.tide .tide-fav-toggle .tide-svg path { fill: transparent; stroke: #fff; stroke-width: 2; stroke-linejoin: round; }
+body.tide .tide-fav-toggle[aria-pressed="true"] .tide-svg path { fill: var(--tide-fav); stroke: var(--tide-fav); }
+body.tide .tide-fav-toggle.tide-just-toggled[aria-pressed="true"] .tide-svg { animation: tide-pop .35s var(--tide-ease); }
 @keyframes tide-pop { 50% { transform: scale(1.25); } }
-@media (prefers-reduced-motion: reduce) { body.tide .tide-fav-toggle.tide-just-toggled[aria-pressed="true"] .tide-ms { animation: none; } }
+@media (prefers-reduced-motion: reduce) { body.tide .tide-fav-toggle.tide-just-toggled[aria-pressed="true"] .tide-svg { animation: none; } }

@@ -1,3 +1,4 @@
+import { isSvgIcon, svgIcon } from './svgIcons';
 type Attrs = Record<string, string | number | boolean | EventListener | undefined | null> & { style?: string };
 
 export function h(tag: string, attrs: Attrs = {}, ...children: (Node | string | null | undefined | false)[]): HTMLElement {
@@ -13,6 +14,11 @@ export function h(tag: string, attrs: Attrs = {}, ...children: (Node | string | 
 }
 
 export function icon(name: string, cls = ''): HTMLElement {
+  if (isSvgIcon(name)) {
+    const s = h('span', { class: `tide-ms tide-svg ${cls}`.trim(), 'aria-hidden': 'true', 'data-icon': name });
+    s.append(svgIcon(name));
+    return s;
+  }
   return h('span', { class: `tide-ms ${cls}`.trim(), 'aria-hidden': 'true' }, name);
 }
 

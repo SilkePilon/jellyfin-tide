@@ -180,7 +180,7 @@ test('phone meta: one line, first genre only, no rating box or quality badge', (
   expect(m.querySelector('.tide-hero-rating, .tide-q')).toBeNull();
   // order: chip, rating, year, genre, runtime (separators between)
   const vals = [...m.children].filter((c) => !c.classList.contains('tide-hero-dot')).map((c) => c.textContent!.trim());
-  expect(vals).toEqual(['NEW', 'star 7.3', '2010', 'Animation', '15m']);
+  expect(vals).toEqual(['NEW', '7.3', '2010', 'Animation', '15m']);
   expect(m.children[1]!.classList.contains('tide-hero-dot')).toBe(false); // no separator right after the chip
   expect(m.querySelectorAll('.tide-hero-dot').length).toBe(3);
 });
@@ -224,7 +224,7 @@ test('runtime matches the card format', () => {
 test('desktop meta (X1): one quiet line, first genre only, rating last, no badges', () => {
   const m = desktopMeta({ ...base, communityRating: 8.2, criticRating: 96, year: 2022, genres: ['Action', 'Drama'], runtimeMinutes: 130, officialRating: 'PG-13', quality: { res: '4K', codec: 'HEVC' } }, null);
   const parts = [...m.children].map((c) => c.classList.contains('tide-hero-dot') ? '·' : c.textContent);
-  expect(parts).toEqual(['2022', '·', 'Action', '·', '2h 10m', '·', 'star 8.2']);
+  expect(parts).toEqual(['2022', '·', 'Action', '·', '2h 10m', '·', ' 8.2']);
   expect(m.querySelector('.tide-q, .tide-hero-rating')).toBeNull();
 });
 
@@ -249,7 +249,7 @@ test('hero has one favourite toggle (no watchlist) that reflects and flips state
   vi.mocked(setFavourite).mockResolvedValue(undefined);
   const { el } = createHero([{ ...base, isFavorite: true }], { ...cfg, enableTrailers: false });
   const btns = el.querySelectorAll('.tide-hero-slide .tide-hero-btns button');
-  expect([...btns].map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['play_arrowPlay', 'infoMore info', 'Favourite']);
+  expect([...btns].map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Play', 'More info', 'Favourite']);
   const fav = el.querySelector<HTMLButtonElement>('button[aria-label="Favourite"]')!;
   expect(fav.getAttribute('aria-pressed')).toBe('true');
   fav.click();
