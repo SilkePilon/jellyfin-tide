@@ -15,7 +15,9 @@ function countText(eps: JfItem[]): string {
   return w ? `${w} of ${eps.length} watched` : `${eps.length} episode${eps.length === 1 ? '' : 's'}`;
 }
 
-export function renderEpisodes(seriesId: string, sorted: JfItem[], startIdx: number, next: JfItem | null, firstEps: JfItem[]): { el: HTMLElement; dispose(): void } {
+export interface EpisodesOpts { synopsis?: boolean; current?: { id: string; tag: string }; heading?: string }
+
+export function renderEpisodes(seriesId: string, sorted: JfItem[], startIdx: number, next: JfItem | null, firstEps: JfItem[], opts?: EpisodesOpts): { el: HTMLElement; dispose(): void } {
   const cache = new Map<string, JfItem[]>([[sorted[startIdx]!.Id, firstEps]]);
   let cur = startIdx;
   const scroller = createScroller('tide-row-wide');
@@ -31,9 +33,11 @@ export function renderEpisodes(seriesId: string, sorted: JfItem[], startIdx: num
     label.textContent = sorted[cur]!.Name;
     count.textContent = countText(eps);
     const up = nextInSeason(eps, next);
-    track.replaceChildren(...eps.map((e) => wideCard(e, { episode: { tag: episodeTag(e, next && next.Id === up?.Id ? next : null) } })));
+    const tagFor = (e: JfItem) => opts?.current ? (e.Id === opts.current.id ? opts.current.tag : null) : episodeTag(e, next && next.Id === up?.Id ? next : null);
+    track.replaceChildren(...eps.map((e) => wideCard(e, { episode: { tag: tagFor(e), synopsis: opts?.synopsis } })));
     scroller.sync();
-    const i = rowStartIndex(eps, next);
+    const ci = opts?.current ? eps.findIndex((e) => e.Id === opts.current!.id) : -1;
+    const i = ci >= 0 ? Math.max(0, ci - 1) : rowStartIndex(eps, next);
     const go = () => {
       const { spans, max } = cardSpans(track);
       const to = Math.min(max, spans[i]?.start ?? 0);

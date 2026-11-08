@@ -153,3 +153,10 @@ test('episode mode: tags, watched check, specials, resume ring', () => {
   expect(part.querySelector('.tide-wide-ring')).not.toBeNull();
   expect(episodeSub({ ...ep, UserData: { PlaybackPositionTicks: 36 * 6e8 } })).toBe('48m · 12m left');
 });
+
+test('episode mode: synopsis can be turned off and tags are free text', () => {
+  const ep2 = { Id: 'e9', Name: 'X', Type: 'Episode', SeriesId: 's', IndexNumber: 2, ParentIndexNumber: 1, RunTimeTicks: 6e9, Overview: 'Long text' };
+  const c = wideCard(ep2, { episode: { tag: 'NOW PLAYING', synopsis: false } });
+  expect(c.querySelector('.tide-wide-syn')).toBeNull();
+  expect(c.querySelector('.tide-wide-tag')?.textContent).toBe('NOW PLAYING');
+});
