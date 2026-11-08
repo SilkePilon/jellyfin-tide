@@ -49,12 +49,12 @@ body.tide .tide-wide-acts > .tide-wide-play, body.tide .tide-wide-acts > .tide-f
 
 /* Progress ring: resting = small grey badge bottom-right; hover = the white Play button. */
 body.tide .tide-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-body.tide .tide-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+body.tide .tide-ring > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 body.tide .tide-ring circle { fill: none; stroke-width: 3; }
 body.tide .tide-ring-track { stroke: #48484a; }
 body.tide .tide-ring-arc { stroke: #fff; stroke-linecap: round; }
 body.tide .tide-wide-ring { width: 44px; height: 44px; border-radius: 50%; background: var(--tide-s3); cursor: pointer; transform: translate(0, 0) scale(.91); transition: transform .45s var(--tide-ease), background-color .3s var(--tide-ease); }
-body.tide .tide-wide-ring svg { inset: 5px; width: auto; height: auto; }
+body.tide .tide-wide-ring > svg { inset: 5px; width: auto; height: auto; }
 body.tide .tide-wide-ring .tide-ms { font-size: 18px; color: #fff; transition: color .3s var(--tide-ease); }
 body.tide .tide-wide-ring circle { transition: stroke .3s var(--tide-ease); }
 /* At rest the ring sits in the corner on its own (the ♥ is hidden): shift it right over the ♥'s slot. */

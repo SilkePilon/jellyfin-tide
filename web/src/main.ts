@@ -8,7 +8,7 @@ import { initRouter, registerTakeover } from './router/hook';
 import { DETAILS_TAKEOVER } from './details/details';
 import { initTabbar } from './mobile/tabbar';
 
-export const TIDE_VERSION = '0.3.0';
+export const TIDE_VERSION = '0.3.1';
 
 export type Feature = (cfg: ClientConfig) => void;
 const features: Feature[] = [];

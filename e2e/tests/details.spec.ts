@@ -170,3 +170,18 @@ test('phone layout: no poster column, full-width primary', async ({ page, reques
   const b = await page.locator('.tide-dh-primary').boundingBox();
   expect(b!.width).toBeGreaterThan(300);
 });
+
+test('play icon inside a progress ring is not rotated (only the ring is)', async ({ page }) => {
+  await login(page);
+  const t = await page.evaluate(() => {
+    const ring = document.createElement('span');
+    ring.className = 'tide-ring tide-wide-ring';
+    ring.innerHTML = '<svg class="r" viewBox="0 0 32 32"></svg><span class="tide-ms tide-svg"><svg class="i" viewBox="0 0 24 24"></svg></span>';
+    document.body.append(ring);
+    const out = [getComputedStyle(ring.querySelector('svg.r')!).transform, getComputedStyle(ring.querySelector('svg.i')!).transform];
+    ring.remove();
+    return out;
+  });
+  expect(t[0]).not.toBe('none');
+  expect(t[1]).toBe('none');
+});
