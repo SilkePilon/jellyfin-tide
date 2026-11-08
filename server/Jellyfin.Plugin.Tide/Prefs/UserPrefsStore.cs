@@ -55,7 +55,29 @@ public sealed class UserPrefsStore
     {
         var known = new HashSet<string>(RowIds.All);
         var order = (p.RowOrder ?? Array.Empty<string>()).Where(known.Contains).Distinct().ToList();
-        order.AddRange(RowIds.All.Where(id => !order.Contains(id)));
+        // Rows missing from a saved order (e.g. sections added in a newer version) slot in right after their nearest
+        // preceding row in the built-in order, so an upgrade puts them where they belong instead of at the bottom.
+        for (var i = 0; i < RowIds.All.Count; i++)
+        {
+            var id = RowIds.All[i];
+            if (order.Contains(id))
+            {
+                continue;
+            }
+
+            var at = 0;
+            for (var j = i - 1; j >= 0; j--)
+            {
+                var prev = order.IndexOf(RowIds.All[j]);
+                if (prev >= 0)
+                {
+                    at = prev + 1;
+                    break;
+                }
+            }
+
+            order.Insert(at, id);
+        }
         return new UserPrefs
         {
             RowOrder = order.ToArray(),

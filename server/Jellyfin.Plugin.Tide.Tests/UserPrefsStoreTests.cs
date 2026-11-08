@@ -22,8 +22,8 @@ public sealed class UserPrefsStoreTests : IDisposable
         var store = new UserPrefsStore(_dir);
         var p = store.Load(Guid.NewGuid(), new[] { "topRated", "continue" }, new[] { "random" });
         Assert.Equal("topRated", p.RowOrder[0]);
-        Assert.Equal("continue", p.RowOrder[1]);
-        Assert.Equal(14, p.RowOrder.Length);
+        Assert.True(Array.IndexOf(p.RowOrder, "topRated") < Array.IndexOf(p.RowOrder, "continue"));
+        Assert.Equal(16, p.RowOrder.Length);
         Assert.Equal(new[] { "random" }, p.Hidden);
         Assert.False(p.Edited);
     }
@@ -50,8 +50,9 @@ public sealed class UserPrefsStoreTests : IDisposable
             Hidden = new[] { "bogus", "collections", "collections" },
             Genres = new() { ["genre1"] = "Drama", ["evil"] = "x" },
         });
-        Assert.Equal(new[] { "random", "continue" }, p.RowOrder.Take(2));
-        Assert.Equal(14, p.RowOrder.Length);
+        Assert.Equal("random", p.RowOrder[0]);
+        Assert.True(Array.IndexOf(p.RowOrder, "random") < Array.IndexOf(p.RowOrder, "continue"));
+        Assert.Equal(16, p.RowOrder.Length);
         Assert.Equal(new[] { "collections" }, p.Hidden);
         Assert.False(p.Genres.ContainsKey("evil"));
     }
@@ -84,6 +85,18 @@ public sealed class UserPrefsStoreTests : IDisposable
 
         var p = store.Load(id, RowIds.All.ToArray(), Array.Empty<string>());
         Assert.False(p.Edited);
-        Assert.Equal(14, p.RowOrder.Length);
+        Assert.Equal(16, p.RowOrder.Length);
+    }
+
+    [Fact]
+    public void NewRowsSlotInAtTheirBuiltInPositionOnUpgrade()
+    {
+        // A 0.1.0 order (no newThisWeek / discover), user-customised: random first.
+        var old = new[] { "random", "continue", "nextUp", "latestMovies", "latestShows", "becauseYouWatched", "topRated", "genre1", "genre2", "genre3", "favourites", "collections", "musicAlbums", "musicArtists" };
+        var p = UserPrefsStore.Normalize(new UserPrefs { RowOrder = old });
+        Assert.Equal(16, p.RowOrder.Length);
+        Assert.Equal(Array.IndexOf(p.RowOrder, "nextUp") + 1, Array.IndexOf(p.RowOrder, "newThisWeek"));
+        Assert.Equal(Array.IndexOf(p.RowOrder, "topRated") + 1, Array.IndexOf(p.RowOrder, "discover"));
+        Assert.Equal("random", p.RowOrder[0]);
     }
 }

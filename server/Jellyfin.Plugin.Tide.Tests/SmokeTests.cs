@@ -9,7 +9,7 @@ public class SmokeTests
     public void DefaultConfigHasAllRows()
     {
         var c = new PluginConfiguration();
-        Assert.Equal(14, c.DefaultRowOrder.Length);
+        Assert.Equal(16, c.DefaultRowOrder.Length);
         Assert.Equal(6, c.HeroSize);
     }
 }

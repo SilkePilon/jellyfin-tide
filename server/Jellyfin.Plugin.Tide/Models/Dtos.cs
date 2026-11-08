@@ -6,7 +6,7 @@ public static class RowIds
 {
     public static readonly IReadOnlyList<string> All = new[]
     {
-        "continue", "nextUp", "latestMovies", "latestShows", "becauseYouWatched", "topRated",
+        "continue", "nextUp", "newThisWeek", "latestMovies", "topRated", "discover", "latestShows", "becauseYouWatched",
         "genre1", "genre2", "genre3", "favourites", "random", "collections", "musicAlbums", "musicArtists",
     };
 

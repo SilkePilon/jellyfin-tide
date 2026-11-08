@@ -6,7 +6,7 @@ import { initIcons } from './icons/swap';
 import { initRouter } from './router/hook';
 import { initTabbar } from './mobile/tabbar';
 
-export const TIDE_VERSION = '0.1.0';
+export const TIDE_VERSION = '0.2.0';
 
 export type Feature = (cfg: ClientConfig) => void;
 const features: Feature[] = [];

@@ -1,6 +1,5 @@
 import { pickGenres, renderRow, ROWS, visibleRows } from '../src/home/rows';
 import type { UserPrefs } from '../src/types';
-import * as quality from '../src/ui/quality';
 
 const prefs = (o: Partial<UserPrefs> = {}): UserPrefs => ({
   rowOrder: ['random', 'continue', 'nextUp', 'latestMovies', 'latestShows', 'becauseYouWatched', 'topRated', 'genre1', 'genre2', 'genre3', 'favourites', 'collections', 'musicAlbums', 'musicArtists'],
@@ -38,15 +37,13 @@ test('every row id has a definition', () => {
   for (const id of visibleRows(prefs({ hidden: [] }))) expect(ROWS[id]).toBeDefined();
 });
 
-test('renderRow fetches, renders cards, then fetches quality', async () => {
-  const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-    if (String(url).includes('/Tide/Quality')) return new Response('{"a":{"res":"4K","codec":"HEVC"}}');
-    return new Response(JSON.stringify({ Items: [{ Id: 'a', Name: 'A', Type: 'Movie' }] }));
-  });
+test('renderRow fetches and renders wide cards (no per-card quality requests)', async () => {
+  const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ Items: [{ Id: 'a', Name: 'A', Type: 'Movie' }] })));
   const { el } = renderRow(ROWS.latestMovies, { userId: 'u', prefs: prefs(), newDays: 14, genres: [] });
-  await vi.waitFor(() => expect(el.querySelectorAll('.tide-card').length).toBe(1));
-  await vi.waitFor(() => expect(el.querySelector('.tide-q')?.textContent).toBe('4KHEVC'));
+  await vi.waitFor(() => expect(el.querySelectorAll('.tide-wide').length).toBe(1));
   expect(fetchSpy.mock.calls.some(([u]) => String(u).includes('IncludeItemTypes=Movie'))).toBe(true);
+  expect(fetchSpy.mock.calls.some(([u]) => String(u).includes('/Tide/Quality'))).toBe(false);
+  expect(el.querySelector('.tide-row-chev-prev')).not.toBeNull();
 });
 
 test('renderRow hides itself when empty', async () => {
@@ -61,20 +58,20 @@ test('renderRow shows retry on error', async () => {
   await vi.waitFor(() => expect(el.querySelector('.tide-row-error button')?.textContent).toContain('Retry'));
 });
 
-test('a quality badge failure keeps the cards (badges are outside the row try)', async () => {
+test('newThisWeek keeps only the last 7 days (shows by newest episode), newest first, max 5', async () => {
+  const now = Date.parse('2026-11-08T12:00:00Z');
+  const day = (d: number) => new Date(now - d * 864e5).toISOString();
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
-    if (String(url).includes('/Tide/Quality')) return new Response('{"a":{"res":"4K","codec":"HEVC"}}');
-    return new Response(JSON.stringify({ Items: [{ Id: 'a', Name: 'A', Type: 'Movie' }] }));
+    const u = String(url);
+    if (u.includes('IncludeItemTypes=Movie')) return new Response(JSON.stringify({ Items: [
+      { Id: 'm1', Name: 'M1', Type: 'Movie', DateCreated: day(1) }, { Id: 'm2', Name: 'M2', Type: 'Movie', DateCreated: day(9) }] }));
+    return new Response(JSON.stringify({ Items: [
+      { Id: 's1', Name: 'S1', Type: 'Series', DateCreated: day(400), DateLastContentAdded: day(0.5) },
+      { Id: 's2', Name: 'S2', Type: 'Series', DateCreated: day(3) }] }));
   });
-  const real = quality.qualityBadge;
-  // cards render with no quality (null); only the post-fetch badge pass gets a real Quality and throws.
-  const badge = vi.spyOn(quality, 'qualityBadge').mockImplementation((q, full) => { if (q) throw new Error('bad badge'); return real(q, full); });
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
-  const { el } = renderRow(ROWS.latestMovies, { userId: 'u', prefs: prefs(), newDays: 14, genres: [] });
-  await vi.waitFor(() => expect(badge.mock.calls.some(([q]) => !!q)).toBe(true));
-  await new Promise((r) => setTimeout(r, 10));
-  expect(el.querySelectorAll('.tide-card').length).toBe(1);
-  expect(el.querySelector('.tide-row-error')).toBeNull();
+  const { newThisWeek } = await import('../src/home/rows');
+  const list = await newThisWeek({ userId: 'u', prefs: prefs(), newDays: 14, genres: [] }, now);
+  expect(list.map((i) => i.Id)).toEqual(['s1', 'm1', 's2']);
 });
 
 test('renderRow dispose disconnects its observers', () => {

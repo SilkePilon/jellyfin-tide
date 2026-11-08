@@ -217,9 +217,8 @@ New row IDs: `newThisWeek`, `discover`. They are added to `RowIds.All` on the se
 ## 4. Server changes
 
 - `RowIds.All` gains `newThisWeek` and `discover`. Default order follows §3.
-- `GET /Tide/Discover` (as described in §3.6) for the current user, with items checked by `IsVisible(user)`.
-- `GET /Tide/NewThisWeek`: Movies with DateCreated, and Series with DateLastContentAdded, within 7 days. Max 5, visible items only.
-- Both endpoints use the 10s client timeout and camelCase DTOs, with unit tests for the selection rules.
+- On upgrade, rows missing from a saved order go right after their nearest preceding row in the built-in order, not at the end. So existing users get New this week after Next Up and Discover after Top Rated.
+- **As built:** Discover picks and New this week are computed client-side from stock Jellyfin endpoints (`/Items`, `/Items/{id}/Similar`). They follow the same rules as the server design, so no new server endpoints were needed. All requests run as the user, so item visibility is enforced by Jellyfin itself.
 
 ## 5. Out of scope
 - Detail page, player, library, search, login and admin redesigns. They get the restyled top bar and badges only.

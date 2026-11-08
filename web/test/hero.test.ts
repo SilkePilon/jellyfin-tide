@@ -193,7 +193,8 @@ test('phone meta: seasons when no runtime, no chip unless new', () => {
 
 test('hero renders both metas (CSS picks one per breakpoint)', () => {
   const { el } = createHero([{ ...base, genres: ['Action', 'Drama'] }], { ...cfg, enableTrailers: false });
-  expect(el.querySelector('.tide-hero-meta')?.textContent).toContain('Action, Drama');
+  expect(el.querySelector('.tide-hero-meta')?.textContent).toContain('Action');
+  expect(el.querySelector('.tide-hero-meta')?.textContent).not.toContain('Drama');
   expect(el.querySelector('.tide-hero-meta-ph')?.textContent).not.toContain('Drama');
 });
 
@@ -220,11 +221,28 @@ test('runtime matches the card format', () => {
   expect(runtime(130)).toBe('2h 10m');
 });
 
-test('desktop meta: dot separators between facts, not around badges', () => {
+test('desktop meta (X1): one quiet line, first genre only, rating last, no badges', () => {
   const m = desktopMeta({ ...base, communityRating: 8.2, criticRating: 96, year: 2022, genres: ['Action', 'Drama'], runtimeMinutes: 130, officialRating: 'PG-13', quality: { res: '4K', codec: 'HEVC' } }, null);
-  const parts = [...m.children].map((c) => c.classList.contains('tide-hero-dot') ? '·' : c.className || c.textContent);
-  expect(parts).toEqual(['tide-hero-scores', '·', '2022', '·', 'Action, Drama', '·', '2h 10m', 'tide-hero-rating', 'tide-q']);
-  expect(m.querySelector('.tide-hero-scores')?.textContent).toBe('star 8.2local_fire_department 96%');
+  const parts = [...m.children].map((c) => c.classList.contains('tide-hero-dot') ? '·' : c.textContent);
+  expect(parts).toEqual(['2022', '·', 'Action', '·', '2h 10m', '·', 'star 8.2']);
+  expect(m.querySelector('.tide-q, .tide-hero-rating')).toBeNull();
+});
+
+test('resume shows the R3 ring inside the white button with minutes left', () => {
+  const { el } = createHero([{ ...base, reason: 'resume', progress: { percent: 60, minutesLeft: 52 } }], { ...cfg, enableTrailers: false });
+  const btn = el.querySelector('.tide-hero-resume')!;
+  expect(btn.querySelector('.tide-hero-ring .tide-ring-arc')?.getAttribute('stroke-dashoffset')).toBe('35.18');
+  expect(btn.textContent).toContain('Resume');
+  expect(btn.querySelector('.tide-hero-left')?.textContent).toBe('52m left');
+  expect(el.querySelector('.tide-hero-progress')).toBeNull();
+});
+
+test('hero reports the active item so the ambient glow can follow', () => {
+  const seen: string[] = [];
+  const hero = createHero([base, { ...base, id: 'h2' }], { ...cfg, enableTrailers: false }, (it) => seen.push(it.id));
+  hero.go(1);
+  expect(seen).toEqual(['h1', 'h2']);
+  hero.destroy();
 });
 
 test('hero has one favourite toggle (no watchlist) that reflects and flips state', async () => {
