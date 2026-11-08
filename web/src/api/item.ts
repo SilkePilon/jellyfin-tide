@@ -2,7 +2,7 @@ import { api, getSession, jfApiClient } from './client';
 import type { JfItem } from '../types';
 
 export interface JfPerson { Id: string; Name: string; Role?: string; Type: string; PrimaryImageTag?: string }
-export interface JfStream { Type: string; Codec?: string; Profile?: string; Width?: number; Height?: number; VideoRange?: string; VideoRangeType?: string; DisplayTitle?: string; Language?: string; IsDefault?: boolean }
+export interface JfStream { Type: string; Index?: number; Codec?: string; Profile?: string; Width?: number; Height?: number; VideoRange?: string; VideoRangeType?: string; DisplayTitle?: string; Language?: string; IsDefault?: boolean }
 export interface JfSource { Id: string; Name?: string; Size?: number; MediaStreams?: JfStream[] }
 export interface JfDetail extends JfItem {
   OfficialRating?: string; Taglines?: string[]; Studios?: { Name: string }[]; People?: JfPerson[];
