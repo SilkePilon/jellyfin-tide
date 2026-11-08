@@ -156,3 +156,33 @@ body.tide .tide-buf .tide-ld-ring .tr { stroke: #48484a; }
 body.tide .tide-buf .tide-ld-pct { font-size: 15px; }
 body.tide .tide-buf small { height: 32px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 16px; background: #2a2a2e; font-size: 13px; font-weight: 700; box-shadow: 0 8px 20px rgba(0,0,0,.5); }
 @media (prefers-reduced-motion: reduce) { body.tide .tide-ld-ring.indet svg { animation: none; } }
+
+/* Phone (≤ 699px or coarse pointer) */
+@media (max-width: 699px), (pointer: coarse) {
+  body.tide .tide-player { --tide-lift: -84px; --tide-pb: 16px; --tide-pg: 22px; }
+  body.tide .tide-pc-hd { top: 16px; } body.tide .tide-pc-logo { height: 26px; } body.tide .tide-pc-ep { font-size: 13px; margin-top: 4px; }
+  body.tide .tide-pc-bt { bottom: 12px; } body.tide .tide-pc-row { margin-top: 8px; gap: 8px; } body.tide .tide-pc-times { margin-top: 4px; font-size: 12px; }
+  body.tide .tide-pc-b { width: 44px; height: 44px; } body.tide .tide-pc-b .tide-ms { font-size: 22px; }
+  body.tide .tide-pc-p { height: 40px; padding: 0 14px; font-size: 13px; }
+  body.tide :is(.tide-pc-rw, .tide-pc-fw, .tide-pc-volw, .tide-pc-row > .tide-pc-play) { display: none; }
+  body.tide .tide-pc-ctr { display: flex; }
+  body.tide .tide-pc-ctr .tide-pc-b { background: rgba(0,0,0,.45); }
+  body.tide .tide-pc-ctr .tide-pc-big { width: 72px; height: 72px; background: rgba(0,0,0,.55); }
+  body.tide .tide-pc-ctr .tide-pc-big .tide-ms { font-size: 44px; }
+  body.tide .tide-player:is(.tide-ps-open, .tide-pset-open, .tide-end-on) .tide-pc-ctr { opacity: 0 !important; pointer-events: none; }
+  body.tide .tide-pshelf { bottom: 92px; } body.tide .tide-pshelf .tide-row-track > * { flex-basis: 220px; }
+  body.tide .tide-pset { left: 0; right: 0; bottom: 0; border-radius: 24px 24px 0 0; grid-template-columns: 1fr 1fr; max-height: 78%; overflow: auto; scrollbar-width: none; }
+  body.tide .tide-pset-col:nth-child(3) { grid-column: 1 / -1; border-left: 0; padding-left: 0; border-top: 1px solid #222; }
+  body.tide .tide-pz-block { left: 40px; gap: 22px; } body.tide .tide-pz-poster { flex-basis: 110px; } body.tide .tide-pz-text { width: 420px; gap: 8px; }
+  body.tide .tide-pz-logo { height: 34px; } body.tide .tide-pz-line { font-size: 16px; } body.tide .tide-pz-syn { font-size: 13px; }
+  body.tide .tide-pz-paused { top: 16px; font-size: 13px; } body.tide .tide-pz-next { width: 260px; }
+  body.tide .tide-end-card { width: 320px; } body.tide .tide-end-th { flex-basis: 110px; }
+  body.tide .tide-ld-poster { width: 110px; } body.tide .tide-ld-in { gap: 28px; } body.tide .tide-ld-logo { height: 28px; } body.tide .tide-ld-line { font-size: 15px; } body.tide .tide-ld-steps { font-size: 12px; }
+}
+/* Double-tap ripple */
+body.tide .tide-rip { position: absolute; top: 0; bottom: 0; width: 38%; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 14px; opacity: 0; pointer-events: none; }
+body.tide .tide-rip.l { left: 0; background: radial-gradient(circle at 30% 50%, rgba(255,255,255,.18), transparent 70%); }
+body.tide .tide-rip.r { right: 0; background: radial-gradient(circle at 70% 50%, rgba(255,255,255,.18), transparent 70%); }
+body.tide .tide-rip .tide-ms { font-size: 34px; }
+body.tide .tide-rip.go { animation: tide-rip .7s var(--tide-sp); }
+@keyframes tide-rip { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
