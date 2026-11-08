@@ -27,7 +27,7 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
     nav.replace(`#/details?id=${encodeURIComponent(item.SeriesId)}&season=${item.IndexNumber ?? 0}${server ? `&serverId=${encodeURIComponent(server)}` : ''}`);
     return null;
   }
-  if (item.Type !== 'Movie' && item.Type !== 'Series') return null;
+  if (item.Type !== 'Movie' && item.Type !== 'Series' && item.Type !== 'Episode') return null;
 
   const disposers: (() => void)[] = [];
   let disposed = false;
@@ -35,7 +35,7 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
   ambient.set(item.Id);
   const header = renderHeader(item);
   // Same background system as the home hero: a sharp backdrop at the top that dissolves (mask) into the ambient glow.
-  const bgImg = h('img', { class: 'tide-dbg-img', alt: '', src: imageUrl(item.Id, 'Backdrop/0', 1920) }) as HTMLImageElement;
+  const bgImg = h('img', { class: 'tide-dbg-img', alt: '', src: imageUrl(item.Type === 'Episode' ? item.SeriesId ?? item.Id : item.Id, 'Backdrop/0', 1920) }) as HTMLImageElement;
   bgImg.onerror = () => bgImg.remove();
   const bg = h('div', { class: 'tide-dbg', 'aria-hidden': 'true' }, bgImg, h('div', { class: 'tide-dbg-shade' }));
   const root = h('div', { class: 'tide-details' }, ambient.el, bg, header.el);
@@ -54,9 +54,11 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
 
   const cast = renderCast(item.People);
   if (cast) root.append(cast);
-  const similar = renderSimilar(item.Id);
-  disposers.push(similar.dispose);
-  root.append(similar.el);
+  if (item.Type !== 'Episode') {
+    const similar = renderSimilar(item.Id);
+    disposers.push(similar.dispose);
+    root.append(similar.el);
+  }
 
   let quality: Quality | null = null;
   const qualityP = getQuality([item.Id]).then((r) => (quality = r[item.Id] ?? null)).catch(() => null);
@@ -102,6 +104,20 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
         placeAbout(null);
       }
     })();
+  } else if (item.Type === 'Episode' && item.SeriesId && item.SeasonId) {
+    void (async () => {
+      try {
+        const [eps, seasons] = await Promise.all([getEpisodes(item.SeriesId!, item.SeasonId!), getSeasons(item.SeriesId!)]);
+        if (disposed) return;
+        header.setNextEpisode(eps[eps.findIndex((e) => e.Id === item.Id) + 1] ?? null);
+        const sorted = sortSeasons(seasons);
+        const idx = Math.max(0, sorted.findIndex((s) => s.Id === item.SeasonId));
+        const row = renderEpisodes(item.SeriesId!, sorted, idx, null, eps, { current: { id: item.Id, tag: 'NOW VIEWING' }, heading: 'More from' });
+        disposers.push(row.dispose);
+        header.el.after(row.el);
+      } catch (e) { console.warn('[Tide] episode sections failed', e); }
+    })();
+    void qualityP.then(() => placeAbout({ src: item.MediaSources?.[0], label: 'Your file' }));
   } else {
     void qualityP.then(() => placeAbout({ src: item.MediaSources?.[0], label: 'Your file' }));
   }

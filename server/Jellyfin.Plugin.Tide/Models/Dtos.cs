@@ -72,7 +72,10 @@ public sealed record ClientConfig(
     [property: JsonPropertyName("defaultRowOrder")] string[] DefaultRowOrder,
     [property: JsonPropertyName("defaultHiddenRows")] string[] DefaultHiddenRows,
     [property: JsonPropertyName("enableDetails")] bool EnableDetails,
-    [property: JsonPropertyName("enableSmoothScroll")] bool EnableSmoothScroll);
+    [property: JsonPropertyName("enableSmoothScroll")] bool EnableSmoothScroll,
+    [property: JsonPropertyName("enablePlayer")] bool EnablePlayer,
+    [property: JsonPropertyName("creditsFallbackSeconds")] int CreditsFallbackSeconds,
+    [property: JsonPropertyName("introSkipper")] bool IntroSkipper);
 
 public sealed record HomeResponse(
     [property: JsonPropertyName("hero")] IReadOnlyList<HeroItemDto> Hero,

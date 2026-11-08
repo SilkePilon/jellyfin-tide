@@ -4,7 +4,9 @@ using Jellyfin.Plugin.Tide.Models;
 using Jellyfin.Plugin.Tide.Prefs;
 using Jellyfin.Plugin.Tide.Quality;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Common.Plugins;
 using MediaBrowser.Controller.Net;
+using MediaBrowser.Model.Plugins;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -21,14 +23,16 @@ public class TideController : ControllerBase
     private readonly HeroService _hero;
     private readonly QualityService _quality;
     private readonly UserPrefsStore _prefs;
+    private readonly IPluginManager _plugins;
 
-    public TideController(IAuthorizationContext auth, IUserManager users, HeroService hero, QualityService quality, UserPrefsStore prefs)
+    public TideController(IAuthorizationContext auth, IUserManager users, HeroService hero, QualityService quality, UserPrefsStore prefs, IPluginManager plugins)
     {
         _auth = auth;
         _users = users;
         _hero = hero;
         _quality = quality;
         _prefs = prefs;
+        _plugins = plugins;
     }
 
     private static Configuration.PluginConfiguration Cfg => Plugin.Instance!.Configuration;
@@ -78,19 +82,23 @@ public class TideController : ControllerBase
 
     private UserPrefs LoadPrefs(User user) => _prefs.Load(user.Id, Cfg.DefaultRowOrder, Cfg.DefaultHiddenRows);
 
-    private static ClientConfig BuildClientConfig() => BuildClientConfig(Cfg, Plugin.Instance!.Version.ToString(3));
-
-    internal static int NewDays(int configured) => Math.Clamp(configured, 1, 90);
-
-    internal static ClientConfig BuildClientConfig(Configuration.PluginConfiguration cfg, string version)
+    private ClientConfig BuildClientConfig()
     {
-        // Same normalisation the prefs store applies, so "Reset to default" on the client matches a fresh user.
+        var intro = IntroSkipperProbe.IsActive(_plugins.Plugins.Select(p => (p.Id, p.Name, p.Manifest.Status == PluginStatus.Active)));
+        return BuildClientConfig(Cfg, Plugin.Instance!.Version.ToString(3), intro);
+    }
+
+    internal static ClientConfig BuildClientConfig(Configuration.PluginConfiguration cfg, string version, bool introSkipper = false)
+    {
         var defaults = UserPrefsStore.Normalize(new UserPrefs { RowOrder = cfg.DefaultRowOrder, Hidden = cfg.DefaultHiddenRows });
         return new ClientConfig(
             cfg.EnableTheme, cfg.EnableIcons, cfg.EnableHome, cfg.EnableTrailers,
             Math.Clamp(cfg.HeroSlotSeconds, 8, 120), NewDays(cfg.NewDays), version,
-            defaults.RowOrder, defaults.Hidden, cfg.EnableDetails, cfg.EnableSmoothScroll);
+            defaults.RowOrder, defaults.Hidden, cfg.EnableDetails, cfg.EnableSmoothScroll,
+            cfg.EnablePlayer, Math.Clamp(cfg.CreditsFallbackSeconds, 0, 300), introSkipper);
     }
+
+    internal static int NewDays(int configured) => Math.Clamp(configured, 1, 90);
 
     private async Task<User?> CurrentUser()
     {

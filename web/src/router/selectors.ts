@@ -13,6 +13,8 @@ export const SELECTORS = {
    * are cached: each visit may add another one and inactive views get `.hide`, so take the visible one.
    */
   detailsHost: '#itemDetailPage.itemDetailPage:not(.hide)',
+  /** 12.4 video player: legacy view #videoOsdPage (route #/video). See docs/notes/web-12.4-player.md */
+  playerHost: '#videoOsdPage:not(.hide)',
   /** Top app bar (N1 nav restyle target). */
   appBar: '.MuiAppBar-root',
   /** Legacy header (still present on some pages). */
@@ -31,6 +33,7 @@ export const ROUTES = {
   search: r('search'),
   details: (id: string) => r(`details?id=${encodeURIComponent(id)}`),
   isDetails: (loc: Location = location) => /^#\/details\?/.test(loc.hash),
+  isPlayer: (loc: Location = location) => /^#\/video(\?|$)/.test(loc.hash),
   detailsParams: (loc: Location = location): URLSearchParams | null =>
     /^#\/details\?/.test(loc.hash) ? new URLSearchParams(loc.hash.slice(loc.hash.indexOf('?') + 1)) : null,
   isHome: (loc: Location = location) =>

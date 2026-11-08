@@ -43,3 +43,14 @@ test('menu lists seasons with progress; picking one fetches and swaps the row (c
   expect(fetchSpy).toHaveBeenCalledTimes(1);
   r.dispose();
 });
+
+test('current option tags that episode and drops synopsis when asked', () => {
+  const sorted = [season(1, 10)];
+  const list = eps(1, 3);
+  const r = renderEpisodes('ser', sorted, 0, null, list, { synopsis: false, current: { id: 's1e5', tag: 'NOW VIEWING' } });
+  const cur = r.el.querySelector('[data-id="s1e5"]')!;
+  expect(cur.querySelector('.tide-wide-tag')?.textContent).toBe('NOW VIEWING');
+  expect(r.el.querySelectorAll('.tide-wide-tag').length).toBe(1);
+  expect(r.el.querySelector('.tide-wide-syn')).toBeNull();
+  r.dispose();
+});

@@ -1,0 +1,57 @@
+import { createSettingsSheet, streamsToSheet } from '../src/player/settingsSheet';
+import { createShelf } from '../src/player/shelf';
+
+beforeEach(() => { (window as any).ApiClient = { serverAddress: () => 'http://jf', accessToken: () => 't', getCurrentUserId: () => 'u' }; });
+afterEach(() => { vi.restoreAllMocks(); document.body.innerHTML = ''; });
+
+test('streamsToSheet lists audio and subtitles with labels', () => {
+  const d = streamsToSheet({ Id: 'e', Name: 'E', Type: 'Episode', MediaSources: [{ Id: 'm', MediaStreams: [
+    { Type: 'Video', Codec: 'hevc' }, { Type: 'Audio', Index: 1, DisplayTitle: 'English - Dolby Digital+ - 5.1 - Default', Language: 'eng' } as any,
+    { Type: 'Audio', Index: 2, DisplayTitle: 'Dutch - AAC - Stereo', Language: 'dut' } as any,
+    { Type: 'Subtitle', Index: 3, DisplayTitle: 'English - SDH', Language: 'eng' } as any] }] });
+  expect(d.audio).toEqual([{ index: 1, label: 'English', sub: 'Dolby Digital+ · 5.1' }, { index: 2, label: 'Dutch', sub: 'AAC · Stereo' }]);
+  expect(d.subtitles).toEqual([{ index: 3, label: 'English', sub: 'SDH' }]);
+});
+
+test('sheet: three columns, picks call back and mark current, stays open', () => {
+  const picks: string[] = [];
+  const s = createSettingsSheet((k, v) => picks.push(`${k}=${v}`), () => {});
+  document.body.append(s.el);
+  s.setData({ audio: [{ index: 1, label: 'English', sub: '5.1' }, { index: 2, label: 'Dutch', sub: 'Stereo' }], subtitles: [{ index: 3, label: 'English', sub: '' }],
+    audioIndex: 1, subtitleIndex: null, quality: ['Auto', '1080p'], qualityCur: 'Auto', speed: 1, subSize: 'M' });
+  s.open();
+  expect(s.isOpen()).toBe(true);
+  const audio = [...s.el.querySelectorAll<HTMLElement>('[data-kind="audio"]')];
+  expect(audio.map((a) => a.classList.contains('on'))).toEqual([true, false]);
+  audio[1]!.click();
+  expect(picks).toEqual(['audio=2']);
+  expect(audio[1]!.classList.contains('on')).toBe(true);
+  s.el.querySelector<HTMLElement>('[data-kind="subtitles"][data-value="-1"]')!.click();
+  s.el.querySelector<HTMLElement>('[data-kind="speed"][data-value="1.5"]')!.click();
+  s.el.querySelector<HTMLElement>('[data-kind="quality"][data-value="1080p"]')!.click();
+  expect(picks).toEqual(['audio=2', 'subtitles=-1', 'speed=1.5', 'quality=1080p']);
+  expect(s.isOpen()).toBe(true);
+  s.close();
+  expect(s.isOpen()).toBe(false);
+});
+
+test('shelf opens the current season with NOW PLAYING and no synopsis', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+    const u = String(url);
+    if (u.includes('/Seasons')) return new Response(JSON.stringify({ Items: [{ Id: 's1', Name: 'Season 1', Type: 'Season', IndexNumber: 1, ChildCount: 2 }] }));
+    if (u.includes('/Episodes')) return new Response(JSON.stringify({ Items: [
+      { Id: 'a', Name: 'A', Type: 'Episode', SeriesId: 'ser', ParentIndexNumber: 1, IndexNumber: 1, Overview: 'x' },
+      { Id: 'b', Name: 'B', Type: 'Episode', SeriesId: 'ser', ParentIndexNumber: 1, IndexNumber: 2, Overview: 'y' }] }));
+    return new Response(JSON.stringify({ Id: 'b', Name: 'B', Type: 'Episode', ParentIndexNumber: 1 }));
+  });
+  const changes: boolean[] = [];
+  const sh = createShelf((o) => changes.push(o));
+  document.body.append(sh.el);
+  await sh.setEpisode('ser', 'b');
+  sh.open();
+  expect(sh.isOpen()).toBe(true);
+  expect(sh.el.querySelector('[data-id="b"] .tide-wide-tag')?.textContent).toBe('NOW PLAYING');
+  expect(sh.el.querySelector('.tide-wide-syn')).toBeNull();
+  sh.close();
+  expect(changes).toEqual([true, false]);
+});

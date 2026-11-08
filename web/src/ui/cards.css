@@ -22,7 +22,7 @@ body.tide .tide-ib-w { background: #fff; color: #000; }
 /* ── Wide card (home v2) ─────────────────────────────────────────────────────────────────────────────────────── */
 body.tide .tide-wide {
   position: relative; aspect-ratio: 16/9; border-radius: 18px; background: var(--tide-s1); isolation: isolate;
-  transform: translateZ(0); transition: transform .45s var(--tide-ease); will-change: auto;
+  transition: transform .45s var(--tide-ease);
 }
 body.tide .tide-wide-art, body.tide .tide-wide::before, body.tide .tide-wide::after { border-radius: inherit; }
 body.tide .tide-wide-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; z-index: 0; -webkit-user-drag: none; user-select: none; }
@@ -49,19 +49,19 @@ body.tide .tide-wide-acts > .tide-wide-play, body.tide .tide-wide-acts > .tide-f
 
 /* Progress ring: resting = small grey badge bottom-right; hover = the white Play button. */
 body.tide .tide-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-body.tide .tide-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+body.tide .tide-ring > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 body.tide .tide-ring circle { fill: none; stroke-width: 3; }
 body.tide .tide-ring-track { stroke: #48484a; }
 body.tide .tide-ring-arc { stroke: #fff; stroke-linecap: round; }
 body.tide .tide-wide-ring { width: 44px; height: 44px; border-radius: 50%; background: var(--tide-s3); cursor: pointer; transform: translate(0, 0) scale(.91); transition: transform .45s var(--tide-ease), background-color .3s var(--tide-ease); }
-body.tide .tide-wide-ring svg { inset: 5px; width: auto; height: auto; }
+body.tide .tide-wide-ring > svg { inset: 5px; width: auto; height: auto; }
 body.tide .tide-wide-ring .tide-ms { font-size: 18px; color: #fff; transition: color .3s var(--tide-ease); }
 body.tide .tide-wide-ring circle { transition: stroke .3s var(--tide-ease); }
 /* At rest the ring sits in the corner on its own (the ♥ is hidden): shift it right over the ♥'s slot. */
 body.tide .tide-wide-progress .tide-wide-ring { transform: translate(54px, 6px) scale(.91); }
 
 /* Reveal: hover, keyboard focus inside, or long-press (.tide-pressed). */
-body.tide .tide-wide:is(:hover, :focus-within, .tide-pressed) { transform: translateZ(0) scale(1.05); z-index: 5; }
+body.tide .tide-wide:is(:hover, :focus-within, .tide-pressed) { transform: scale(1.05); z-index: 5; }
 body.tide .tide-wide:is(:hover, :focus-within, .tide-pressed) .tide-card-shadow::after { opacity: 1; }
 body.tide .tide-wide:is(:hover, :focus-within, .tide-pressed)::before { opacity: 0; }
 body.tide .tide-wide:is(:hover, :focus-within, .tide-pressed)::after { opacity: 1; }

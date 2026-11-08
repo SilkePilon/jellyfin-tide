@@ -80,7 +80,7 @@ export function episodeSub(item: JfItem): string {
   return [rt, extra].filter(Boolean).join(' · ');
 }
 
-export interface WideCardOpts { episode?: { tag: 'CONTINUE' | 'UP NEXT' | null } }
+export interface WideCardOpts { episode?: { tag: string | null; synopsis?: boolean } }
 
 export function wideCard(item: JfItem, opts: WideCardOpts = {}): HTMLElement {
   const epMode = !!opts.episode;
@@ -136,7 +136,7 @@ export function wideCard(item: JfItem, opts: WideCardOpts = {}): HTMLElement {
     h('span', { class: 'tide-wide-info' },
       h('span', { class: 'tide-wide-title' }, title),
       h('span', { class: 'tide-wide-sub' }, epMode ? episodeSub(item) : hoverLine(item)),
-      epMode && item.Overview ? h('span', { class: 'tide-wide-syn' }, item.Overview) : null),
+      epMode && item.Overview && opts.episode?.synopsis !== false ? h('span', { class: 'tide-wide-syn' }, item.Overview) : null),
     h('span', { class: 'tide-wide-acts' }, playBtn, fav));
   attachLongPress(card);
   return card;

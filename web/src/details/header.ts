@@ -8,10 +8,12 @@ import { toggleButton } from '../ui/toggle';
 import { qualityBadge } from '../ui/quality';
 import { menuItem, openPopover } from '../ui/popover';
 import { openYouTubeModal } from '../ui/trailerModal';
-import { epLabel, yearSpan, youtubeId } from './logic';
+import { endsAt, epLabel, yearSpan, youtubeId } from './logic';
+import { renderNextUp } from './nextUp';
+import { ROUTES } from '../router/selectors';
 import type { JfItem, Quality } from '../types';
 
-export interface Header { el: HTMLElement; col: HTMLElement; setTarget(ep: JfItem | null): void; setQuality(q: Quality | null): void }
+export interface Header { el: HTMLElement; col: HTMLElement; setTarget(ep: JfItem | null): void; setQuality(q: Quality | null): void; setNextEpisode(ep: JfItem | null): void }
 
 export function primaryLabel(item: JfDetail, ep: JfItem | null): { text: string; left: string | null; pct: number; target: string } {
   const t = item.Type === 'Series' ? ep : item;
@@ -42,12 +44,23 @@ function metaLine(item: JfDetail): HTMLElement {
 }
 
 export function renderHeader(item: JfDetail): Header {
-  const poster = h('div', { class: 'tide-dh-poster' });
-  const pimg = h('img', { src: imageUrl(item.Id, 'Primary', 700), alt: '' }) as HTMLImageElement;
-  pimg.onerror = () => pimg.replaceWith(h('span', { class: 'tide-dh-poster-t' }, item.Name));
-  poster.append(pimg);
-  const titleText = () => h('h1', { class: 'tide-dh-title' }, item.Name);
-  const logo: HTMLElement = h('img', { class: 'tide-dh-logo', src: imageUrl(item.Id, 'Logo', 900), alt: item.Name });
+  const isEp = item.Type === 'Episode';
+  let poster: HTMLElement;
+  if (isEp) {
+    // Episode page: the episode's own 16:9 still (with progress) instead of the 2:3 poster.
+  const still = h('div', { class: 'tide-dh-still' });
+  still.style.backgroundImage = `url("${imageUrl(item.Id, 'Primary', 900)}")`;
+  const pos = item.UserData?.PlaybackPositionTicks ?? 0;
+  if (pos && item.RunTimeTicks) still.append(h('span', { class: 'tide-dh-pb' }, h('i', { style: `transform:scaleX(${pos / item.RunTimeTicks})` })));
+    poster = still;
+  } else {
+    poster = h('div', { class: 'tide-dh-poster' });
+    const pimg = h('img', { src: imageUrl(item.Id, 'Primary', 700), alt: '' }) as HTMLImageElement;
+    pimg.onerror = () => pimg.replaceWith(h('span', { class: 'tide-dh-poster-t' }, item.Name));
+    poster.append(pimg);
+  }
+  const titleText = () => h('h1', { class: 'tide-dh-title' }, isEp ? item.SeriesName ?? item.Name : item.Name);
+  const logo: HTMLElement = h('img', { class: 'tide-dh-logo', src: imageUrl(isEp ? item.SeriesId ?? item.Id : item.Id, 'Logo', 900), alt: isEp ? item.SeriesName ?? item.Name : item.Name });
   (logo as HTMLImageElement).onerror = () => logo.replaceWith(titleText());
 
   const desc = h('p', { class: 'tide-dh-desc', tabindex: '0' }, item.Overview ?? '');
@@ -68,7 +81,7 @@ export function renderHeader(item: JfDetail): Header {
   if (item.Type === 'Series') { primary.disabled = true; primary.append(icon('play_arrow'), h('span', {}, 'Play')); } else paint(null);
 
   const yt = youtubeId(item.RemoteTrailers?.map((t) => t.Url).find((u) => youtubeId(u)));
-  const trailer = (item.LocalTrailerCount ?? 0) > 0 || yt
+  const trailer = !isEp && ((item.LocalTrailerCount ?? 0) > 0 || yt)
     ? h('button', { class: 'tide-btn tide-btn-lg tide-dh-trailer', type: 'button', onclick: async () => {
       const local = (item.LocalTrailerCount ?? 0) > 0 ? await getLocalTrailerId(item.Id).catch(() => null) : null;
       if (local) void play(local);
@@ -94,14 +107,27 @@ export function renderHeader(item: JfDetail): Header {
   const moreWrap = h('span', { class: 'tide-dh-morewrap' }, more);
 
   const btns = h('div', { class: 'tide-dh-btns' }, primary, trailer, fav, seen, moreWrap);
+  const ends = isEp ? endsAt(item.RunTimeTicks, item.UserData?.PlaybackPositionTicks) : null;
+  const meta = metaLine(item);
+  if (ends) meta.append(h('span', { class: 'tide-dh-ends' }, `ends at ${ends}`));
+  const back = isEp && item.SeriesId
+    ? h('a', { class: 'tide-dh-back', href: ROUTES.details(item.SeriesId) }, icon('arrow_back'), ` ${item.SeriesName ?? ''} · all seasons`)
+    : null;
   const col = h('div', { class: 'tide-dh-col' },
-    logo, metaLine(item),
+    logo,
+    isEp ? h('div', { class: 'tide-dh-kick' }, `SEASON ${item.ParentIndexNumber ?? 0} · EPISODE ${item.IndexNumber ?? 0}`) : null,
+    isEp ? h('h1', { class: 'tide-dh-eptitle' }, item.Name) : null,
+    meta,
     item.Type === 'Movie' && item.Taglines?.[0] ? h('div', { class: 'tide-dh-tag' }, item.Taglines[0]) : null,
-    desc, btns);
-  const el = h('header', { class: 'tide-dh' }, poster, col);
+    desc, btns, back);
+  const el = h('header', { class: `tide-dh${isEp ? ' tide-dh-ep' : ''}` }, poster, col);
   return {
     el, col,
     setTarget: (ep) => { primary.disabled = false; paint(ep); },
+    setNextEpisode(ep) {
+      col.querySelector('.tide-nu')?.remove();
+      if (ep) col.insertBefore(renderNextUp(ep, 'NEXT EPISODE'), back);
+    },
     setQuality: (q) => { const b = qualityBadge(q, true); const slot = el.querySelector('.tide-dh-q'); if (slot) slot.replaceChildren(...(b ? [b] : [])); },
   };
 }
