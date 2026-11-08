@@ -9,8 +9,17 @@ BBB_ZIP=media/.BigBuckBunny_320x180.mp4.zip
 bbb() { [ -f "$1" ] && return; dl https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4.zip "$BBB_ZIP"; unzip -p "$BBB_ZIP" '*.mp4' > "$1"; }
 bbb "media/Movies/Big Buck Bunny (2008)/Big Buck Bunny (2008).mp4"
 dl https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4 "media/Movies/Sintel (2010)/Sintel (2010).mp4"
-dl https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4 "media/Shows/Blender Shorts/Season 01/Blender Shorts S01E01.mp4"
+[ -f "media/Shows/Blender Shorts/Season 01/Blender Shorts S01E01.mkv" ] || dl https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4 "media/Shows/Blender Shorts/Season 01/Blender Shorts S01E01.mp4"
 bbb "media/Shows/Blender Shorts/Season 01/Blender Shorts S01E02.mp4"
+# Multi-audio + subtitle fixture for the player (S01E01 as MKV with eng + dut audio and an English .srt).
+E1="media/Shows/Blender Shorts/Season 01/Blender Shorts S01E01"
+if [ ! -f "$E1.mkv" ]; then
+  docker run --rm -v "$PWD/media/Shows/Blender Shorts/Season 01:/m" -v "$PWD/media/Movies/Sintel (2010):/src:ro" -w /m jrottenberg/ffmpeg:6.1-alpine -loglevel error -y \
+    -i "/src/Sintel (2010).mp4" -f lavfi -t 52 -i sine=frequency=440 -map 0:v -map 0:a -map 1:a -c:v copy -c:a aac \
+    -metadata:s:a:0 language=eng -metadata:s:a:1 language=dut "Blender Shorts S01E01.mkv"
+  rm -f "$E1.mp4"
+fi
+[ -f "$E1.en.srt" ] || printf '1\n00:00:01,000 --> 00:00:05,000\nHello from Tide\n\n2\n00:00:06,000 --> 00:00:10,000\nSecond line\n' > "$E1.en.srt"
 mkdir -p "media/Shows/Blender Shorts/Season 02"
 [ -e "media/Shows/Blender Shorts/Season 02/Blender Shorts S02E01.mp4" ] || ln "media/Movies/Sintel (2010)/Sintel (2010).mp4" "media/Shows/Blender Shorts/Season 02/Blender Shorts S02E01.mp4" 2>/dev/null || cp "media/Movies/Sintel (2010)/Sintel (2010).mp4" "media/Shows/Blender Shorts/Season 02/Blender Shorts S02E01.mp4"
 # More titles (copies of the Sintel trailer under real open-movie names) so Jellyfin fetches their artwork and
