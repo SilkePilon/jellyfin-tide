@@ -3,6 +3,7 @@ import { getClientConfig } from './api/tide';
 import type { ClientConfig } from './types';
 import { initTheme } from './theme/index';
 import { initSmoothScroll } from './theme/smoothScroll';
+import { initScrollingState } from './theme/scrolling';
 import { initIcons } from './icons/swap';
 import { initRouter, registerTakeover } from './router/hook';
 import { DETAILS_TAKEOVER } from './details/details';
@@ -38,6 +39,7 @@ export async function boot(): Promise<void> {
 
 registerFeature(initTheme);
 registerFeature((cfg) => { if (cfg.enableTheme) initSmoothScroll(cfg); });
+registerFeature(() => void initScrollingState());
 registerFeature(initIcons);
 registerTakeover(DETAILS_TAKEOVER);
 registerFeature((cfg) => void initRouter(cfg));
