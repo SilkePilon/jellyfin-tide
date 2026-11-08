@@ -6,11 +6,15 @@ body.tide .tide-hero-slide.on { opacity: 1; pointer-events: auto; }
 body.tide .tide-hero-bg { position: absolute; inset: 0; background: center 25% / cover no-repeat; }
 body.tide .tide-hero-slide.kenburns .tide-hero-bg { animation: tide-kb 30s ease-out forwards; }
 @keyframes tide-kb { from { transform: scale(1); } to { transform: scale(1.1); } }
-body.tide .tide-hero-vid { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity 1.4s ease; }
-body.tide .tide-hero-vid.show { opacity: 1; }
+body.tide .tide-hero-vid { position: absolute; inset: 0; overflow: hidden; opacity: 0; background: #000; transition: opacity .8s ease; }
+/* Video only while it really plays (never its pause/buffer UI); the backdrop fades out underneath at the same time. */
+body.tide .tide-hero-slide.vidplay .tide-hero-vid { opacity: 1; }
+body.tide .tide-hero-bg { transition: opacity .8s ease; }
+body.tide .tide-hero-slide.vidplay .tide-hero-bg { opacity: 0; }
 body.tide .tide-hero-vid iframe, body.tide .tide-hero-vid video { position: absolute; top: 50%; left: 50%; width: 100%; aspect-ratio: 16/9; min-height: 100%; transform: translate(-50%, -50%) scale(1.18); border: 0; pointer-events: none; object-fit: cover; }
 /* Shades are translucent (no opaque bottom) so the hero melts into the ambient glow behind the page. */
 body.tide .tide-hero-shade { position: absolute; inset: 0; z-index: 2; background:
+  radial-gradient(ellipse 46% 42% at 100% 100%, rgba(0,0,0,.72) 0%, rgba(0,0,0,.45) 45%, rgba(0,0,0,0) 100%),
   linear-gradient(90deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.6) 22%, rgba(0,0,0,.22) 45%, rgba(0,0,0,0) 64%),
   linear-gradient(0deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,.2) 18%, rgba(0,0,0,.08) 34%, rgba(0,0,0,0) 52%),
   linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0) 20%); }
@@ -41,12 +45,13 @@ body.tide .tide-hero-left { font-weight: 500; color: #6e6e73; font-size: .9em; }
 body.tide .tide-hero-mute { position: absolute; right: var(--tide-gutter); top: 100px; z-index: 5; width: 42px; height: 42px; background: var(--tide-s2); }
 /* T3 logo strip */
 body.tide .tide-t3 { position: absolute; right: var(--tide-gutter); bottom: 130px; z-index: 4; display: flex; gap: 30px; align-items: flex-end; }
-body.tide .tide-t3-item { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; background: none; border: 0; padding: 0; cursor: pointer; color: #fff; }
-body.tide .tide-t3-item img { height: 34px; max-width: 150px; object-fit: contain; object-position: left bottom; filter: grayscale(1) brightness(.45); transition: filter .3s, height .3s var(--tide-ease); }
-body.tide .tide-t3-item.on img { filter: none; height: 44px; }
-body.tide .tide-t3-text { font-weight: 800; font-size: 14px; color: #6e6e73; max-width: 150px; text-align: left; }
-body.tide .tide-t3-item.on .tide-t3-text { color: #fff; }
-body.tide .tide-t3-bar { width: 100%; height: 3px; border-radius: 2px; background: var(--tide-s3); overflow: hidden; }
+body.tide .tide-t3-item { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; background: none; border: 0; padding: 4px; margin: -4px; border-radius: 10px; cursor: pointer; color: #fff; outline: none !important; -webkit-tap-highlight-color: transparent; }
+body.tide .tide-t3-item:focus-visible { box-shadow: 0 0 0 2px #fff; }
+body.tide .tide-t3-item img { height: 34px; max-width: 150px; object-fit: contain; object-position: left bottom; filter: grayscale(1) brightness(1.35) drop-shadow(0 1px 6px rgba(0,0,0,.8)); opacity: .7; transition: filter .3s, opacity .3s, height .3s var(--tide-ease); }
+body.tide .tide-t3-item.on img { filter: drop-shadow(0 1px 6px rgba(0,0,0,.8)); opacity: 1; height: 44px; }
+body.tide .tide-t3-text { font-weight: 800; font-size: 14px; color: #d1d1d6; opacity: .7; max-width: 150px; text-align: left; text-shadow: 0 1px 6px rgba(0,0,0,.8); }
+body.tide .tide-t3-item.on .tide-t3-text { color: #fff; opacity: 1; }
+body.tide .tide-t3-bar { width: 100%; height: 3px; border-radius: 2px; background: #48484a; overflow: hidden; }
 body.tide .tide-t3-bar i { display: block; height: 100%; width: 100%; background: #fff; transform: scaleX(0); transform-origin: left center; will-change: transform; }
 body.tide .tide-hero-meta-ph { display: none; }
 @media (max-width: 1099px) and (min-width: 700px) { body.tide .tide-t3 { display: none; } }

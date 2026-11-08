@@ -278,3 +278,54 @@ test('hero gets tide-hero-playing only while the active slide shows a trailer', 
   expect(hero.el.classList.contains('tide-hero-playing')).toBe(false);
   hero.destroy();
 });
+test('fix a/b: backdrop hides only while the trailer really plays; pause shows it again after 300ms', async () => {
+  vi.useFakeTimers();
+  (fetch as any).mockImplementation(() => Promise.resolve(new Response(JSON.stringify([{ Id: 'loc1' }]))));
+  const hero = createHero([base, { ...base, id: 'h2' }], cfg);
+  await vi.advanceTimersByTimeAsync(3_100);
+  const slide = hero.el.querySelector('.tide-hero-slide.on')!;
+  const v = slide.querySelector('video')!;
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  v.dispatchEvent(new Event('playing'));
+  expect(slide.classList.contains('vidplay')).toBe(true);
+  v.dispatchEvent(new Event('pause'));
+  await vi.advanceTimersByTimeAsync(200);
+  expect(slide.classList.contains('vidplay')).toBe(true);
+  await vi.advanceTimersByTimeAsync(150);
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  v.dispatchEvent(new Event('waiting'));
+  v.dispatchEvent(new Event('playing'));
+  await vi.advanceTimersByTimeAsync(400);
+  expect(slide.classList.contains('vidplay')).toBe(true);
+  hero.go(1);
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  hero.destroy();
+});
+
+test('fix a/b: youtube state messages drive vidplay; silent player falls back to playing', async () => {
+  vi.useFakeTimers();
+  const hero = createHero([base, { ...base, id: 'h2' }], cfg);
+  await vi.advanceTimersByTimeAsync(3_100);
+  const slide = hero.el.querySelector('.tide-hero-slide.on')!;
+  const f = slide.querySelector('iframe')!;
+  f.dispatchEvent(new Event('load'));
+  await vi.advanceTimersByTimeAsync(1_600); // ok() after 1.5 s
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  const msg = (info: number) => window.dispatchEvent(new MessageEvent('message', {
+    origin: 'https://www.youtube-nocookie.com', source: f.contentWindow, data: JSON.stringify({ event: 'onStateChange', info }),
+  }));
+  msg(1);
+  expect(slide.classList.contains('vidplay')).toBe(true);
+  msg(2);
+  await vi.advanceTimersByTimeAsync(350);
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  hero.destroy();
+
+  const silent = createHero([base, { ...base, id: 'h2' }], cfg);
+  await vi.advanceTimersByTimeAsync(3_100);
+  const s2 = silent.el.querySelector('.tide-hero-slide.on')!;
+  s2.querySelector('iframe')!.dispatchEvent(new Event('load'));
+  await vi.advanceTimersByTimeAsync(1_600 + 2_500);
+  expect(s2.classList.contains('vidplay')).toBe(true);
+  silent.destroy();
+});
