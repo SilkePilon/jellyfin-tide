@@ -206,7 +206,7 @@ New row IDs: `newThisWeek`, `discover`. They are added to `RowIds.All` on the se
 
 ### 3.10 Motion rules (site-wide)
 - Animate only `transform` and `opacity`. `filter` is allowed only on Discover posters and background layers, never on large live images.
-- Never animate `left`, `top`, `width`, `height`, `margin` or `box-shadow` on many elements at once. The card hover shadow uses an extra pseudo-element whose opacity is animated.
+- Never animate `left`, `top`, `width`, `height`, `margin` or `box-shadow` on many elements at once. The card hover shadow lives on a dedicated child element (`.tide-card-shadow`) whose opacity is animated (scrims use ::before/::after).
 - Easing `cubic-bezier(.2,.8,.2,1)`. Durations: hover 450ms, fades 300ms, crossfades 0.8–1.1s.
 - `will-change: transform` only on elements that are currently animating, or on the 10 Discover posters.
 - Blur only on small images (≤160px wide, upscaled), never on a full-resolution image.
