@@ -94,3 +94,6 @@ body.tide-theme .detailRibbon { background-color: var(--tide-s1); }
 @media (max-width: 699px) {
   body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiAvatar-root { background: none; }
 }
+/* Keyboard / anchor scrolling eases too (wheel is handled in smoothScroll.ts). */
+html.tide-smooth { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html.tide-smooth { scroll-behavior: auto; } }

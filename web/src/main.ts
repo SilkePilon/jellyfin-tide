@@ -2,6 +2,7 @@ import { waitForSession } from './api/client';
 import { getClientConfig } from './api/tide';
 import type { ClientConfig } from './types';
 import { initTheme } from './theme/index';
+import { initSmoothScroll } from './theme/smoothScroll';
 import { initIcons } from './icons/swap';
 import { initRouter } from './router/hook';
 import { initTabbar } from './mobile/tabbar';
@@ -35,6 +36,7 @@ export async function boot(): Promise<void> {
 }
 
 registerFeature(initTheme);
+registerFeature((cfg) => { if (cfg.enableTheme) initSmoothScroll(cfg); });
 registerFeature(initIcons);
 registerFeature((cfg) => void initRouter(cfg));
 registerFeature(() => void initTabbar());
