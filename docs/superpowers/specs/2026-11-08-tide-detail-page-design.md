@@ -260,6 +260,14 @@ f. **Row chevrons animate.**
    - **Hover:** scale 1.08, background `#3a3a3c`, and the arrow nudges 2px in its direction.
    - **Press:** scale .92, springing back on release (.2s).
    - Transform and opacity only, as everywhere else. With `prefers-reduced-motion`, opacity only.
+   - **The cards glide when you click.** Paging no longer uses the browser's `scrollBy({behavior:'smooth'})`, which is short and abrupt and sometimes instant in Jellyfin Desktop.
+     - A shared `animateScrollLeft(track, to)` in `ui/scrollAnim.ts` eases `scrollLeft` over **650ms** with an ease-out cubic. It runs on `requestAnimationFrame`, so only the scroll position changes and there is no layout work.
+     - **Page target:** the first card that is only partly visible on that side becomes the new first (or last) card. A page always moves whole cards and lands exactly on a card edge, never mid-card.
+     - Scroll snap is switched off on the track while the animation runs and back on when it ends, so snapping can't fight the glide.
+     - Clicking again mid-glide re-targets from the current position to one more page, so double-clicking moves two pages smoothly.
+     - The row cancels the glide when the user drags, wheels or touches it.
+     - **Reused by:** ←/→ keyboard focus moves, the smooth-scroll wheel on rows (§6g) and the episode row's first position after a season switch.
+     - With `prefers-reduced-motion`, scrolling jumps instantly.
 
 g. **Smooth scrolling, whole app.**
    - **Where:** the new `web/src/theme/smoothScroll.ts`, started from `main.ts` when the theme is on. It applies on every page, stock or Tide.
@@ -301,6 +309,7 @@ g. **Smooth scrolling, whole app.**
   - **About** fact skipping
   - **Your file** formatting (subtitle shortening, versions)
   - **trailer modal**
+  - **scroll animation**: page target lands on a card edge, eases over 650ms, re-targets on a second click, cancels on pointer/wheel, snap is restored after the glide
   - **fix (a)/(b) state machine**: the backdrop opacity follows player state
   - **smooth scroll**:
     - mouse-vs-trackpad detection
@@ -321,5 +330,6 @@ g. **Smooth scrolling, whole app.**
   - phone viewport layout
   - the heart is a solid red SVG when on
   - a chevron is fully visible after hovering a row and transparent once the row is scrolled to its end
+  - clicking › moves the row over several frames and ends with a card exactly at the left edge
   - one mouse-wheel notch moves the page over several frames (not in one jump) and lands about one notch further
 - **Manual**: Jellyfin Desktop check of icons (fix e), the trailer (fixes a/b), and that wheel scrolling feels smooth and a trackpad still feels native (fix g).
