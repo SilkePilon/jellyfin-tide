@@ -43,36 +43,54 @@ body.tide-theme ::-webkit-scrollbar { width: 10px; height: 10px; }
 body.tide-theme ::-webkit-scrollbar-thumb { background: var(--tide-s3); border-radius: 5px; }
 body.tide-theme ::-webkit-scrollbar-track { background: transparent; }
 
-/* N1 top nav */
+/* N1 top bar (v2): breathing room under the window title bar, pills for libraries, and ONE style for every icon
+   button in the bar, including buttons injected by other plugins. */
 body.tide-theme .MuiAppBar-root {
-  background: var(--tide-bg) !important; box-shadow: none !important; border: 0;
+  background: var(--tide-bg) !important; box-shadow: none !important; border: 0; border-radius: 0 !important;
+  padding-top: calc(16px + env(titlebar-area-height, 0px)) !important;
   transition: background-color .3s var(--tide-ease);
 }
 body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root { background: transparent !important; }
-body.tide-theme .MuiAppBar-root .MuiButton-root {
-  border-radius: 22px; padding: 7px 15px; color: var(--tide-tx); font-weight: 500;
+body.tide-theme .MuiAppBar-root .MuiToolbar-root { min-height: 64px !important; padding-left: var(--tide-gutter) !important; padding-right: var(--tide-gutter) !important; gap: 8px; }
+body.tide-theme .MuiAppBar-root .MuiToolbar-root > * { display: flex; align-items: center; gap: 8px; }
+/* Logo: the Jellyfin mark only (the server name next to it reads like a broken logo). */
+body.tide-theme .MuiAppBar-root a.MuiButton-root[href="#/"] { font-size: 0 !important; min-width: 0; padding: 6px !important; margin-right: 14px; background: none !important; }
+body.tide-theme .MuiAppBar-root a.MuiButton-root[href="#/"] .MuiButton-startIcon { margin: 0; }
+body.tide-theme .MuiAppBar-root a.MuiButton-root[href="#/"] img { height: 30px; width: auto; }
+/* Library links as pills; the current one is the white pill. */
+body.tide-theme .MuiAppBar-root .MuiButton-root:not([href="#/"]) {
+  border-radius: 20px; padding: 8px 16px !important; min-height: 0; color: #e5e5ea; font: 500 15px var(--tide-font); text-transform: none; letter-spacing: 0;
+  transition: background-color .2s var(--tide-ease), color .2s var(--tide-ease);
 }
+body.tide-theme .MuiAppBar-root .MuiButton-root:not([href="#/"]) .MuiButton-startIcon { margin-right: 8px; }
+body.tide-theme .MuiAppBar-root .MuiButton-root:not([href="#/"]) .tide-ms { font-size: 20px; }
+body.tide-theme .MuiAppBar-root .MuiButton-root:not([href="#/"]):hover { background: var(--tide-s3); }
 body.tide-theme .MuiAppBar-root .MuiButton-root[aria-current="page"],
 body.tide-theme .MuiAppBar-root .MuiButton-root.Mui-selected,
-body.tide-theme .MuiAppBar-root .MuiButton-root.active {
-  background: #fff !important; color: #000 !important; font-weight: 600;
+body.tide-theme .MuiAppBar-root .MuiButton-root.active { background: #fff !important; color: #000 !important; font-weight: 600; }
+/* Every icon button (stock, legacy headerButton, or another plugin's): a 44px transparent circle, grey on hover. */
+body.tide-theme .MuiAppBar-root .MuiIconButton-root,
+body.tide-theme .MuiAppBar-root .MuiToolbar-root button:not(.MuiButton-root),
+body.tide-theme .MuiAppBar-root .MuiToolbar-root .headerButton {
+  width: 44px !important; height: 44px !important; min-width: 44px; padding: 0 !important; margin: 0 !important; border-radius: 50% !important; border: 0 !important;
+  background: transparent !important; color: #fff !important; box-shadow: none !important;
+  display: inline-flex !important; align-items: center; justify-content: center; transition: background-color .2s var(--tide-ease);
 }
-body.tide-theme .MuiAppBar-root .MuiIconButton-root { background: var(--tide-s2); margin-left: 8px; }
+body.tide-theme .MuiAppBar-root .MuiIconButton-root:is(:hover, :focus-visible),
+body.tide-theme .MuiAppBar-root .MuiToolbar-root button:not(.MuiButton-root):is(:hover, :focus-visible),
+body.tide-theme .MuiAppBar-root .MuiToolbar-root .headerButton:is(:hover, :focus-visible) { background: var(--tide-s3) !important; }
+body.tide-theme .MuiAppBar-root .MuiToolbar-root :is(.MuiIconButton-root, button:not(.MuiButton-root), .headerButton) :is(.tide-ms, .material-icons, svg:not(.tide-icon-hidden)) { font-size: 24px !important; width: 24px; height: 24px; line-height: 24px; color: #fff; }
+/* Avatar: a clean 34px circle. */
+body.tide-theme .MuiAppBar-root .MuiAvatar-root { width: 34px; height: 34px; background-color: var(--tide-s3); color: var(--tide-tx); }
+body.tide-theme .MuiAppBar-root .MuiAvatar-root img { object-fit: cover; }
 
 /* Stock cards everywhere else */
 body.tide-theme .cardScalable, body.tide-theme .cardImageContainer { border-radius: var(--tide-radius); }
-/* Phone, over the hero: plain icons on the image (the hero's top shade keeps them legible), no filled circles. */
-@media (max-width: 699px) {
-  body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiIconButton-root { background: none; }
-}
-/* Avatar: stock paints it the brand blue; keep the bar monochrome like the other round actions. */
-body.tide-theme .MuiAppBar-root .MuiAvatar-root { background-color: var(--tide-s3); color: var(--tide-tx); }
-/* Phone over the hero: the avatar (and the button wrapping it) drops its circle too, like the other icon buttons. */
-@media (max-width: 699px) {
-  body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiAvatar-root,
-  body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiButtonBase-root:has(> .MuiAvatar-root) { background: none; }
-}
 
 /* Details page: stock uses a grey page and a translucent ribbon over the backdrop. Solid surfaces instead. */
 body.tide-theme .detailPageWrapperContainer { background-color: var(--tide-bg); }
 body.tide-theme .detailRibbon { background-color: var(--tide-s1); }
+/* Phone over the hero: the avatar drops its grey circle too, like every other bar button. */
+@media (max-width: 699px) {
+  body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiAvatar-root { background: none; }
+}

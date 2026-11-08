@@ -20,6 +20,11 @@ export function toggleButton(opts: {
     busy = true;
     on = !on;
     render();
+    // Only user toggles animate (not items that load already on).
+    btn.classList.remove('tide-just-toggled');
+    void btn.offsetWidth;
+    btn.classList.add('tide-just-toggled');
+    setTimeout(() => btn.classList.remove('tide-just-toggled'), 450);
     opts.onChange?.(on);
     let saving: Promise<void>;
     try { saving = Promise.resolve(opts.save(on)); } catch (err) { saving = Promise.reject(err); }

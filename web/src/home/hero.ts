@@ -3,7 +3,7 @@ import { api, imageUrl, streamUrl } from '../api/client';
 import { openDetails, play, setFavourite } from '../api/actions';
 import { fmtRuntime, h, icon } from '../ui/dom';
 import { toggleButton } from '../ui/toggle';
-import { qualityBadge } from '../ui/quality';
+import { progressRing } from '../ui/cards';
 import type { ClientConfig, HeroItem } from '../types';
 
 export type TrailerSource = { kind: 'local'; url: string } | { kind: 'youtube'; id: string };
@@ -71,26 +71,18 @@ export function backgroundUrl(item: Pick<HeroItem, 'id' | 'hasThumb'>, phone = i
   return phone && item.hasThumb ? imageUrl(item.id, 'Thumb', 1280) : imageUrl(item.id, 'Backdrop/0', 1920);
 }
 
-/** Desktop meta line: rating + critic, then year · genres · seasons/runtime, then age rating and quality badges. */
+/** Desktop meta (X1): one quiet line, "2022 · Action · 2h 10m · ★ 8.2". Quality lives on the detail page. */
 export function desktopMeta(item: HeroItem, chip: string | null): HTMLElement {
-  const lead: Node[] = [];
-  if (chip === 'NEW') lead.push(h('span', { class: 'tide-chip tide-chip-w' }, 'NEW'));
-  const scores = [
-    item.communityRating ? h('span', {}, icon('star', 'tide-star'), ` ${item.communityRating.toFixed(1)}`) : null,
-    item.criticRating ? h('span', {}, icon('local_fire_department', 'tide-critic'), ` ${Math.round(item.criticRating)}%`) : null,
-  ].filter((n): n is HTMLElement => !!n);
   const facts = [
-    scores.length ? h('span', { class: 'tide-hero-scores' }, ...scores) : null,
     item.year ? h('span', {}, String(item.year)) : null,
-    item.genres.length ? h('span', {}, item.genres.join(', ')) : null,
-    item.seasonCount ? h('span', {}, `${item.seasonCount} season${item.seasonCount === 1 ? '' : 's'}`) : null,
-    item.runtimeMinutes ? h('span', {}, runtime(item.runtimeMinutes)) : null,
+    item.genres[0] ? h('span', {}, item.genres[0]) : null,
+    item.runtimeMinutes ? h('span', {}, runtime(item.runtimeMinutes))
+      : item.seasonCount ? h('span', {}, `${item.seasonCount} season${item.seasonCount === 1 ? '' : 's'}`) : null,
+    item.communityRating ? h('span', {}, icon('star', 'tide-star'), ` ${item.communityRating.toFixed(1)}`) : null,
   ].filter((n): n is HTMLElement => !!n);
   const dotted: Node[] = [];
   facts.forEach((n, i) => { if (i) dotted.push(h('span', { class: 'tide-hero-dot', 'aria-hidden': 'true' }, '·')); dotted.push(n); });
-  return h('div', { class: 'tide-hero-meta' }, ...lead, ...dotted,
-    item.officialRating ? h('span', { class: 'tide-hero-rating' }, item.officialRating) : null,
-    qualityBadge(item.quality, true));
+  return h('div', { class: 'tide-hero-meta' }, chip === 'NEW' ? h('span', { class: 'tide-chip tide-chip-w' }, 'NEW') : null, ...dotted);
 }
 
 function slide(item: HeroItem, idx: number): HTMLElement {
@@ -104,19 +96,21 @@ function slide(item: HeroItem, idx: number): HTMLElement {
   const episode = r.episode
     ? h('div', { class: 'tide-hero-ep' }, r.chip === 'NEW EPISODE' ? h('span', { class: 'tide-chip tide-chip-w' }, 'NEW EPISODE') : null, r.episode)
     : null;
-  const progress = item.progress
-    ? h('div', { class: 'tide-hero-progress' }, (() => { const b = h('span', { class: 'tide-hero-bar' }, h('i')); (b.firstChild as HTMLElement).style.width = `${item.progress!.percent}%`; return b; })(), `${item.progress.minutesLeft}m left`)
-    : null;
+  // R3: resume progress is a ring around ▶ inside the white button, followed by a dim "52m left".
+  const primary = item.progress
+    ? h('button', { class: 'tide-btn tide-btn-w tide-btn-lg tide-hero-resume', type: 'button', onclick: () => void play(item.playTargetId) },
+      progressRing(item.progress.percent, 'tide-ring tide-hero-ring'), h('span', {}, r.button), h('span', { class: 'tide-hero-left' }, `${item.progress.minutesLeft}m left`))
+    : h('button', { class: 'tide-btn tide-btn-w tide-btn-lg', type: 'button', onclick: () => void play(item.playTargetId) }, icon('play_arrow'), r.button);
   const buttons = h('div', { class: 'tide-hero-btns' },
-    h('button', { class: 'tide-btn tide-btn-w', onclick: () => void play(item.playTargetId) }, icon('play_arrow'), r.button),
-    h('button', { class: 'tide-btn', onclick: () => openDetails(item.id) }, icon('info'), 'More info'),
+    primary,
+    h('button', { class: 'tide-btn tide-btn-lg', type: 'button', onclick: () => openDetails(item.id) }, icon('info'), 'More info'),
     // Jellyfin has no native watchlist: one ♥ Favourite toggle covers "Watchlist / Favourites".
-    toggleButton({ icon: 'favorite', label: 'Favourite', on: item.isFavorite, cls: 'tide-ib-lg tide-fav-toggle', save: (on) => setFavourite(item.id, on) }));
+    toggleButton({ icon: 'favorite', label: 'Favourite', on: item.isFavorite, cls: 'tide-ib-xl tide-fav-toggle', save: (on) => setFavourite(item.id, on) }));
   return h('div', { class: 'tide-hero-slide', 'data-i': idx }, bg, h('div', { class: 'tide-hero-vid' }), h('div', { class: 'tide-hero-shade' }),
-    h('div', { class: 'tide-hero-txt' }, logo, meta, phoneMeta(item, r.chip), episode, h('p', { class: 'tide-hero-desc' }, item.overview), buttons, progress));
+    h('div', { class: 'tide-hero-txt' }, logo, meta, phoneMeta(item, r.chip), episode, h('p', { class: 'tide-hero-desc' }, item.overview), buttons));
 }
 
-export function createHero(items: HeroItem[], cfg: ClientConfig) {
+export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (item: HeroItem) => void) {
   const slides = items.map(slide);
   const muteBtn = h('button', { class: 'tide-ib tide-hero-mute', 'aria-label': 'Unmute' }, icon('volume_off'));
   const strip = h('div', { class: 'tide-t3' }, ...items.map((it, i) => {
@@ -181,14 +175,15 @@ export function createHero(items: HeroItem[], cfg: ClientConfig) {
 
   function setBar(i: number, ms: number, from = 0, run = true): void {
     bars().forEach((b, n) => {
+      // Progress fills via transform (compositor-only), never width (which re-lays out every frame).
       b.style.transition = 'none';
-      b.style.width = n === i ? `${from}%` : '0%';
+      b.style.transform = `scaleX(${n === i ? from / 100 : 0})`;
     });
     const bar = bars()[i];
     if (bar && run) {
-      void bar.offsetWidth;
-      bar.style.transition = `width ${ms}ms linear`;
-      bar.style.width = '100%';
+      void bar.getBoundingClientRect();
+      bar.style.transition = `transform ${ms}ms linear`;
+      bar.style.transform = 'scaleX(1)';
     }
   }
 
@@ -322,6 +317,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig) {
     }
     cur = ((n % items.length) + items.length) % items.length;
     slides.forEach((_, i) => setActive(i, i === cur));
+    onChange?.(items[cur]!);
     trailerStarted = false;
     remainingMs = slotMs;
     setBar(cur, slotMs, 0, !paused);

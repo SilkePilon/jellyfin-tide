@@ -27,8 +27,9 @@ public class TideControllerTests
         var root = doc.RootElement;
         Assert.Equal(90, root.GetProperty("newDays").GetInt32());
         var order = root.GetProperty("defaultRowOrder").EnumerateArray().Select(e => e.GetString()).ToArray();
-        Assert.Equal(new[] { "topRated", "continue", "nextUp" }, order.Take(3));
-        Assert.Equal(14, order.Length);
+        Assert.Equal("topRated", order[0]);
+        Assert.Equal(Array.IndexOf(order, "continue") + 1, Array.IndexOf(order, "nextUp"));
+        Assert.Equal(16, order.Length);
         Assert.Equal(new[] { "random" }, root.GetProperty("defaultHiddenRows").EnumerateArray().Select(e => e.GetString()));
     }
 }

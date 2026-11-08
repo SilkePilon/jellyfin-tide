@@ -199,7 +199,7 @@ test('Reset to default uses the admin defaults from ClientConfig', async () => {
   [...panel.querySelectorAll<HTMLButtonElement>('footer button')].find((b) => b.textContent === 'Reset to default')!.click();
   const labels = [...panel.querySelectorAll('.tide-edit-label')].map((l) => l.textContent);
   expect(labels.slice(0, 2)).toEqual(['Top rated, not watched yet', 'Continue Watching']);
-  expect(labels.length).toBe(14);
+  expect(labels.length).toBe(16);
   const randomBox = [...panel.querySelectorAll('.tide-edit-item')].find((li) => li.textContent?.includes('Something different'))!
     .querySelector('input[type=checkbox]') as HTMLInputElement;
   expect(randomBox.checked).toBe(false);

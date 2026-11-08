@@ -1,5 +1,5 @@
-import { openDetails, setFavourite, setWatched } from '../src/api/actions';
-import { landscapeCard, minutesLeft, posterCard, subLine } from '../src/ui/cards';
+import { openDetails, play, setFavourite } from '../src/api/actions';
+import { hoverLine, minutesLeft, progressRing, subLine, wideCard } from '../src/ui/cards';
 import { qualityBadge } from '../src/ui/quality';
 import type { JfItem } from '../src/types';
 
@@ -33,76 +33,85 @@ test('sub line for movie and series', () => {
   expect(subLine(series)).toBe('2023 · Drama · 3 seasons');
 });
 
-test('poster card resting state: NEW, quality, progress, no title overlay', () => {
-  const c = posterCard(movie, { quality: { res: '4K', codec: 'HEVC' }, newDays: 14, now: NOW });
-  expect(c.querySelector('.tide-chip-new')).not.toBeNull();
-  expect(c.querySelector('.tide-q')?.textContent).toBe('4KHEVC');
-  expect((c.querySelector('.tide-poster-progress i') as HTMLElement).style.width).toBe('60%');
-  expect(c.querySelector('.tide-poster-logo')).toBeNull();
-  expect(c.querySelector('.tide-card-title')?.textContent).toBe('Top Gun: Maverick');
-});
-
-test('poster card: ratings live in hover layer', () => {
-  const c = posterCard(movie, { newDays: 14, now: NOW });
-  const hover = c.querySelector('.tide-poster-hover')!;
-  expect(hover.textContent).toContain('8.2');
-  expect(hover.textContent).toContain('96%');
-  expect(hover.querySelectorAll('button').length).toBe(4);
-});
-
-test('poster card corner: unwatched count, watched check, favourite', () => {
-  expect(posterCard(series, { newDays: 14, now: NOW }).querySelector('.tide-corner')?.textContent).toBe('9');
-  const watched = posterCard({ ...movie, UserData: { Played: true } }, { newDays: 14, now: NOW });
-  expect(watched.querySelector('.tide-corner')?.textContent).toBe('check');
-  const fav = posterCard({ ...movie, UserData: { IsFavorite: true } }, { newDays: 14, now: NOW });
-  expect(fav.querySelector('.tide-corner')?.textContent).toBe('favorite');
-});
-
-test('not NEW when older than window', () => {
-  expect(posterCard(series, { newDays: 14, now: NOW }).querySelector('.tide-chip-new')).toBeNull();
-});
-
 test('minutes left', () => {
   expect(minutesLeft(movie)).toBe(52);
 });
 
-test('landscape card for episode uses episode image + series logo', () => {
+test('wide card: artwork + logo, no text under the card', () => {
+  const c = wideCard(series);
+  expect(c.classList.contains('tide-wide')).toBe(true);
+  expect(c.querySelector<HTMLImageElement>('.tide-wide-art')?.src).toContain('/Items/s1/Images/Backdrop/0');
+  expect(c.querySelector<HTMLImageElement>('img.tide-wide-logo')?.src).toContain('/Items/s1/Images/Logo');
+  expect(c.querySelector('.tide-card-title, .tide-card-sub')).toBeNull();
+  // details live in the hover layer only
+  expect(c.querySelector('.tide-wide-info .tide-wide-title')?.textContent).toBe('Silo');
+  expect(c.querySelector('.tide-wide-sub')?.textContent).toBe('2023 · Drama · 3 seasons');
+});
+
+test('hover line: rating first for titles, episode form for episodes, time left when resuming', () => {
+  expect(hoverLine(movie)).toBe('★ 8.2 · 2022 · Action · 2h 10m · 52m left');
   const ep: JfItem = { Id: 'e1', Name: 'Bad Optics', Type: 'Episode', SeriesId: 's9', SeriesName: 'Lanterns', ParentIndexNumber: 1, IndexNumber: 6, RunTimeTicks: 60 * 60 * 1e7, UserData: { PlayedPercentage: 25, PlaybackPositionTicks: 15 * 60 * 1e7 } };
-  const c = landscapeCard(ep);
-  expect((c.querySelector('.tide-land-img') as HTMLElement).style.backgroundImage).toContain('/Items/e1/Images/Primary');
-  expect(c.querySelector('img.tide-land-logo')?.getAttribute('src')).toContain('/Items/s9/Images/Logo');
-  expect(c.querySelector('.tide-card-sub')?.textContent).toBe('S1 · E6 · Bad Optics · 45m left');
+  expect(hoverLine(ep)).toBe('S1 · E6 · Bad Optics · 45m left');
 });
 
-test('action button click does not open details', () => {
-  const c = posterCard(movie, { newDays: 14, now: NOW });
-  document.body.append(c);
-  (c.querySelector('button[aria-label="Favourite"]') as HTMLElement).click();
-  expect(setFavourite).toHaveBeenCalledWith('m1', true);
+test('episode card: episode still as art, series logo and title', () => {
+  const ep: JfItem = { Id: 'e1', Name: 'Bad Optics', Type: 'Episode', SeriesId: 's9', SeriesName: 'Lanterns', ParentIndexNumber: 1, IndexNumber: 6 };
+  const c = wideCard(ep);
+  expect(c.querySelector<HTMLImageElement>('.tide-wide-art')?.src).toContain('/Items/e1/Images/Primary');
+  expect(c.querySelector<HTMLImageElement>('img.tide-wide-logo')?.src).toContain('/Items/s9/Images/Logo');
+  expect(c.querySelector('.tide-wide-title')?.textContent).toBe('Lanterns');
+});
+
+test('progress ring only for resumable items; it is the play control', () => {
+  const c = wideCard(movie);
+  expect(c.classList.contains('tide-wide-progress')).toBe(true);
+  const ring = c.querySelector<HTMLElement>('.tide-wide-ring')!;
+  expect(ring.querySelector('.tide-ring-arc')?.getAttribute('stroke-dashoffset')).toBe('35.18');
+  expect(c.querySelector('.tide-wide-play')).toBeNull();
+  ring.click();
+  expect(play).toHaveBeenCalledWith('m1');
   expect(openDetails).not.toHaveBeenCalled();
-  c.remove();
+  const plain = wideCard(series);
+  expect(plain.querySelector('.tide-wide-ring')).toBeNull();
+  expect(plain.querySelector('.tide-wide-play')).not.toBeNull();
 });
 
-test('watched / favourite toggles reflect state, flip on click and update the corner badge', () => {
-  const c = posterCard({ ...movie, UserData: { IsFavorite: true } }, { newDays: 14, now: NOW });
-  const fav = c.querySelector<HTMLButtonElement>('button[aria-label="Favourite"]')!;
-  const seen = c.querySelector<HTMLButtonElement>('button[aria-label="Mark watched"]')!;
+test('progress ring clamps and renders track + arc', () => {
+  const r = progressRing(150);
+  expect(r.querySelector('.tide-ring-track')).not.toBeNull();
+  expect(r.querySelector('.tide-ring-arc')?.getAttribute('stroke-dashoffset')).toBe('0.00');
+});
+
+test('favourite toggle reflects state and only animates on user toggles', () => {
+  vi.mocked(setFavourite).mockResolvedValue(undefined);
+  const c = wideCard({ ...series, UserData: { IsFavorite: true } });
+  const fav = c.querySelector<HTMLButtonElement>('.tide-fav-toggle')!;
   expect(fav.getAttribute('aria-pressed')).toBe('true');
-  expect(seen.getAttribute('aria-pressed')).toBe('false');
+  expect(fav.classList.contains('tide-just-toggled')).toBe(false);
   fav.click();
   expect(fav.getAttribute('aria-pressed')).toBe('false');
-  expect(c.querySelector('.tide-corner')).toBeNull();
-  seen.click();
-  expect(seen.getAttribute('aria-pressed')).toBe('true');
-  expect(setWatched).toHaveBeenCalledWith('m1', true);
-  expect(c.querySelector('.tide-corner')?.textContent).toBe('check');
+  expect(setFavourite).toHaveBeenCalledWith('s1', false);
+  expect(openDetails).not.toHaveBeenCalled();
+  expect(fav.classList.contains('tide-just-toggled')).toBe(true);
 });
 
-test('long-press reveals hover layer and swallows the following click', () => {
+test('card click opens details, but not right after a drag-to-scroll', () => {
+  const track = document.createElement('div');
+  const c = wideCard(series);
+  track.append(c);
+  document.body.append(track);
+  c.click();
+  expect(openDetails).toHaveBeenCalledTimes(1);
+  track.dataset.tideDragged = '1';
+  c.click();
+  expect(openDetails).toHaveBeenCalledTimes(1);
+  track.remove();
+});
+
+test('long-press reveals the hover layer and swallows the following click', () => {
   vi.useFakeTimers();
   try {
-    const c = posterCard(movie, { newDays: 14, now: NOW });
-    document.body.append(c);
+    const c = wideCard(series);
     c.dispatchEvent(new Event('touchstart'));
     vi.advanceTimersByTime(500);
     c.dispatchEvent(new Event('touchend'));
@@ -110,8 +119,7 @@ test('long-press reveals hover layer and swallows the following click', () => {
     expect(c.classList.contains('tide-pressed')).toBe(true);
     expect(openDetails).not.toHaveBeenCalled();
     c.click();
-    expect(openDetails).toHaveBeenCalledWith('m1');
-    c.remove();
+    expect(openDetails).toHaveBeenCalledTimes(1);
   } finally {
     vi.useRealTimers();
   }

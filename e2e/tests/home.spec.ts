@@ -29,14 +29,111 @@ test('home renders hero and rows', async ({ page }) => {
   await expect(page.locator('section.tide-row:not([hidden])').first()).toBeVisible();
 });
 
-test('poster hover shows actions (desktop)', async ({ page }, info) => {
+test('wide card: no text under it; hover reveals readable info + actions and is not clipped (desktop)', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop');
   await login(page);
-  const card = page.locator('.tide-card-poster').first();
+  const card = page.locator('section[data-row="latestMovies"] .tide-wide').nth(1);
   await card.scrollIntoViewIfNeeded();
+  await expect(page.locator('.tide-card-title, .tide-card-sub')).toHaveCount(0);
+  await expect(card.locator('.tide-wide-info')).toHaveCSS('opacity', '0');
   await card.hover();
-  await expect(card.locator('.tide-poster-hover')).toHaveCSS('opacity', '1');
-  await expect(card.locator('.tide-poster-hover')).toHaveCSS('visibility', 'visible');
+  await expect(card.locator('.tide-wide-info')).toHaveCSS('opacity', '1');
+  await expect(card.locator('.tide-fav-toggle')).toHaveCSS('opacity', '1');
+  await page.waitForTimeout(500); // hover transition settles
+  // The scaled card + 3px ring stays inside the track's visible box (the 0.1.0 clipping bug).
+  const [c, t] = await Promise.all([card.boundingBox(), card.locator('xpath=ancestor::div[contains(@class,"tide-row-track")]').boundingBox()]);
+  expect(c!.y - 3).toBeGreaterThanOrEqual(t!.y);
+  expect(c!.y + c!.height + 3).toBeLessThanOrEqual(t!.y + t!.height);
+});
+
+test('row scrolling: chevron pages, drag scrolls without opening details (desktop)', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  const row = page.locator('section[data-row="latestMovies"]');
+  const track = row.locator('.tide-row-track');
+  await row.scrollIntoViewIfNeeded();
+  await row.hover();
+  const next = row.locator('.tide-row-chev-next');
+  await expect(next).toHaveCSS('opacity', '1');
+  await expect(row.locator('.tide-row-chev-prev')).toHaveCSS('opacity', '0');
+  await next.click();
+  await expect.poll(() => track.evaluate((t) => t.scrollLeft)).toBeGreaterThan(100);
+  await track.evaluate((t) => { t.style.scrollBehavior = 'auto'; t.scrollLeft = 0; });
+  const box = (await track.boundingBox())!;
+  const hash = await page.evaluate(() => location.hash);
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height / 2, { steps: 8 });
+  await page.mouse.up();
+  expect(await track.evaluate((t) => t.scrollLeft)).toBeGreaterThan(50);
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => location.hash)).toBe(hash);
+});
+
+test('cards per row adapt to window width', async ({ browser }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  for (const [w, n] of [[1920, 4.4], [1440, 3.4], [1200, 2.6], [900, 1.6]] as const) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: 900 } });
+    const page = await ctx.newPage();
+    await login(page);
+    const cw = await page.locator('.tide-wide').first().evaluate((c) => c.getBoundingClientRect().width);
+    // n cards incl. the peek fit the viewport minus gutters (±6%)
+    const gutter = w < 700 ? 16 : 56;
+    const expected = (w - 2 * gutter - 22 * (n - 1.4)) / n;
+    expect(Math.abs(cw - expected) / expected).toBeLessThan(0.06);
+    await ctx.close();
+  }
+});
+
+test('discover: clicking a poster brings it to the centre and updates the reason (desktop)', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  const sec = page.locator('section[data-row="discover"]');
+  await sec.scrollIntoViewIfNeeded();
+  await expect(sec.locator('.tide-disc-poster.center')).toHaveCount(1, { timeout: 15_000 });
+  await expect(sec.locator('.tide-row-title')).toHaveText('Discover');
+  const other = sec.locator('.tide-disc-poster:not(.center)').first();
+  const name = await other.getAttribute('aria-label');
+  await other.click();
+  await expect(sec.locator('.tide-disc-poster.center')).toHaveAttribute('aria-label', name!);
+  await expect(sec.locator('.tide-disc-meta')).toContainText(name!);
+});
+
+test('new this week bento shows NEW tiles (desktop)', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  const sec = page.locator('section[data-row="newThisWeek"]');
+  await sec.scrollIntoViewIfNeeded();
+  await expect(sec.locator('.tide-bento-tile').first()).toBeVisible({ timeout: 15_000 });
+  expect(await sec.locator('.tide-bento-tile').count()).toBeGreaterThanOrEqual(3);
+});
+
+test('favourite keeps a grey button; only the heart turns red (desktop)', async ({ page, request }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  const fav = page.locator('.tide-hero-slide.on .tide-fav-toggle');
+  const was = await fav.getAttribute('aria-pressed');
+  try {
+    if (was === 'true') { await fav.click(); await expect(fav).toHaveAttribute('aria-pressed', 'false'); }
+    const bgBefore = await fav.evaluate((b) => getComputedStyle(b).backgroundColor);
+    await fav.click();
+    await expect(fav).toHaveAttribute('aria-pressed', 'true');
+    await page.waitForTimeout(450);
+    expect(await fav.evaluate((b) => getComputedStyle(b).backgroundColor)).toBe(bgBefore);
+    expect(await fav.locator('.tide-ms').evaluate((i) => getComputedStyle(i).color)).toBe('rgb(255, 55, 95)');
+  } finally {
+    if ((await fav.getAttribute('aria-pressed')) !== was) await fav.click();
+  }
+});
+
+test('top bar: breathing room above, every bar button (incl. another plugin\'s) is the same 44px circle (desktop)', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  await page.evaluate(() => { const box = document.querySelector('.MuiAppBar-root .MuiToolbar-root > div:last-child')!; const b = document.createElement('button'); b.className = 'plugin-dummy'; b.innerHTML = '<span class="material-icons">casino</span>'; box.prepend(b); });
+  const top = await page.locator('.MuiAppBar-root .MuiToolbar-root').evaluate((t) => t.getBoundingClientRect().top);
+  expect(top).toBeGreaterThanOrEqual(16);
+  const sizes = await page.locator('.MuiAppBar-root .MuiIconButton-root, .MuiAppBar-root .plugin-dummy').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return `${Math.round(r.width)}x${Math.round(r.height)}`; }));
+  expect(new Set(sizes)).toEqual(new Set(['44x44']));
 });
 
 test('edit home: hide a row persists after reload', async ({ page, request }, info) => {
@@ -83,7 +180,7 @@ test('phone shows tab bar and no row arrows', async ({ page }, info) => {
   test.skip(info.project.name !== 'phone');
   await login(page);
   await expect(page.locator('.tide-tabbar')).toBeVisible();
-  await expect(page.locator('.tide-row-arrows').first()).toBeHidden();
+  await expect(page.locator('.tide-row-chev').first()).toBeHidden();
 });
 
 test('hero starts at top under transparent app bar (desktop)', async ({ page }, info) => {
@@ -247,9 +344,10 @@ test('row title link and details route open real pages (desktop)', async ({ page
   await expect(page.locator('#moviesPage:not(.hide) .card').first()).toBeVisible({ timeout: 15_000 });
 
   await page.goBack();
-  await page.waitForSelector('.tide-card-poster');
-  const id = await page.locator('.tide-card-poster').first().getAttribute('data-id');
-  await page.locator('.tide-card-poster .tide-card-title').first().click(); // card click -> ROUTES.details
+  await page.waitForSelector('section[data-row="latestMovies"] .tide-wide');
+  const card = page.locator('section[data-row="latestMovies"] .tide-wide').first();
+  const id = await card.getAttribute('data-id');
+  await card.locator('.tide-wide-art').click({ position: { x: 40, y: 20 } }); // card click -> ROUTES.details
   await expect.poll(() => new URL(page.url()).hash).toBe(`#/details?id=${id}`);
   await expect(page.locator('.itemDetailPage:not(.hide), #itemDetailPage:not(.hide)').first()).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('.itemDetailPage:not(.hide) .itemName').filter({ hasText: /\S/ }).first()).toBeVisible({ timeout: 15_000 });

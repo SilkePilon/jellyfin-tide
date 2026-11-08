@@ -1,10 +1,9 @@
 import './cards.css';
 import { fmtRuntime, h, icon } from './dom';
-import { qualityBadge } from './quality';
 import { toggleButton } from './toggle';
 import { imageUrl } from '../api/client';
-import { openDetails, play, setFavourite, setWatched } from '../api/actions';
-import type { JfItem, Quality } from '../types';
+import { openDetails, play, setFavourite } from '../api/actions';
+import type { JfItem } from '../types';
 
 export function subLine(item: JfItem): string {
   const parts: string[] = [];
@@ -26,19 +25,6 @@ export function minutesLeft(item: JfItem): number | null {
   return Math.max(0, Math.round((item.RunTimeTicks - pos) / 6e8));
 }
 
-function isNew(item: JfItem, newDays: number, now: number): boolean {
-  if (!item.DateCreated) return false;
-  return now - Date.parse(item.DateCreated) <= newDays * 864e5;
-}
-
-function corner(item: JfItem): HTMLElement | null {
-  const ud = item.UserData ?? {};
-  if (item.Type === 'Series' && (ud.UnplayedItemCount ?? 0) > 0) return h('span', { class: 'tide-corner tide-corner-count' }, String(ud.UnplayedItemCount));
-  if (ud.Played) return h('span', { class: 'tide-corner tide-corner-done' }, icon('check'));
-  if (ud.IsFavorite) return h('span', { class: 'tide-corner tide-corner-fav' }, icon('favorite'));
-  return null;
-}
-
 function stop(fn: () => void | Promise<void>): EventListener {
   return (e: Event) => {
     e.preventDefault();
@@ -47,69 +33,93 @@ function stop(fn: () => void | Promise<void>): EventListener {
   };
 }
 
-export function posterCard(item: JfItem, opts: { quality?: Quality | null; newDays: number; now?: number }): HTMLElement {
-  const now = opts.now ?? Date.now();
-  const ud = { ...item.UserData };
-  const pct = ud.PlayedPercentage && !ud.Played ? Math.round(ud.PlayedPercentage) : 0;
-  const badges = h('div', { class: 'tide-poster-badges' },
-    isNew(item, opts.newDays, now) ? h('span', { class: 'tide-chip tide-chip-w tide-chip-new' }, 'NEW') : null,
-    qualityBadge(opts.quality, false));
-  const ratings = h('div', { class: 'tide-poster-ratings' },
-    item.CommunityRating ? h('span', { class: 'tide-chip' }, icon('star', 'tide-star'), item.CommunityRating.toFixed(1)) : null,
-    item.CriticRating ? h('span', { class: 'tide-chip' }, icon('local_fire_department', 'tide-critic'), `${Math.round(item.CriticRating)}%`) : null);
-  const hover = h('div', { class: 'tide-poster-hover' }, ratings,
-    h('div', { class: 'tide-poster-actions' },
-      h('button', { class: 'tide-ib tide-ib-w', 'aria-label': 'Play', onclick: stop(() => play(item.Id)) }, icon('play_arrow')),
-      toggleButton({ icon: 'check', label: 'Mark watched', on: !!ud.Played, save: (on) => setWatched(item.Id, on), onChange: (on) => { ud.Played = on; syncCorner(); } }),
-      toggleButton({ icon: 'favorite', label: 'Favourite', on: !!ud.IsFavorite, cls: 'tide-fav-toggle', save: (on) => setFavourite(item.Id, on), onChange: (on) => { ud.IsFavorite = on; syncCorner(); } }),
-      h('button', { class: 'tide-ib tide-ib-more', 'aria-label': 'More', onclick: stop(() => openDetails(item.Id)) }, icon('more_horiz'))));
-  let cornerEl = corner(item);
-  /** Keep the corner badge (watched ✓ / favourite ♥) in step with the toggles. */
-  const syncCorner = () => {
-    const next = corner({ ...item, UserData: ud });
-    if (cornerEl && next) cornerEl.replaceWith(next);
-    else if (cornerEl) cornerEl.remove();
-    else if (next) badges.after(next);
-    cornerEl = next;
-  };
-  const poster = h('div', { class: 'tide-poster', style: `background-image:url("${imageUrl(item.Id, 'Primary', 500)}")` },
-    badges, cornerEl,
-    pct ? h('div', { class: 'tide-poster-progress' }, (() => { const i = h('i'); i.style.width = `${pct}%`; return i; })()) : null,
-    hover);
-  const card: HTMLElement = h('a', { class: 'tide-card tide-card-poster', href: '#', 'data-id': item.Id, onclick: (e: Event) => {
-    e.preventDefault();
-    if (card.dataset.tideLongpress) { delete card.dataset.tideLongpress; return; }
-    void openDetails(item.Id);
-  } },
-    poster,
-    h('div', { class: 'tide-card-title' }, item.Name),
-    h('div', { class: 'tide-card-sub' }, subLine(item)));
-  attachLongPress(card);
-  return card;
+const SVGNS = 'http://www.w3.org/2000/svg';
+const RING_LEN = 87.96; // 2πr, r = 14 in a 32×32 viewBox
+
+/** Progress ring (track + arc) around a ▶ icon. Used on cards (resting badge → hover Play) and the hero Resume. */
+export function progressRing(percent: number, cls = 'tide-ring'): HTMLElement {
+  const svg = document.createElementNS(SVGNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 32 32');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const [c, extra] of [['tide-ring-track', null], ['tide-ring-arc', percent]] as const) {
+    const circle = document.createElementNS(SVGNS, 'circle');
+    circle.setAttribute('cx', '16'); circle.setAttribute('cy', '16'); circle.setAttribute('r', '14');
+    circle.setAttribute('class', c);
+    if (extra !== null) {
+      const p = Math.max(0, Math.min(100, extra));
+      circle.setAttribute('stroke-dasharray', String(RING_LEN));
+      circle.setAttribute('stroke-dashoffset', (RING_LEN * (1 - p / 100)).toFixed(2));
+    }
+    svg.append(circle);
+  }
+  return h('span', { class: cls }, svg as unknown as Node, icon('play_arrow'));
 }
 
-export function landscapeCard(item: JfItem): HTMLElement {
-  const isEp = item.Type === 'Episode' && !!item.SeriesId;
-  const img = isEp ? imageUrl(item.Id, 'Primary', 640) : imageUrl(item.Id, 'Backdrop/0', 640);
-  const logoId = isEp ? (item.SeriesId as string) : item.Id;
-  const pct = Math.round(item.UserData?.PlayedPercentage ?? 0);
+/** "★ 8.2 · 2022 · Action · 2h 10m" (movie/series) or "S1 · E6 · Name · 30m left" (episode). */
+export function hoverLine(item: JfItem): string {
   const left = minutesLeft(item);
-  const sub = isEp
-    ? [`S${item.ParentIndexNumber ?? 0} · E${item.IndexNumber ?? 0}`, item.Name]
-    : [item.ProductionYear ? String(item.ProductionYear) : null, fmtRuntime(item.RunTimeTicks)];
-  if (left !== null) sub.push(`${left}m left`);
-  const logo = h('img', { class: 'tide-land-logo', src: imageUrl(logoId, 'Logo', 300), alt: '' }) as HTMLImageElement;
-  logo.onerror = () => logo.remove();
-  const bar = h('i');
-  bar.style.width = `${pct}%`;
-  const imgEl = h('div', { class: 'tide-land-img' }, logo,
-    h('div', { class: 'tide-land-play' }, icon('play_arrow')),
-    pct ? h('div', { class: 'tide-land-progress' }, bar) : null);
-  imgEl.style.backgroundImage = `url("${img}")`;
-  return h('a', { class: 'tide-card tide-card-land', href: '#', 'data-id': item.Id, onclick: stop(() => play(item.Id)) },
-    imgEl,
-    h('div', { class: 'tide-card-title' }, isEp ? item.SeriesName ?? item.Name : item.Name),
-    h('div', { class: 'tide-card-sub' }, sub.filter(Boolean).join(' · ')));
+  const parts: string[] = [];
+  if (item.Type === 'Episode') {
+    parts.push(`S${item.ParentIndexNumber ?? 0} · E${item.IndexNumber ?? 0}`, item.Name);
+  } else {
+    if (item.CommunityRating) parts.push(`\u2605 ${item.CommunityRating.toFixed(1)}`);
+    parts.push(subLine(item));
+  }
+  if (left !== null && (item.UserData?.PlaybackPositionTicks ?? 0) > 0) parts.push(`${left}m left`);
+  return parts.filter(Boolean).join(' · ');
+}
+
+/**
+ * Home v2 card: large 16:9 artwork with the logo, no text under it. Hover / focus / long-press reveals title,
+ * details and actions. Items with a resume position show a progress ring that turns into the Play button.
+ */
+export function wideCard(item: JfItem): HTMLElement {
+  const isEp = item.Type === 'Episode' && !!item.SeriesId;
+  const logoId = isEp ? (item.SeriesId as string) : item.Id;
+  const title = isEp ? item.SeriesName ?? item.Name : item.Name;
+  const ud = { ...item.UserData };
+  const pct = !ud.Played && (ud.PlaybackPositionTicks ?? 0) > 0 ? Math.round(ud.PlayedPercentage ?? 0) : 0;
+
+  const art = h('img', { class: 'tide-wide-art', alt: '', loading: 'lazy', decoding: 'async',
+    src: isEp ? imageUrl(item.Id, 'Primary', 720) : imageUrl(item.Id, 'Backdrop/0', 720) }) as HTMLImageElement;
+  art.onerror = () => {
+    // Items without a backdrop fall back to their primary image once.
+    if (art.dataset.fallback) { art.remove(); return; }
+    art.dataset.fallback = '1';
+    art.src = imageUrl(isEp ? (item.SeriesId as string) : item.Id, isEp ? 'Backdrop/0' : 'Primary', 720);
+  };
+  const textLogo = () => h('span', { class: 'tide-wide-logo tide-wide-logo-text' }, title);
+  const logo: HTMLElement = h('img', { class: 'tide-wide-logo', src: imageUrl(logoId, 'Logo', 360), alt: title, loading: 'lazy', decoding: 'async' });
+  (logo as HTMLImageElement).onerror = () => logo.replaceWith(textLogo());
+
+  const fav = toggleButton({ icon: 'favorite', label: 'Favourite', on: !!ud.IsFavorite, cls: 'tide-fav-toggle tide-wide-btn',
+    save: (on) => setFavourite(item.Id, on), onChange: (on) => { ud.IsFavorite = on; } });
+  const playTarget = item.Id;
+  const playBtn = pct
+    ? progressRing(pct, 'tide-ring tide-wide-ring')
+    : h('span', { class: 'tide-wide-play tide-wide-btn' }, icon('play_arrow'));
+  playBtn.setAttribute('role', 'button');
+  playBtn.setAttribute('tabindex', '-1');
+  playBtn.setAttribute('aria-label', pct ? `Resume ${title}` : `Play ${title}`);
+  playBtn.addEventListener('click', stop(() => play(playTarget)));
+
+  const card: HTMLElement = h('a', {
+    class: `tide-card tide-wide${pct ? ' tide-wide-progress' : ''}`, href: '#', 'data-id': item.Id, 'aria-label': title,
+    onclick: (e: Event) => {
+      e.preventDefault();
+      if (card.dataset.tideLongpress) { delete card.dataset.tideLongpress; return; }
+      if (card.closest('[data-tide-dragged]')) return; // a drag-to-scroll just ended on this card
+      void openDetails(item.Id);
+    },
+  },
+    h('span', { class: 'tide-card-shadow', 'aria-hidden': 'true' }),
+    art, logo,
+    h('span', { class: 'tide-wide-info' },
+      h('span', { class: 'tide-wide-title' }, title),
+      h('span', { class: 'tide-wide-sub' }, hoverLine(item))),
+    h('span', { class: 'tide-wide-acts' }, playBtn, fav));
+  attachLongPress(card);
+  return card;
 }
 
 export function squareCard(item: JfItem, round = false): HTMLElement {

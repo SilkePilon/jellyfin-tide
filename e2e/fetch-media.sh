@@ -11,3 +11,9 @@ bbb "media/Movies/Big Buck Bunny (2008)/Big Buck Bunny (2008).mp4"
 dl https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4 "media/Movies/Sintel (2010)/Sintel (2010).mp4"
 dl https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4 "media/Shows/Blender Shorts/Season 01/Blender Shorts S01E01.mp4"
 bbb "media/Shows/Blender Shorts/Season 01/Blender Shorts S01E02.mp4"
+# More titles (copies of the Sintel trailer under real open-movie names) so Jellyfin fetches their artwork and
+# Discover / New this week have enough items to render.
+for t in "Elephants Dream (2006)" "Tears of Steel (2012)" "Spring (2019)" "Cosmos Laundromat (2015)" "Agent 327 Operation Barbershop (2017)" "Caminandes Llama Drama (2013)"; do
+  mkdir -p "media/Movies/$t"
+  [ -e "media/Movies/$t/$t.mp4" ] || ln "media/Movies/Sintel (2010)/Sintel (2010).mp4" "media/Movies/$t/$t.mp4" 2>/dev/null || cp "media/Movies/Sintel (2010)/Sintel (2010).mp4" "media/Movies/$t/$t.mp4"
+done
