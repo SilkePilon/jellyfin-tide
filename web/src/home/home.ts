@@ -3,7 +3,7 @@ import { api, getSession } from '../api/client';
 import { getHome, putPrefs } from '../api/tide';
 import { h, icon } from '../ui/dom';
 import { createHero } from './hero';
-import { imageUrl } from '../api/client';
+import { createAmbient } from '../ui/ambient';
 import { openEditPanel } from './editPanel';
 import { SELECTORS } from '../router/selectors';
 import { pickGenres, renderRow, ROWS, visibleRows } from './rows';
@@ -80,19 +80,9 @@ export async function mountHome(host: HTMLElement, cfg: ClientConfig): Promise<(
   settle();
   // Ambient glow: a dark, blurred, tiny copy of the current hero backdrop fixed behind the whole home page.
   // Two layers crossfade (opacity only); the image is 160px wide so the blur is cheap.
-  const ambientLayers = [h('div', { class: 'tide-ambient' }), h('div', { class: 'tide-ambient' })];
-  const ambient = h('div', { class: 'tide-ambient-wrap', 'aria-hidden': 'true' }, ...ambientLayers, h('div', { class: 'tide-ambient-veil' }));
-  let ambientIdx = 0;
-  let ambientId = '';
-  const setAmbient = (id: string) => {
-    if (id === ambientId) return;
-    ambientId = id;
-    const next = ambientLayers[ambientIdx ^ 1]!;
-    next.style.backgroundImage = `url("${imageUrl(id, 'Backdrop/0', 160)}")`;
-    next.classList.add('on');
-    ambientLayers[ambientIdx]!.classList.remove('on');
-    ambientIdx ^= 1;
-  };
+  const amb = createAmbient();
+  const ambient = amb.el;
+  const setAmbient = amb.set;
   let heroApi: ReturnType<typeof createHero> | null = null;
   let rowDisposers: (() => void)[] = [];
   let closePanel: (() => void) | null = null;

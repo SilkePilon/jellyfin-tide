@@ -1,0 +1,122 @@
+/* ── Detail page ─────────────────────────────────────────────────────────────── */
+body.tide .tide-details { position: relative; isolation: isolate; color: var(--tide-tx); padding: 40px 0 96px; min-height: 100vh;
+  --tide-gap: 22px; --tide-n: 3.4; --tide-cw: calc((100vw - 2 * var(--tide-gutter) - var(--tide-gap) * (var(--tide-n) - 1.4)) / var(--tide-n)); }
+@media (min-width: 1800px) { body.tide .tide-details { --tide-n: 4.4; } }
+@media (max-width: 1399px) { body.tide .tide-details { --tide-n: 2.6; } }
+@media (max-width: 999px) { body.tide .tide-details { --tide-n: 1.6; } }
+@media (max-width: 699px) { body.tide .tide-details { --tide-n: 1.2; --tide-gap: 14px; } }
+body.tide #itemDetailPage.tide-taken > :not(.tide-details) { display: none !important; }
+/* Pulled up under the transparent app bar (offset measured in mountDetails); the header keeps its place. */
+body.tide .tide-details { margin-top: calc(-1 * var(--tide-details-offset, 0px)); padding-top: calc(var(--tide-details-offset, 0px) + 40px); }
+body.tide .tide-details > :not(.tide-ambient-wrap, .tide-dbg) { position: relative; z-index: 1; }
+/* Hero background system: sharp backdrop + translucent shades, both masked so they dissolve into the ambient glow. */
+body.tide .tide-dbg { position: absolute; left: 0; right: 0; top: 0; height: max(92vh, 760px); z-index: 0; pointer-events: none; overflow: hidden; }
+body.tide .tide-dbg-img, body.tide .tide-dbg-shade { position: absolute; inset: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 52%, rgba(0,0,0,.6) 72%, rgba(0,0,0,.2) 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 52%, rgba(0,0,0,.6) 72%, rgba(0,0,0,.2) 88%, transparent 100%); }
+body.tide .tide-dbg-img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+body.tide .tide-dbg-shade { background:
+  linear-gradient(90deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.6) 35%, rgba(0,0,0,.35) 65%, rgba(0,0,0,.3) 100%),
+  linear-gradient(0deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.25) 30%, rgba(0,0,0,0) 60%),
+  linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0) 20%); }
+body.tide .tide-dsec { margin-top: 56px; }
+body.tide .tide-dsec-h { display: flex; align-items: center; gap: 14px; padding: 0 var(--tide-gutter); }
+body.tide .tide-dsec-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+
+/* Header (C2) */
+body.tide .tide-dh { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 56px; align-items: end; padding: 0 var(--tide-gutter); }
+body.tide .tide-dh-poster img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+body.tide .tide-dh-poster-t { display: flex; height: 100%; align-items: center; justify-content: center; padding: 24px; text-align: center; font-size: 26px; font-weight: 800; letter-spacing: -.02em; color: #a1a1a6; }
+body.tide .tide-dh-poster { overflow: hidden; aspect-ratio: 2/3; border-radius: 22px; background: center / cover #1d1d20; box-shadow: 0 50px 100px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.06); }
+body.tide .tide-dh-logo { display: block; max-width: min(440px, 100%); max-height: 150px; object-fit: contain; object-position: left bottom; margin-bottom: 20px; filter: drop-shadow(0 4px 24px rgba(0,0,0,.6)); }
+body.tide .tide-dh-title { margin: 0 0 18px; font-size: 48px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+body.tide .tide-dh-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 16px; font-weight: 500; color: #e5e5ea; }
+body.tide .tide-dh-meta .tide-ms { font-size: 1.1em; margin-top: -2px; }
+body.tide .tide-dh-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tide-critic); vertical-align: middle; }
+body.tide .tide-dh-tag { font-size: 13px; font-style: italic; color: #a1a1a6; margin-top: 8px; }
+body.tide .tide-dh-desc { color: #d1d1d6; font-size: 15px; line-height: 1.6; margin: 14px 0 0; max-width: 760px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+body.tide .tide-dh-desc.open { -webkit-line-clamp: unset; display: block; }
+body.tide .tide-dh-btns { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 26px; }
+body.tide .tide-dh-btns .tide-btn-lg { height: 54px; }
+body.tide .tide-dh-btns .tide-ib-xl { width: 54px; height: 54px; }
+body.tide .tide-dh-primary[disabled] { opacity: .6; cursor: default; }
+body.tide .tide-dh-morewrap { position: relative; }
+
+/* Next up strip (N2) */
+body.tide .tide-nu { display: flex; align-items: center; gap: 16px; margin-top: 22px; max-width: 560px; width: 100%; padding: 10px 20px 10px 10px; border: 0; border-radius: 18px; background: #141416; color: var(--tide-tx); cursor: pointer; text-align: left; font: inherit; transition: background-color .3s var(--tide-ease); }
+body.tide .tide-nu:is(:hover, :focus-visible) { background: #1d1d20; outline: none; }
+body.tide .tide-nu-th { position: relative; flex: 0 0 150px; aspect-ratio: 16/9; border-radius: 12px; background: center / cover #2a2a2e; overflow: hidden; }
+body.tide .tide-nu-pb { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #3a3a3c; }
+body.tide .tide-nu-pb i { display: block; height: 100%; background: #fff; transform-origin: left center; }
+body.tide .tide-nu-tx { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+body.tide .tide-nu-k { font-size: 12px; font-weight: 800; letter-spacing: .12em; color: #a1a1a6; }
+body.tide .tide-nu-t { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.tide .tide-nu-m { font-size: 13px; color: #a1a1a6; }
+body.tide .tide-nu-go { margin-left: auto; flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #000; display: flex; align-items: center; justify-content: center; }
+
+/* Episodes (P1) */
+body.tide .tide-ep-ddwrap { position: relative; }
+body.tide .tide-ep-dd { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--tide-tx); font: 700 22px var(--tide-font); letter-spacing: -.02em; padding: 6px 10px 6px 0; cursor: pointer; border-radius: 12px; }
+body.tide .tide-ep-dd .tide-ms { transition: transform .3s var(--tide-ease); }
+body.tide .tide-ep-dd.open .tide-ms { transform: rotate(180deg); }
+body.tide .tide-ep-count { font-size: 14px; color: #8e8e93; }
+body.tide .tide-ep-menu { width: 324px; }
+body.tide .tide-ep-mp { flex: 0 0 38px; aspect-ratio: 2/3; border-radius: 7px; background: center / cover #333; }
+body.tide .tide-ep-menu .tide-pop-label { display: flex; flex-direction: column; gap: 2px; }
+body.tide .tide-ep-menu .tide-pop-label b { font-size: 15px; }
+body.tide .tide-ep-mm { font-size: 12px; font-weight: 500; color: #a1a1a6; }
+body.tide .tide-ep-mbar { width: 90px; height: 4px; border-radius: 2px; background: #3a3a3c; overflow: hidden; margin-top: 6px; }
+body.tide .tide-ep-mbar i { display: block; height: 100%; background: #fff; transform-origin: left center; }
+body.tide .tide-pop-item[aria-current="true"] .tide-ep-mm { color: #3a3a3c; }
+body.tide .tide-pop-item[aria-current="true"] .tide-ep-mbar { background: #d1d1d6; }
+body.tide .tide-pop-item[aria-current="true"] .tide-ep-mbar i { background: #000; }
+body.tide .tide-ep-mdone { font-size: 20px; }
+
+/* Cast (K4) */
+body.tide .tide-cast-all { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; color: #a1a1a6; font: 600 14px var(--tide-font); cursor: pointer; }
+body.tide .tide-cast-all:hover { color: #fff; }
+body.tide .tide-cast-grid { display: flex; flex-wrap: wrap; gap: 12px; padding: 20px var(--tide-gutter) 0; }
+body.tide .tide-chipp { display: flex; align-items: center; gap: 12px; padding: 6px 20px 6px 6px; border-radius: 40px; background: #141416; color: var(--tide-tx); text-decoration: none; transition: background-color .25s var(--tide-ease); }
+body.tide .tide-chipp:is(:hover, :focus-visible) { background: #2a2a2e; outline: none; }
+body.tide .tide-chipp-ph { flex: 0 0 48px; width: 48px; height: 48px; border-radius: 50%; background: center 18% / cover #2a2a2e; display: flex; align-items: center; justify-content: center; }
+body.tide .tide-chipp-ini { font-size: 15px; font-weight: 700; color: #a1a1a6; }
+body.tide .tide-chipp-tx { display: flex; flex-direction: column; min-width: 0; }
+body.tide .tide-chipp-tx b { font-size: 14px; white-space: nowrap; }
+body.tide .tide-chipp-tx span { font-size: 12px; color: #8e8e93; margin-top: 2px; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+
+/* More like this keeps the home row spacing (22px top padding stops hovered cards being clipped). */
+body.tide .tide-similar { margin-top: 56px; }
+
+/* Details (M2) */
+body.tide .tide-details-panels { display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px; padding: 20px var(--tide-gutter) 0; align-items: start; }
+body.tide .tide-panel { background: #141416; border-radius: 22px; padding: 26px; }
+body.tide .tide-panel h3 { margin: 0 0 20px; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+body.tide .tide-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 30px; }
+body.tide .tide-fact span { display: block; font-size: 13px; color: #8e8e93; }
+body.tide .tide-fact b { display: block; font-size: 15px; font-weight: 600; margin-top: 5px; }
+body.tide .tide-frow { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; padding: 12px 0; border-bottom: 1px solid #222; }
+body.tide .tide-frow:last-child { border-bottom: 0; }
+body.tide .tide-frow span { color: #8e8e93; }
+body.tide .tide-frow b { font-weight: 600; text-align: right; }
+
+@media (max-width: 899px) {
+  body.tide .tide-dh { grid-template-columns: 220px minmax(0, 1fr); gap: 32px; }
+}
+@media (max-width: 699px) {
+  body.tide .tide-details { padding-top: calc(var(--tide-details-offset, 0px) + 16px); }
+  body.tide .tide-dbg { height: 72vh; }
+  body.tide .tide-dh { grid-template-columns: 1fr; gap: 0; text-align: center; }
+  body.tide .tide-dh-poster { display: none; }
+  body.tide .tide-dh-logo { margin: 24px auto 16px; max-width: 72%; max-height: 110px; object-position: center bottom; }
+  body.tide .tide-dh-title { font-size: 34px; }
+  body.tide .tide-dh-meta { justify-content: center; font-size: 14px; }
+  body.tide .tide-dh-desc { -webkit-line-clamp: 4; text-align: left; }
+  body.tide .tide-dh-btns { justify-content: center; }
+  body.tide .tide-dh-primary { flex: 1 0 100%; justify-content: center; }
+  body.tide .tide-dh-trailer { width: 54px; padding: 0; justify-content: center; font-size: 0; gap: 0; border-radius: 50%; }
+  body.tide .tide-dh-trailer .tide-ms { font-size: 24px; }
+  body.tide .tide-nu { max-width: none; text-align: left; }
+  body.tide .tide-cast-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, auto); grid-auto-columns: max-content; overflow-x: auto; scrollbar-width: none; }
+  body.tide .tide-details-panels { grid-template-columns: 1fr; }
+  body.tide .tide-facts { grid-template-columns: 1fr 1fr; }
+}

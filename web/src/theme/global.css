@@ -50,7 +50,7 @@ body.tide-theme .MuiAppBar-root {
   padding-top: calc(16px + env(titlebar-area-height, 0px)) !important;
   transition: background-color .3s var(--tide-ease);
 }
-body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root { background: transparent !important; }
+body.tide-theme:is(.tide-on-home, .tide-on-details):not(.tide-scrolled) .MuiAppBar-root { background: transparent !important; }
 body.tide-theme .MuiAppBar-root .MuiToolbar-root { min-height: 64px !important; padding-left: var(--tide-gutter) !important; padding-right: var(--tide-gutter) !important; gap: 8px; }
 body.tide-theme .MuiAppBar-root .MuiToolbar-root > * { display: flex; align-items: center; gap: 8px; }
 /* Logo: the Jellyfin mark only (the server name next to it reads like a broken logo). */
@@ -92,5 +92,8 @@ body.tide-theme .detailPageWrapperContainer { background-color: var(--tide-bg); 
 body.tide-theme .detailRibbon { background-color: var(--tide-s1); }
 /* Phone over the hero: the avatar drops its grey circle too, like every other bar button. */
 @media (max-width: 699px) {
-  body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiAvatar-root { background: none; }
+  body.tide-theme:is(.tide-on-home, .tide-on-details):not(.tide-scrolled) .MuiAppBar-root .MuiAvatar-root { background: none; }
 }
+/* Keyboard / anchor scrolling eases too (wheel is handled in smoothScroll.ts). */
+html.tide-smooth { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html.tide-smooth { scroll-behavior: auto; } }

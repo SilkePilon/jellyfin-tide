@@ -89,7 +89,7 @@ public class TideController : ControllerBase
         return new ClientConfig(
             cfg.EnableTheme, cfg.EnableIcons, cfg.EnableHome, cfg.EnableTrailers,
             Math.Clamp(cfg.HeroSlotSeconds, 8, 120), NewDays(cfg.NewDays), version,
-            defaults.RowOrder, defaults.Hidden);
+            defaults.RowOrder, defaults.Hidden, cfg.EnableDetails, cfg.EnableSmoothScroll);
     }
 
     private async Task<User?> CurrentUser()

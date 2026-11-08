@@ -120,7 +120,7 @@ test('favourite keeps a grey button; only the heart turns red (desktop)', async 
     await expect(fav).toHaveAttribute('aria-pressed', 'true');
     await page.waitForTimeout(450);
     expect(await fav.evaluate((b) => getComputedStyle(b).backgroundColor)).toBe(bgBefore);
-    expect(await fav.locator('.tide-ms').evaluate((i) => getComputedStyle(i).color)).toBe('rgb(255, 55, 95)');
+    expect(await fav.locator('svg path').evaluate((i) => getComputedStyle(i).fill)).toBe('rgb(255, 55, 95)');
   } finally {
     if ((await fav.getAttribute('aria-pressed')) !== was) await fav.click();
   }

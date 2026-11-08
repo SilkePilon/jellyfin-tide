@@ -51,3 +51,17 @@ export async function setFavourite(id: string, on: boolean): Promise<void> {
   const s = getSession();
   await api(`/UserFavoriteItems/${id}`, { method: on ? 'POST' : 'DELETE', query: { userId: s?.userId } });
 }
+/** Shuffle-play a series / collection in this browser (same PlayNow path as play()). */
+export async function playShuffle(id: string): Promise<void> {
+  try {
+    const sessionId = await ownSessionId();
+    if (!sessionId) throw new Error('own session not found');
+    await api(`/Sessions/${sessionId}/Playing`, { method: 'POST', query: { playCommand: 'PlayShuffle', itemIds: id } });
+  } catch (e) {
+    console.warn('[Tide] shuffle failed', e);
+  }
+}
+
+export async function refreshItem(id: string): Promise<void> {
+  await api(`/Items/${id}/Refresh`, { method: 'POST', query: { Recursive: true, MetadataRefreshMode: 'Default', ImageRefreshMode: 'Default' } });
+}

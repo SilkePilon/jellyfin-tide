@@ -73,50 +73,70 @@ export function hoverLine(item: JfItem): string {
  * Home v2 card: large 16:9 artwork with the logo, no text under it. Hover / focus / long-press reveals title,
  * details and actions. Items with a resume position show a progress ring that turns into the Play button.
  */
-export function wideCard(item: JfItem): HTMLElement {
+export function episodeSub(item: JfItem): string {
+  const rt = fmtRuntime(item.RunTimeTicks);
+  const left = minutesLeft(item);
+  const extra = item.UserData?.Played ? 'Watched' : left !== null && (item.UserData?.PlaybackPositionTicks ?? 0) > 0 ? `${left}m left` : null;
+  return [rt, extra].filter(Boolean).join(' · ');
+}
+
+export interface WideCardOpts { episode?: { tag: 'CONTINUE' | 'UP NEXT' | null } }
+
+export function wideCard(item: JfItem, opts: WideCardOpts = {}): HTMLElement {
+  const epMode = !!opts.episode;
   const isEp = item.Type === 'Episode' && !!item.SeriesId;
   const logoId = isEp ? (item.SeriesId as string) : item.Id;
-  const title = isEp ? item.SeriesName ?? item.Name : item.Name;
+  const title = epMode ? `${item.IndexNumber ?? 0}. ${item.Name}` : isEp ? item.SeriesName ?? item.Name : item.Name;
   const ud = { ...item.UserData };
-  const pct = !ud.Played && (ud.PlaybackPositionTicks ?? 0) > 0 ? Math.round(ud.PlayedPercentage ?? 0) : 0;
+  const pct = !ud.Played && (ud.PlaybackPositionTicks ?? 0) > 0 ? Math.round(ud.PlayedPercentage ?? ((ud.PlaybackPositionTicks ?? 0) / (item.RunTimeTicks || 1)) * 100) : 0;
 
   const art = h('img', { class: 'tide-wide-art', alt: '', loading: 'lazy', decoding: 'async',
     src: isEp ? imageUrl(item.Id, 'Primary', 720) : imageUrl(item.Id, 'Backdrop/0', 720) }) as HTMLImageElement;
   art.onerror = () => {
-    // Items without a backdrop fall back to their primary image once.
+    // Items without a backdrop fall back to their primary image once (episodes: to the series backdrop).
     if (art.dataset.fallback) { art.remove(); return; }
     art.dataset.fallback = '1';
     art.src = imageUrl(isEp ? (item.SeriesId as string) : item.Id, isEp ? 'Backdrop/0' : 'Primary', 720);
   };
-  const textLogo = () => h('span', { class: 'tide-wide-logo tide-wide-logo-text' }, title);
-  const logo: HTMLElement = h('img', { class: 'tide-wide-logo', src: imageUrl(logoId, 'Logo', 360), alt: title, loading: 'lazy', decoding: 'async' });
-  (logo as HTMLImageElement).onerror = () => logo.replaceWith(textLogo());
+  let rest: HTMLElement;
+  if (epMode) {
+    rest = h('span', { class: 'tide-wide-ep' },
+      h('span', { class: 'tide-wide-ep-k' }, item.ParentIndexNumber === 0 ? 'SPECIAL' : `EPISODE ${item.IndexNumber ?? 0}`),
+      h('span', { class: 'tide-wide-ep-n' }, item.Name));
+  } else {
+    const textLogo = () => h('span', { class: 'tide-wide-logo tide-wide-logo-text' }, title);
+    rest = h('img', { class: 'tide-wide-logo', src: imageUrl(logoId, 'Logo', 360), alt: title, loading: 'lazy', decoding: 'async' });
+    (rest as HTMLImageElement).onerror = () => rest.replaceWith(textLogo());
+  }
 
   const fav = toggleButton({ icon: 'favorite', label: 'Favourite', on: !!ud.IsFavorite, cls: 'tide-fav-toggle tide-wide-btn',
     save: (on) => setFavourite(item.Id, on), onChange: (on) => { ud.IsFavorite = on; } });
-  const playTarget = item.Id;
   const playBtn = pct
     ? progressRing(pct, 'tide-ring tide-wide-ring')
     : h('span', { class: 'tide-wide-play tide-wide-btn' }, icon('play_arrow'));
   playBtn.setAttribute('role', 'button');
   playBtn.setAttribute('tabindex', '-1');
   playBtn.setAttribute('aria-label', pct ? `Resume ${title}` : `Play ${title}`);
-  playBtn.addEventListener('click', stop(() => play(playTarget)));
+  playBtn.addEventListener('click', stop(() => play(item.Id)));
 
   const card: HTMLElement = h('a', {
-    class: `tide-card tide-wide${pct ? ' tide-wide-progress' : ''}`, href: '#', 'data-id': item.Id, 'aria-label': title,
+    class: `tide-card tide-wide${pct ? ' tide-wide-progress' : ''}${epMode ? ' tide-wide-epmode' : ''}`, href: '#', 'data-id': item.Id, 'aria-label': title,
     onclick: (e: Event) => {
       e.preventDefault();
       if (card.dataset.tideLongpress) { delete card.dataset.tideLongpress; return; }
       if (card.closest('[data-tide-dragged]')) return; // a drag-to-scroll just ended on this card
-      void openDetails(item.Id);
+      if (epMode) void play(item.Id);
+      else void openDetails(item.Id);
     },
   },
     h('span', { class: 'tide-card-shadow', 'aria-hidden': 'true' }),
-    art, logo,
+    art, rest,
+    epMode && opts.episode?.tag ? h('span', { class: 'tide-wide-tag' }, opts.episode.tag) : null,
+    epMode && ud.Played ? h('span', { class: 'tide-wide-done', 'aria-label': 'Watched' }, icon('check')) : null,
     h('span', { class: 'tide-wide-info' },
       h('span', { class: 'tide-wide-title' }, title),
-      h('span', { class: 'tide-wide-sub' }, hoverLine(item))),
+      h('span', { class: 'tide-wide-sub' }, epMode ? episodeSub(item) : hoverLine(item)),
+      epMode && item.Overview ? h('span', { class: 'tide-wide-syn' }, item.Overview) : null),
     h('span', { class: 'tide-wide-acts' }, playBtn, fav));
   attachLongPress(card);
   return card;

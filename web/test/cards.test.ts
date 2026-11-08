@@ -1,5 +1,5 @@
 import { openDetails, play, setFavourite } from '../src/api/actions';
-import { hoverLine, minutesLeft, progressRing, subLine, wideCard } from '../src/ui/cards';
+import { episodeSub, hoverLine, minutesLeft, progressRing, subLine, wideCard } from '../src/ui/cards';
 import { qualityBadge } from '../src/ui/quality';
 import type { JfItem } from '../src/types';
 
@@ -123,4 +123,33 @@ test('long-press reveals the hover layer and swallows the following click', () =
   } finally {
     vi.useRealTimers();
   }
+});
+
+
+const ep = { Id: 'e3', Name: 'A Dark Web', Type: 'Episode', SeriesId: 'ser', IndexNumber: 3, ParentIndexNumber: 3, RunTimeTicks: 48 * 6e8, Overview: 'Juliette takes control.' };
+
+test('episode mode: kicker + title at rest, no logo, synopsis on hover, click plays', () => {
+  vi.clearAllMocks();
+  const c = wideCard(ep, { episode: { tag: null } });
+  expect(c.querySelector('img.tide-wide-logo, .tide-wide-logo-text')).toBeNull();
+  expect(c.querySelector('.tide-wide-ep-k')?.textContent).toBe('EPISODE 3');
+  expect(c.querySelector('.tide-wide-ep-n')?.textContent).toBe('A Dark Web');
+  expect(c.querySelector('.tide-wide-title')?.textContent).toBe('3. A Dark Web');
+  expect(c.querySelector('.tide-wide-sub')?.textContent).toBe('48m');
+  expect(c.querySelector('.tide-wide-syn')?.textContent).toBe('Juliette takes control.');
+  expect(c.querySelector<HTMLImageElement>('.tide-wide-art')!.src).toContain('/Items/e3/Images/Primary');
+  c.click();
+  expect(play).toHaveBeenCalledWith('e3');
+  expect(openDetails).not.toHaveBeenCalled();
+});
+
+test('episode mode: tags, watched check, specials, resume ring', () => {
+  expect(wideCard(ep, { episode: { tag: 'UP NEXT' } }).querySelector('.tide-wide-tag')?.textContent).toBe('UP NEXT');
+  const watched = wideCard({ ...ep, UserData: { Played: true } }, { episode: { tag: null } });
+  expect(watched.querySelector('.tide-wide-done')).not.toBeNull();
+  expect(watched.querySelector('.tide-wide-sub')?.textContent).toBe('48m · Watched');
+  expect(wideCard({ ...ep, ParentIndexNumber: 0 }, { episode: { tag: null } }).querySelector('.tide-wide-ep-k')?.textContent).toBe('SPECIAL');
+  const part = wideCard({ ...ep, UserData: { PlaybackPositionTicks: 36 * 6e8 } }, { episode: { tag: 'CONTINUE' } });
+  expect(part.querySelector('.tide-wide-ring')).not.toBeNull();
+  expect(episodeSub({ ...ep, UserData: { PlaybackPositionTicks: 36 * 6e8 } })).toBe('48m · 12m left');
 });

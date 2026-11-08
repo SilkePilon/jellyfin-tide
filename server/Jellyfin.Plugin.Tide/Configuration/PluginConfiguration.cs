@@ -8,6 +8,8 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool EnableIcons { get; set; } = true;
     public bool EnableHome { get; set; } = true;
     public bool EnableTrailers { get; set; } = true;
+    public bool EnableDetails { get; set; } = true;
+    public bool EnableSmoothScroll { get; set; } = true;
     public int HeroSize { get; set; } = 6;
     public int HeroSlotSeconds { get; set; } = 30;
     public int NewDays { get; set; } = 14;

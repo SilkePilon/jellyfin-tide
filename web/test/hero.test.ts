@@ -180,7 +180,7 @@ test('phone meta: one line, first genre only, no rating box or quality badge', (
   expect(m.querySelector('.tide-hero-rating, .tide-q')).toBeNull();
   // order: chip, rating, year, genre, runtime (separators between)
   const vals = [...m.children].filter((c) => !c.classList.contains('tide-hero-dot')).map((c) => c.textContent!.trim());
-  expect(vals).toEqual(['NEW', 'star 7.3', '2010', 'Animation', '15m']);
+  expect(vals).toEqual(['NEW', '7.3', '2010', 'Animation', '15m']);
   expect(m.children[1]!.classList.contains('tide-hero-dot')).toBe(false); // no separator right after the chip
   expect(m.querySelectorAll('.tide-hero-dot').length).toBe(3);
 });
@@ -224,7 +224,7 @@ test('runtime matches the card format', () => {
 test('desktop meta (X1): one quiet line, first genre only, rating last, no badges', () => {
   const m = desktopMeta({ ...base, communityRating: 8.2, criticRating: 96, year: 2022, genres: ['Action', 'Drama'], runtimeMinutes: 130, officialRating: 'PG-13', quality: { res: '4K', codec: 'HEVC' } }, null);
   const parts = [...m.children].map((c) => c.classList.contains('tide-hero-dot') ? '·' : c.textContent);
-  expect(parts).toEqual(['2022', '·', 'Action', '·', '2h 10m', '·', 'star 8.2']);
+  expect(parts).toEqual(['2022', '·', 'Action', '·', '2h 10m', '·', ' 8.2']);
   expect(m.querySelector('.tide-q, .tide-hero-rating')).toBeNull();
 });
 
@@ -249,7 +249,7 @@ test('hero has one favourite toggle (no watchlist) that reflects and flips state
   vi.mocked(setFavourite).mockResolvedValue(undefined);
   const { el } = createHero([{ ...base, isFavorite: true }], { ...cfg, enableTrailers: false });
   const btns = el.querySelectorAll('.tide-hero-slide .tide-hero-btns button');
-  expect([...btns].map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['play_arrowPlay', 'infoMore info', 'Favourite']);
+  expect([...btns].map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Play', 'More info', 'Favourite']);
   const fav = el.querySelector<HTMLButtonElement>('button[aria-label="Favourite"]')!;
   expect(fav.getAttribute('aria-pressed')).toBe('true');
   fav.click();
@@ -277,4 +277,55 @@ test('hero gets tide-hero-playing only while the active slide shows a trailer', 
   hero.go(1);
   expect(hero.el.classList.contains('tide-hero-playing')).toBe(false);
   hero.destroy();
+});
+test('fix a/b: backdrop hides only while the trailer really plays; pause shows it again after 300ms', async () => {
+  vi.useFakeTimers();
+  (fetch as any).mockImplementation(() => Promise.resolve(new Response(JSON.stringify([{ Id: 'loc1' }]))));
+  const hero = createHero([base, { ...base, id: 'h2' }], cfg);
+  await vi.advanceTimersByTimeAsync(3_100);
+  const slide = hero.el.querySelector('.tide-hero-slide.on')!;
+  const v = slide.querySelector('video')!;
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  v.dispatchEvent(new Event('playing'));
+  expect(slide.classList.contains('vidplay')).toBe(true);
+  v.dispatchEvent(new Event('pause'));
+  await vi.advanceTimersByTimeAsync(200);
+  expect(slide.classList.contains('vidplay')).toBe(true);
+  await vi.advanceTimersByTimeAsync(150);
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  v.dispatchEvent(new Event('waiting'));
+  v.dispatchEvent(new Event('playing'));
+  await vi.advanceTimersByTimeAsync(400);
+  expect(slide.classList.contains('vidplay')).toBe(true);
+  hero.go(1);
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  hero.destroy();
+});
+
+test('fix a/b: youtube state messages drive vidplay; silent player falls back to playing', async () => {
+  vi.useFakeTimers();
+  const hero = createHero([base, { ...base, id: 'h2' }], cfg);
+  await vi.advanceTimersByTimeAsync(3_100);
+  const slide = hero.el.querySelector('.tide-hero-slide.on')!;
+  const f = slide.querySelector('iframe')!;
+  f.dispatchEvent(new Event('load'));
+  await vi.advanceTimersByTimeAsync(1_600); // ok() after 1.5 s
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  const msg = (info: number) => window.dispatchEvent(new MessageEvent('message', {
+    origin: 'https://www.youtube-nocookie.com', source: f.contentWindow, data: JSON.stringify({ event: 'onStateChange', info }),
+  }));
+  msg(1);
+  expect(slide.classList.contains('vidplay')).toBe(true);
+  msg(2);
+  await vi.advanceTimersByTimeAsync(350);
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  hero.destroy();
+
+  const silent = createHero([base, { ...base, id: 'h2' }], cfg);
+  await vi.advanceTimersByTimeAsync(3_100);
+  const s2 = silent.el.querySelector('.tide-hero-slide.on')!;
+  s2.querySelector('iframe')!.dispatchEvent(new Event('load'));
+  await vi.advanceTimersByTimeAsync(1_600 + 2_500);
+  expect(s2.classList.contains('vidplay')).toBe(true);
+  silent.destroy();
 });

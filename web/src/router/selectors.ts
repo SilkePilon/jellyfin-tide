@@ -8,6 +8,11 @@ export const SELECTORS = {
    * second `main > .skinBody`. It is outside the app bar and is unmounted when leaving home, so re-query it per visit.
    */
   homeHost: '#indexPage.homePage',
+  /**
+   * 12.4 detail page: legacy view `div#itemDetailPage.page.itemDetailPage` in `.mainAnimatedPages.skinBody`. Views
+   * are cached: each visit may add another one and inactive views get `.hide`, so take the visible one.
+   */
+  detailsHost: '#itemDetailPage.itemDetailPage:not(.hide)',
   /** Top app bar (N1 nav restyle target). */
   appBar: '.MuiAppBar-root',
   /** Legacy header (still present on some pages). */
@@ -25,6 +30,9 @@ export const ROUTES = {
   music: r('music'),
   search: r('search'),
   details: (id: string) => r(`details?id=${encodeURIComponent(id)}`),
+  isDetails: (loc: Location = location) => /^#\/details\?/.test(loc.hash),
+  detailsParams: (loc: Location = location): URLSearchParams | null =>
+    /^#\/details\?/.test(loc.hash) ? new URLSearchParams(loc.hash.slice(loc.hash.indexOf('?') + 1)) : null,
   isHome: (loc: Location = location) =>
     ROUTING.hashRouting ? /^#\/(home)?(\?|$)/.test(loc.hash) : /\/web\/home\/?$/.test(loc.pathname),
 };

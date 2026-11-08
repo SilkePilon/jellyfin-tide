@@ -31,3 +31,8 @@ body.tide .tide-ms {
 body.tide svg.tide-icon-hidden {
   display: none !important;
 }
+
+/* Inline SVG icons size like the font glyphs they replace (1em box, currentColor). */
+body.tide .tide-svg { width: 1em; height: 1em; display: inline-flex; align-items: center; justify-content: center; }
+body.tide .tide-svg svg { width: 100%; height: 100%; display: block; fill: currentColor; overflow: visible; }
+body.tide .tide-svg path { transition: fill .2s var(--tide-ease), stroke .2s var(--tide-ease); }

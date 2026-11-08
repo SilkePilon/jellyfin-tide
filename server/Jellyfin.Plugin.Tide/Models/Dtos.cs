@@ -70,7 +70,9 @@ public sealed record ClientConfig(
     [property: JsonPropertyName("newDays")] int NewDays,
     [property: JsonPropertyName("version")] string Version,
     [property: JsonPropertyName("defaultRowOrder")] string[] DefaultRowOrder,
-    [property: JsonPropertyName("defaultHiddenRows")] string[] DefaultHiddenRows);
+    [property: JsonPropertyName("defaultHiddenRows")] string[] DefaultHiddenRows,
+    [property: JsonPropertyName("enableDetails")] bool EnableDetails,
+    [property: JsonPropertyName("enableSmoothScroll")] bool EnableSmoothScroll);
 
 public sealed record HomeResponse(
     [property: JsonPropertyName("hero")] IReadOnlyList<HeroItemDto> Hero,

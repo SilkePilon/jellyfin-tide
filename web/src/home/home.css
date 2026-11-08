@@ -1,10 +1,4 @@
 body.tide .tide-home { position: relative; isolation: isolate; background: transparent; color: var(--tide-tx); padding-bottom: 80px; min-height: 100vh; }
-/* Ambient glow behind the whole home page (fixed, so it stays put while the rows scroll over it). */
-body.tide .tide-ambient-wrap { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: #000; }
-body.tide .tide-ambient { position: absolute; inset: -40px; background: center / cover no-repeat; filter: blur(14px) brightness(.32) saturate(1.3); opacity: 0; transition: opacity 1s ease; }
-body.tide .tide-ambient.on { opacity: 1; }
-body.tide .tide-ambient-veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.65)); }
-@media (prefers-reduced-motion: reduce) { body.tide .tide-ambient { transition: none; } }
 /* Rows: full-bleed track (cards scroll edge to edge), title aligned to the gutter. */
 body.tide .tide-home { --tide-gap: 22px; --tide-n: 3.4; --tide-cw: calc((100vw - 2 * var(--tide-gutter) - var(--tide-gap) * (var(--tide-n) - 1.4)) / var(--tide-n)); }
 @media (min-width: 1800px) { body.tide .tide-home { --tide-n: 4.4; } }
@@ -26,19 +20,30 @@ body.tide .tide-row-track > * { flex: 0 0 var(--tide-cw); scroll-snap-align: sta
 body.tide .tide-row-square > *, body.tide .tide-row-round > * { flex-basis: calc(var(--tide-cw) * .55); }
 body.tide .tide-row-track.tide-dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
 body.tide .tide-row-track.tide-dragging * { pointer-events: none; }
-/* Edge chevrons: solid circles, only while the row is hovered and that direction can scroll. */
+/* Edge chevrons: solid circles that glide in/out (transform + opacity only). */
 body.tide .tide-row-chev {
-  position: absolute; top: calc(22px + var(--tide-cw) * 9 / 32); transform: translateY(-50%); z-index: 6; width: 48px; height: 48px; border-radius: 50%; border: 0;
+  position: absolute; top: calc(22px + var(--tide-cw) * 9 / 32); z-index: 6; width: 48px; height: 48px; border-radius: 50%; border: 0;
   background: var(--tide-s3); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;
-  opacity: 0; pointer-events: none; transition: opacity .2s var(--tide-ease); box-shadow: 0 8px 20px rgba(0,0,0,.6);
+  opacity: 0; pointer-events: none; box-shadow: 0 8px 20px rgba(0,0,0,.6);
+  transition: opacity .25s var(--tide-ease), transform .25s var(--tide-ease), background-color .2s;
 }
-body.tide .tide-row-chev .tide-ms { font-size: 28px; }
-body.tide .tide-row-chev-prev { left: 12px; }
-body.tide .tide-row-chev-next { right: 12px; }
+body.tide .tide-row-chev-prev { left: 12px; transform: translate(-10px, -50%) scale(.85); }
+body.tide .tide-row-chev-next { right: 12px; transform: translate(10px, -50%) scale(.85); }
+body.tide .tide-row-chev .tide-ms { font-size: 28px; transition: transform .25s var(--tide-ease); }
 @media (hover: hover) {
-  body.tide .tide-row-scroller.can-prev:hover .tide-row-chev-prev, body.tide .tide-row-scroller.can-next:hover .tide-row-chev-next { opacity: 1; pointer-events: auto; }
+  body.tide .tide-row-scroller.can-prev:hover .tide-row-chev-prev, body.tide .tide-row-scroller.can-next:hover .tide-row-chev-next {
+    opacity: 1; pointer-events: auto; transform: translate(0, -50%) scale(1); transition: opacity .35s var(--tide-ease), transform .35s var(--tide-ease), background-color .2s;
+  }
+  body.tide .tide-row-scroller .tide-row-chev:hover { background: #3a3a3c; transform: translate(0, -50%) scale(1.08); }
+  body.tide .tide-row-chev-next:hover .tide-ms { transform: translateX(2px); }
+  body.tide .tide-row-chev-prev:hover .tide-ms { transform: translateX(-2px); }
+  body.tide .tide-row-scroller .tide-row-chev:active { transform: translate(0, -50%) scale(.92); transition-duration: .1s; }
 }
-body.tide .tide-row-scroller .tide-row-chev:hover { background: #3a3a3c; }
+body.tide .tide-row-track.tide-gliding { scroll-snap-type: none; }
+@media (prefers-reduced-motion: reduce) {
+  body.tide .tide-row-chev, body.tide .tide-row-scroller .tide-row-chev:is(:hover, :active) { transform: translate(0, -50%) !important; }
+  body.tide .tide-row-chev .tide-ms { transform: none !important; }
+}
 body.tide .tide-row-skeleton { flex: 0 0 var(--tide-cw); aspect-ratio: 16/9; border-radius: 18px; background: var(--tide-s1); }
 body.tide .tide-row-error { color: var(--tide-mu); font-size: 14px; padding: 20px 0; }
 body.tide .tide-row-error button { background: none; border: 0; color: #fff; font-weight: 600; cursor: pointer; text-decoration: underline; }

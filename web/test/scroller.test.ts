@@ -21,15 +21,45 @@ test('chevrons only for directions that can scroll', () => {
   expect(s.el.classList.contains('can-prev') || s.el.classList.contains('can-next')).toBe(false);
 });
 
-test('chevron pages by 85% of the visible width', () => {
+test('chevron pages by whole cards with the eased animator', () => {
+  vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance', 'setTimeout'] });
   const s = createScroller('x');
-  sized(s.track, 3000, 1000);
-  const by = vi.fn();
-  s.track.scrollBy = by as unknown as typeof s.track.scrollBy;
+  sized(s.track, 4000, 1000);
+  s.track.getBoundingClientRect = () => ({ left: 0, right: 1000, width: 1000 } as DOMRect);
+  for (let i = 0; i < 10; i++) {
+    const c = document.createElement('a');
+    c.getBoundingClientRect = () => ({ left: i * 400 - s.track.scrollLeft, right: i * 400 + 380 - s.track.scrollLeft, width: 380 } as DOMRect);
+    s.track.append(c);
+  }
   s.el.querySelector<HTMLButtonElement>('.tide-row-chev-next')!.click();
-  expect(by).toHaveBeenCalledWith({ left: 850, behavior: 'smooth' });
+  vi.advanceTimersByTime(100);
+  expect(s.track.scrollLeft).toBeGreaterThan(0);
+  expect(s.track.scrollLeft).toBeLessThan(800);
+  vi.advanceTimersByTime(700);
+  expect(s.track.scrollLeft).toBe(800);
   s.el.querySelector<HTMLButtonElement>('.tide-row-chev-prev')!.click();
-  expect(by).toHaveBeenLastCalledWith({ left: -850, behavior: 'smooth' });
+  vi.advanceTimersByTime(800);
+  expect(s.track.scrollLeft).toBe(0);
+  vi.useRealTimers();
+});
+
+test('pointer down cancels a running glide', () => {
+  vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance', 'setTimeout'] });
+  const s = createScroller('x');
+  sized(s.track, 4000, 1000);
+  s.track.getBoundingClientRect = () => ({ left: 0, right: 1000, width: 1000 } as DOMRect);
+  for (let i = 0; i < 10; i++) {
+    const c = document.createElement('a');
+    c.getBoundingClientRect = () => ({ left: i * 400 - s.track.scrollLeft, right: i * 400 + 380 - s.track.scrollLeft, width: 380 } as DOMRect);
+    s.track.append(c);
+  }
+  s.el.querySelector<HTMLButtonElement>('.tide-row-chev-next')!.click();
+  vi.advanceTimersByTime(60);
+  s.track.dispatchEvent(pointer('pointerdown', 10));
+  const at = s.track.scrollLeft;
+  vi.advanceTimersByTime(800);
+  expect(s.track.scrollLeft).toBe(at);
+  vi.useRealTimers();
 });
 
 function pointer(type: string, x: number, id = 1): Event {
@@ -61,7 +91,7 @@ test('a plain click (no movement) is not treated as a drag', () => {
 
 test('arrow keys move focus to the neighbouring card', () => {
   const s = createScroller('x');
-  const cards = [0, 1, 2].map((i) => { const a = document.createElement('a'); a.href = '#'; a.textContent = String(i); a.scrollIntoView = vi.fn(); return a; });
+  const cards = [0, 1, 2].map((i) => { const a = document.createElement('a'); a.href = '#'; a.textContent = String(i); return a; });
   s.track.append(...cards);
   document.body.append(s.el);
   cards[1]!.focus();

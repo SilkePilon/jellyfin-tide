@@ -32,4 +32,16 @@ public class TideControllerTests
         Assert.Equal(16, order.Length);
         Assert.Equal(new[] { "random" }, root.GetProperty("defaultHiddenRows").EnumerateArray().Select(e => e.GetString()));
     }
+
+    [Fact]
+    public void ClientConfigExposesDetailsAndSmoothScroll()
+    {
+        using var on = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(new PluginConfiguration(), "0.3.0")));
+        Assert.True(on.RootElement.GetProperty("enableDetails").GetBoolean());
+        Assert.True(on.RootElement.GetProperty("enableSmoothScroll").GetBoolean());
+        var cfg = new PluginConfiguration { EnableDetails = false, EnableSmoothScroll = false };
+        using var off = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(cfg, "0.3.0")));
+        Assert.False(off.RootElement.GetProperty("enableDetails").GetBoolean());
+        Assert.False(off.RootElement.GetProperty("enableSmoothScroll").GetBoolean());
+    }
 }

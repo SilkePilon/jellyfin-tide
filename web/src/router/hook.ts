@@ -7,10 +7,6 @@ export function shouldTakeOver(cfg: ClientConfig, loc: Location = location): boo
   return cfg.enableHome && ROUTES.isHome(loc);
 }
 
-function findHost(): HTMLElement | null {
-  return document.querySelector<HTMLElement>(SELECTORS.homeHost);
-}
-
 /** One-time (per browser) toast, shown only to administrators. */
 export async function adminToast(message: string): Promise<void> {
   const key = `tide-toast:${message}`;
@@ -37,79 +33,109 @@ const nextFrame = (cb: () => void): void => {
   else setTimeout(cb, 16);
 };
 
+export interface Takeover {
+  id: string;
+  /** Class of the root element mount() adds as a direct child of the host. */
+  rootClass: string;
+  matches(cfg: ClientConfig, loc: Location): boolean;
+  /** Identity of what is shown (home: constant; details: item id). A change remounts even on the same host. */
+  key(loc: Location): string;
+  findHost(): HTMLElement | null;
+  /** Resolve an unmount function, or null to decline (leave stock) for this host + key. */
+  mount(host: HTMLElement, cfg: ClientConfig, loc: Location): Promise<(() => void) | null>;
+}
+
+export const HOME_TAKEOVER: Takeover = {
+  id: 'home',
+  rootClass: 'tide-home',
+  matches: (cfg, loc) => shouldTakeOver(cfg, loc),
+  key: () => 'home',
+  findHost: () => document.querySelector<HTMLElement>(SELECTORS.homeHost),
+  mount: (host, cfg) => mountHome(host, cfg),
+};
+
+const extra: Takeover[] = [];
+export function registerTakeover(t: Takeover): void {
+  if (!extra.some((x) => x.id === t.id)) extra.push(t);
+}
+
 /**
- * Mounts Tide home whenever the home route is active. jellyfin-web 12.4 removes `#indexPage` when leaving home and
- * recreates it on return (and may replace it while on home), so the host is re-queried on every visit and a body
- * MutationObserver remounts when our root is detached. Returns a disposer (used by tests).
+ * Mounts a takeover whenever its route is active. jellyfin-web 12.4 removes / recreates / caches page hosts, so the
+ * host is re-queried on every visit and a body MutationObserver remounts when our root is detached. A host whose
+ * mount threw is never retried (a recreated host is a new element and gets a fresh attempt); a declined host + key
+ * is skipped until the key or host changes.
  */
-export function initRouter(cfg: ClientConfig): () => void {
+export function initTakeover(t: Takeover, cfg: ClientConfig): () => void {
   let unmount: (() => void) | null = null;
   let mountedHost: HTMLElement | null = null;
+  let mountedKey = '';
   let mounting = false;
   let warned = false;
   let scheduled = false;
   let disposed = false;
-  /** Hosts whose mount threw: never retried (a recreated #indexPage is a new element and gets a fresh attempt). */
   const failedHosts = new WeakSet<HTMLElement>();
+  const declined = new WeakMap<HTMLElement, string>();
+  const active = () => t.matches(cfg, location);
 
-  const mountedOk = () => !!(unmount && mountedHost?.isConnected && mountedHost.querySelector(':scope > .tide-home'));
+  const mountedOk = () => !!(unmount && mountedHost?.isConnected && mountedKey === t.key(location)
+    && mountedHost.matches(':not(.hide)') && mountedHost.querySelector(`:scope > .${t.rootClass}`));
+  const canTry = (host: HTMLElement | null) => !!host && !failedHosts.has(host) && declined.get(host) !== t.key(location);
 
   function teardown(): void {
     const u = unmount;
     unmount = null;
     mountedHost = null;
+    mountedKey = '';
     u?.();
   }
 
   async function sync(): Promise<void> {
     if (disposed) return;
-    if (!shouldTakeOver(cfg)) {
-      teardown();
-      return;
-    }
+    if (!active()) { teardown(); return; }
     if (mounting) return;
     if (unmount) {
       if (mountedOk()) return;
-      teardown(); // host replaced or our root wiped: remount below
+      teardown();
     }
     mounting = true;
     try {
-      let host = findHost();
-      for (let i = 0; !host && i < 20 && shouldTakeOver(cfg) && !disposed; i++) {
+      let host = t.findHost();
+      for (let i = 0; !host && i < 20 && active() && !disposed; i++) {
         await new Promise((r) => setTimeout(r, 250));
-        host = findHost();
+        host = t.findHost();
       }
-      if (!shouldTakeOver(cfg) || disposed) return;
-      if (host && failedHosts.has(host)) return;
+      if (!active() || disposed) return;
       if (!host) {
         if (!warned) {
-          console.warn(`[Tide] home host not found; Tide verified for web ${WEB_VERIFIED_VERSION}. Keeping stock home.`);
-          void adminToast(`Tide home is off: this Jellyfin web version is not verified (Tide supports ${WEB_VERIFIED_VERSION}). Theme stays on.`);
+          console.warn(`[Tide] ${t.id} host not found; Tide verified for web ${WEB_VERIFIED_VERSION}. Keeping stock page.`);
+          void adminToast(`Tide ${t.id} is off: this Jellyfin web version is not verified (Tide supports ${WEB_VERIFIED_VERSION}). Theme stays on.`);
         }
         warned = true;
         return;
       }
-      let u: () => void;
+      if (!canTry(host)) return;
+      const key = t.key(location);
+      let u: (() => void) | null;
       try {
-        u = await mountHome(host, cfg);
+        u = await t.mount(host, cfg, location);
       } catch (e) {
         failedHosts.add(host);
-        console.error('[Tide] home mount failed, keeping stock home', e);
+        console.error(`[Tide] ${t.id} mount failed, keeping stock page`, e);
         return;
       }
-      if (disposed || !shouldTakeOver(cfg) || !host.isConnected) {
+      if (!u) { declined.set(host, key); return; }
+      if (disposed || !active() || !host.isConnected || t.key(location) !== key) {
         u(); // route changed or host replaced while loading
       } else {
         unmount = u;
         mountedHost = host;
+        mountedKey = key;
       }
     } finally {
       mounting = false;
     }
-    schedule(); // state may have changed while we were mounting
+    schedule();
   }
-
-  const canTry = (host: HTMLElement | null) => !!host && !failedHosts.has(host);
 
   function schedule(): void {
     if (scheduled || disposed) return;
@@ -117,15 +143,14 @@ export function initRouter(cfg: ClientConfig): () => void {
     nextFrame(() => {
       scheduled = false;
       if (mounting || disposed) return;
-      const onHome = shouldTakeOver(cfg);
-      if (unmount ? !onHome || !mountedOk() : onHome && canTry(findHost())) void sync();
+      const on = active();
+      if (unmount ? !on || !mountedOk() : on && canTry(t.findHost())) void sync();
     });
   }
 
-  const onNav = () => void sync();
-  const unsubscribe = onLocationChange(onNav);
+  const unsubscribe = onLocationChange(() => void sync());
   const obs = new MutationObserver(() => schedule());
-  obs.observe(document.body, { childList: true, subtree: true });
+  obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   void sync();
 
   return () => {
@@ -134,4 +159,9 @@ export function initRouter(cfg: ClientConfig): () => void {
     unsubscribe();
     teardown();
   };
+}
+
+export function initRouter(cfg: ClientConfig): () => void {
+  const stops = [HOME_TAKEOVER, ...extra].map((t) => initTakeover(t, cfg));
+  return () => stops.forEach((s) => s());
 }

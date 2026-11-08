@@ -134,6 +134,8 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
   let startTimer: ReturnType<typeof setTimeout> | undefined;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
   let hsTimer: ReturnType<typeof setInterval> | undefined;
+  let playOffTimer: ReturnType<typeof setTimeout> | undefined;
+  let silentTimer: ReturnType<typeof setTimeout> | undefined;
   let tabHidden = typeof document !== 'undefined' && document.hidden === true;
   let offscreen = false;
   let paused = tabHidden;
@@ -150,6 +152,9 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     [slotTimer, startTimer, loadTimer].forEach((t) => t !== undefined && clearTimeout(t));
     if (hsTimer !== undefined) clearInterval(hsTimer);
     slotTimer = startTimer = loadTimer = hsTimer = undefined;
+    if (playOffTimer !== undefined) clearTimeout(playOffTimer);
+    if (silentTimer !== undefined) clearTimeout(silentTimer);
+    playOffTimer = silentTimer = undefined;
     attempt = null;
     deferred = null;
   };
@@ -157,7 +162,22 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
   /** `.tide-hero-playing` on the hero while the active slide shows a trailer (phone shows the mute button only then). */
   const syncPlaying = () => el.classList.toggle('tide-hero-playing', cur >= 0 && slides[cur]!.classList.contains('vidon'));
 
+  /** `vidplay`: the trailer is really playing (backdrop hidden, video shown). Leaving it waits 300 ms (debounced). */
+  function setPlay(i: number, on: boolean): void {
+    const s = slides[i];
+    if (!s || i !== cur) return;
+    if (playOffTimer !== undefined) { clearTimeout(playOffTimer); playOffTimer = undefined; }
+    if (on) s.classList.add('vidplay');
+    else playOffTimer = setTimeout(() => { playOffTimer = undefined; s.classList.remove('vidplay'); }, 300);
+  }
+  function clearPlay(s: HTMLElement): void {
+    if (playOffTimer !== undefined) { clearTimeout(playOffTimer); playOffTimer = undefined; }
+    if (silentTimer !== undefined) { clearTimeout(silentTimer); silentTimer = undefined; }
+    s.classList.remove('vidplay');
+  }
+
   function stopVideo(s: HTMLElement): void {
+    clearPlay(s);
     s.classList.remove('vidon');
     syncPlaying();
     const v = s.querySelector('.tide-hero-vid')!;
@@ -221,6 +241,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
       if (loadTimer !== undefined) { clearTimeout(loadTimer); loadTimer = undefined; }
       if (hsTimer !== undefined) { clearInterval(hsTimer); hsTimer = undefined; }
       s.classList.remove('vidon');
+      clearPlay(s);
       syncPlaying();
       box.classList.remove('show');
       box.replaceChildren();
@@ -242,6 +263,9 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
       v.autoplay = !paused;
       v.src = src.url;
       v.addEventListener('playing', ok, { once: true });
+      v.addEventListener('playing', () => { if (g === gen) setPlay(i, true); });
+      v.addEventListener('pause', () => { if (g === gen) setPlay(i, false); });
+      v.addEventListener('waiting', () => { if (g === gen) setPlay(i, false); });
       v.addEventListener('error', () => fail(), { once: true });
       v.addEventListener('ended', () => { if (g === gen) go(i + 1); });
       node = v;
@@ -271,6 +295,8 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
         setTimeout(() => {
           if (g !== gen) return;
           ok();
+          if (silentTimer !== undefined) clearTimeout(silentTimer);
+          silentTimer = setTimeout(() => { silentTimer = undefined; if (g === gen && !f._tideHeard) setPlay(i, true); }, 2500);
           if (!muted) ytCommand(f, 'unMute');
           if (paused) ytCommand(f, 'pauseVideo');
         }, 1500);
@@ -295,7 +321,9 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     const state = d.event === 'onStateChange' && typeof d.info === 'number'
       ? d.info
       : typeof d.info === 'object' && d.info !== null ? (d.info as { playerState?: number }).playerState : undefined;
-    if (state === 0) go(cur + 1); // ended
+    if (state === 1) setPlay(cur, true);
+    else if (state === 2 || state === 3) setPlay(cur, false);
+    else if (state === 0) go(cur + 1); // ended
   }
 
   function setActive(i: number, on: boolean): void {
