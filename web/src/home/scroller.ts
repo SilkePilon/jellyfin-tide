@@ -1,4 +1,5 @@
 import { h, icon } from '../ui/dom';
+import { animator, cardSpans, PAGE_MS, pageTarget, revealTarget } from '../ui/scrollAnim';
 
 const DRAG_THRESHOLD = 6;
 
@@ -14,7 +15,11 @@ export function createScroller(trackClass: string): Scroller {
   const next = h('button', { class: 'tide-row-chev tide-row-chev-next', type: 'button', 'aria-label': 'Scroll right', tabindex: '-1' }, icon('chevron_right'));
   const el = h('div', { class: 'tide-row-scroller' }, track, prev, next);
 
-  const page = (dir: -1 | 1) => track.scrollBy({ left: dir * track.clientWidth * 0.85, behavior: 'smooth' });
+  const page = (dir: -1 | 1) => {
+    const a = animator(track, 'x');
+    const { spans, view, max } = cardSpans(track);
+    a.to(pageTarget(a.target() ?? track.scrollLeft, view, spans, max, dir), PAGE_MS);
+  };
   prev.addEventListener('click', () => page(-1));
   next.addEventListener('click', () => page(1));
 
@@ -33,6 +38,7 @@ export function createScroller(trackClass: string): Scroller {
   let dragging = false;
   let pointer = -1;
   const onDown = (e: PointerEvent) => {
+    animator(track, 'x').cancel();
     if (e.pointerType !== 'mouse' || e.button !== 0) return;
     pointer = e.pointerId;
     startX = e.clientX;
@@ -64,6 +70,7 @@ export function createScroller(trackClass: string): Scroller {
   track.addEventListener('pointerup', onUp);
   track.addEventListener('pointercancel', onUp);
   track.addEventListener('dragstart', (e) => e.preventDefault());
+  track.addEventListener('touchstart', () => animator(track, 'x').cancel(), { passive: true });
 
   // Keyboard: ←/→ move focus to the neighbouring card and keep it in view.
   track.addEventListener('keydown', (e) => {
@@ -75,7 +82,10 @@ export function createScroller(trackClass: string): Scroller {
     if (!target) return;
     e.preventDefault();
     target.focus({ preventScroll: true });
-    target.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    const a = animator(track, 'x');
+    const { spans, view, max } = cardSpans(track);
+    const span = spans[i + (e.key === 'ArrowRight' ? 1 : -1)];
+    if (span) a.to(revealTarget(a.target() ?? track.scrollLeft, view, span, max), PAGE_MS);
   });
 
   return { el, track, sync, dispose: () => ro?.disconnect() };
