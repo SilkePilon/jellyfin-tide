@@ -34,6 +34,8 @@ test('movie: hides stock, renders header + cast + about; unmount restores', asyn
   expect(un).toBeTypeOf('function');
   expect(host().classList.contains('tide-taken')).toBe(true);
   expect(host().querySelector('.tide-details .tide-dh')).not.toBeNull();
+  expect(host().querySelector<HTMLImageElement>('.tide-dbg img')?.src).toContain('/Items/m/Images/Backdrop/0');
+  expect(document.body.classList.contains('tide-on-details')).toBe(true);
   expect(host().querySelector('.tide-eps')).toBeNull();
   expect(host().querySelector('.tide-nu')).toBeNull();
   expect(host().querySelector('.tide-chipp b')?.textContent).toBe('Tom Cruise');
@@ -41,6 +43,7 @@ test('movie: hides stock, renders header + cast + about; unmount restores', asyn
   un!();
   expect(host().classList.contains('tide-taken')).toBe(false);
   expect(host().querySelector('.tide-details')).toBeNull();
+  expect(document.body.classList.contains('tide-on-details')).toBe(false);
 });
 
 test('series: next up strip, episodes at the next-up season, file label names the episode', async () => {

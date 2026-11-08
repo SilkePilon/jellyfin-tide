@@ -1,4 +1,5 @@
 import { getQuality } from '../api/tide';
+import { imageUrl } from '../api/client';
 import { getEpisodes, getItem, getNextUp, getResumeEpisode, getSeasons, type JfDetail, type JfSource } from '../api/item';
 import { h } from '../ui/dom';
 import { createAmbient } from '../ui/ambient';
@@ -33,9 +34,23 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
   const ambient = createAmbient();
   ambient.set(item.Id);
   const header = renderHeader(item);
-  const root = h('div', { class: 'tide-details' }, ambient.el, header.el);
+  // Same background system as the home hero: a sharp backdrop at the top that dissolves (mask) into the ambient glow.
+  const bgImg = h('img', { class: 'tide-dbg-img', alt: '', src: imageUrl(item.Id, 'Backdrop/0', 1920) }) as HTMLImageElement;
+  bgImg.onerror = () => bgImg.remove();
+  const bg = h('div', { class: 'tide-dbg', 'aria-hidden': 'true' }, bgImg, h('div', { class: 'tide-dbg-shade' }));
+  const root = h('div', { class: 'tide-details' }, ambient.el, bg, header.el);
   host.classList.add('tide-taken');
   host.prepend(root);
+  document.body.classList.add('tide-on-details');
+  // Full-bleed backdrop under the transparent app bar: pull the root up by its natural page offset (as home does).
+  const fitTop = () => {
+    if (!root.isConnected) return;
+    root.style.setProperty('--tide-details-offset', '0px');
+    const top = root.getBoundingClientRect().top - document.documentElement.getBoundingClientRect().top;
+    root.style.setProperty('--tide-details-offset', `${Math.max(0, Math.round(top))}px`);
+  };
+  fitTop();
+  window.addEventListener('resize', fitTop);
 
   const cast = renderCast(item.People);
   if (cast) root.append(cast);
@@ -94,8 +109,10 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
   return () => {
     disposed = true;
     disposers.forEach((d) => d());
+    window.removeEventListener('resize', fitTop);
     root.remove();
     host.classList.remove('tide-taken');
+    document.body.classList.remove('tide-on-details');
   };
 }
 

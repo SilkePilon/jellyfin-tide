@@ -6,6 +6,19 @@ body.tide .tide-details { position: relative; isolation: isolate; color: var(--t
 @media (max-width: 999px) { body.tide .tide-details { --tide-n: 1.6; } }
 @media (max-width: 699px) { body.tide .tide-details { --tide-n: 1.2; --tide-gap: 14px; } }
 body.tide #itemDetailPage.tide-taken > :not(.tide-details) { display: none !important; }
+/* Pulled up under the transparent app bar (offset measured in mountDetails); the header keeps its place. */
+body.tide .tide-details { margin-top: calc(-1 * var(--tide-details-offset, 0px)); padding-top: calc(var(--tide-details-offset, 0px) + 40px); }
+body.tide .tide-details > :not(.tide-ambient-wrap, .tide-dbg) { position: relative; z-index: 1; }
+/* Hero background system: sharp backdrop + translucent shades, both masked so they dissolve into the ambient glow. */
+body.tide .tide-dbg { position: absolute; left: 0; right: 0; top: 0; height: max(92vh, 760px); z-index: 0; pointer-events: none; overflow: hidden; }
+body.tide .tide-dbg-img, body.tide .tide-dbg-shade { position: absolute; inset: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 52%, rgba(0,0,0,.6) 72%, rgba(0,0,0,.2) 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 52%, rgba(0,0,0,.6) 72%, rgba(0,0,0,.2) 88%, transparent 100%); }
+body.tide .tide-dbg-img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+body.tide .tide-dbg-shade { background:
+  linear-gradient(90deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.6) 35%, rgba(0,0,0,.35) 65%, rgba(0,0,0,.3) 100%),
+  linear-gradient(0deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.25) 30%, rgba(0,0,0,0) 60%),
+  linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0) 20%); }
 body.tide .tide-dsec { margin-top: 56px; }
 body.tide .tide-dsec-h { display: flex; align-items: center; gap: 14px; padding: 0 var(--tide-gutter); }
 body.tide .tide-dsec-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
@@ -90,7 +103,8 @@ body.tide .tide-frow b { font-weight: 600; text-align: right; }
   body.tide .tide-dh { grid-template-columns: 220px minmax(0, 1fr); gap: 32px; }
 }
 @media (max-width: 699px) {
-  body.tide .tide-details { padding-top: 16px; }
+  body.tide .tide-details { padding-top: calc(var(--tide-details-offset, 0px) + 16px); }
+  body.tide .tide-dbg { height: 72vh; }
   body.tide .tide-dh { grid-template-columns: 1fr; gap: 0; text-align: center; }
   body.tide .tide-dh-poster { display: none; }
   body.tide .tide-dh-logo { margin: 24px auto 16px; max-width: 72%; max-height: 110px; object-position: center bottom; }
