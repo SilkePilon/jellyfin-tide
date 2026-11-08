@@ -7,6 +7,7 @@ import { initScrollingState } from './theme/scrolling';
 import { initIcons } from './icons/swap';
 import { initRouter, registerTakeover } from './router/hook';
 import { DETAILS_TAKEOVER } from './details/details';
+import { initPlayLoading, PLAYER_TAKEOVER } from './player/player';
 import { initTabbar } from './mobile/tabbar';
 
 export const TIDE_VERSION = '0.3.1';
@@ -42,6 +43,8 @@ registerFeature((cfg) => { if (cfg.enableTheme) initSmoothScroll(cfg); });
 registerFeature(() => void initScrollingState());
 registerFeature(initIcons);
 registerTakeover(DETAILS_TAKEOVER);
+registerTakeover(PLAYER_TAKEOVER);
+registerFeature((cfg) => void initPlayLoading(cfg));
 registerFeature((cfg) => void initRouter(cfg));
 registerFeature(() => void initTabbar());
 
