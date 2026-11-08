@@ -112,7 +112,7 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
         header.setNextEpisode(eps[eps.findIndex((e) => e.Id === item.Id) + 1] ?? null);
         const sorted = sortSeasons(seasons);
         const idx = Math.max(0, sorted.findIndex((s) => s.Id === item.SeasonId));
-        const row = renderEpisodes(item.SeriesId!, sorted, idx, null, eps, { current: { id: item.Id, tag: 'NOW VIEWING' }, heading: `More from Season ${item.ParentIndexNumber ?? ''}` });
+        const row = renderEpisodes(item.SeriesId!, sorted, idx, null, eps, { current: { id: item.Id, tag: 'NOW VIEWING' }, heading: 'More from' });
         disposers.push(row.dispose);
         header.el.after(row.el);
       } catch (e) { console.warn('[Tide] episode sections failed', e); }

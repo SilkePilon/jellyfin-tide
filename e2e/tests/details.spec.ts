@@ -171,17 +171,19 @@ test('phone layout: no poster column, full-width primary', async ({ page, reques
   expect(b!.width).toBeGreaterThan(300);
 });
 
-test('play icon inside a progress ring is not rotated (only the ring is)', async ({ page }) => {
+test('play icon inside any progress ring is not rotated (only the ring is)', async ({ page }) => {
   await login(page);
-  const t = await page.evaluate(() => {
+  const out = await page.evaluate(() => ['tide-ring tide-wide-ring', 'tide-end-ring', 'tide-ld-ring'].map((cls) => {
     const ring = document.createElement('span');
-    ring.className = 'tide-ring tide-wide-ring';
+    ring.className = cls;
     ring.innerHTML = '<svg class="r" viewBox="0 0 32 32"></svg><span class="tide-ms tide-svg"><svg class="i" viewBox="0 0 24 24"></svg></span>';
     document.body.append(ring);
-    const out = [getComputedStyle(ring.querySelector('svg.r')!).transform, getComputedStyle(ring.querySelector('svg.i')!).transform];
+    const t = [getComputedStyle(ring.querySelector('svg.r')!).transform, getComputedStyle(ring.querySelector('svg.i')!).transform];
     ring.remove();
-    return out;
-  });
-  expect(t[0]).not.toBe('none');
-  expect(t[1]).toBe('none');
+    return [cls, ...t];
+  }));
+  for (const [cls, ringT, iconT] of out) {
+    expect(ringT, cls).not.toBe('none');
+    expect(iconT, cls).toBe('none');
+  }
 });

@@ -37,7 +37,8 @@ test('episode page: still, kicker, back link, next strip, NOW VIEWING row, no si
   expect(host.querySelector('.tide-dh-trailer')).toBeNull();
   await vi.waitFor(() => expect(host.querySelector('.tide-nu-k')?.textContent).toBe('NEXT EPISODE · S3 E2'));
   await vi.waitFor(() => expect(host.querySelector('[data-id="e1"] .tide-wide-tag')?.textContent).toBe('NOW VIEWING'));
-  expect(host.querySelector('.tide-eps h2')?.textContent).toBe('More from Season 3');
+  expect(host.querySelector('.tide-eps h2')?.textContent).toBe('More from');
+  expect(host.querySelector('.tide-ep-dd')?.textContent).toContain('Season 3');
   expect(host.querySelector('.tide-similar')).toBeNull();
   un!();
 });
