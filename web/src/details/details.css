@@ -83,3 +83,24 @@ body.tide .tide-frow { display: flex; justify-content: space-between; gap: 16px;
 body.tide .tide-frow:last-child { border-bottom: 0; }
 body.tide .tide-frow span { color: #8e8e93; }
 body.tide .tide-frow b { font-weight: 600; text-align: right; }
+
+@media (max-width: 899px) {
+  body.tide .tide-dh { grid-template-columns: 220px minmax(0, 1fr); gap: 32px; }
+}
+@media (max-width: 699px) {
+  body.tide .tide-details { padding-top: 16px; }
+  body.tide .tide-dh { grid-template-columns: 1fr; gap: 0; text-align: center; }
+  body.tide .tide-dh-poster { display: none; }
+  body.tide .tide-dh-logo { margin: 24px auto 16px; max-width: 72%; max-height: 110px; object-position: center bottom; }
+  body.tide .tide-dh-title { font-size: 34px; }
+  body.tide .tide-dh-meta { justify-content: center; font-size: 14px; }
+  body.tide .tide-dh-desc { -webkit-line-clamp: 4; text-align: left; }
+  body.tide .tide-dh-btns { justify-content: center; }
+  body.tide .tide-dh-primary { flex: 1 0 100%; justify-content: center; }
+  body.tide .tide-dh-trailer { width: 54px; padding: 0; justify-content: center; font-size: 0; gap: 0; }
+  body.tide .tide-dh-trailer .tide-ms { font-size: 24px; }
+  body.tide .tide-nu { max-width: none; text-align: left; }
+  body.tide .tide-cast-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, auto); grid-auto-columns: max-content; overflow-x: auto; scrollbar-width: none; }
+  body.tide .tide-details-panels { grid-template-columns: 1fr; }
+  body.tide .tide-facts { grid-template-columns: 1fr 1fr; }
+}

@@ -4,7 +4,8 @@ import type { ClientConfig } from './types';
 import { initTheme } from './theme/index';
 import { initSmoothScroll } from './theme/smoothScroll';
 import { initIcons } from './icons/swap';
-import { initRouter } from './router/hook';
+import { initRouter, registerTakeover } from './router/hook';
+import { DETAILS_TAKEOVER } from './details/details';
 import { initTabbar } from './mobile/tabbar';
 
 export const TIDE_VERSION = '0.2.0';
@@ -38,6 +39,7 @@ export async function boot(): Promise<void> {
 registerFeature(initTheme);
 registerFeature((cfg) => { if (cfg.enableTheme) initSmoothScroll(cfg); });
 registerFeature(initIcons);
+registerTakeover(DETAILS_TAKEOVER);
 registerFeature((cfg) => void initRouter(cfg));
 registerFeature(() => void initTabbar());
 
