@@ -56,3 +56,30 @@ body.tide .tide-pop-item[aria-current="true"] .tide-ep-mm { color: #3a3a3c; }
 body.tide .tide-pop-item[aria-current="true"] .tide-ep-mbar { background: #d1d1d6; }
 body.tide .tide-pop-item[aria-current="true"] .tide-ep-mbar i { background: #000; }
 body.tide .tide-ep-mdone { font-size: 20px; }
+
+/* Cast (K4) */
+body.tide .tide-cast-all { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; color: #a1a1a6; font: 600 14px var(--tide-font); cursor: pointer; }
+body.tide .tide-cast-all:hover { color: #fff; }
+body.tide .tide-cast-grid { display: flex; flex-wrap: wrap; gap: 12px; padding: 20px var(--tide-gutter) 0; }
+body.tide .tide-chipp { display: flex; align-items: center; gap: 12px; padding: 6px 20px 6px 6px; border-radius: 40px; background: #141416; color: var(--tide-tx); text-decoration: none; transition: background-color .25s var(--tide-ease); }
+body.tide .tide-chipp:is(:hover, :focus-visible) { background: #2a2a2e; outline: none; }
+body.tide .tide-chipp-ph { flex: 0 0 48px; width: 48px; height: 48px; border-radius: 50%; background: center 18% / cover #2a2a2e; display: flex; align-items: center; justify-content: center; }
+body.tide .tide-chipp-ini { font-size: 15px; font-weight: 700; color: #a1a1a6; }
+body.tide .tide-chipp-tx { display: flex; flex-direction: column; min-width: 0; }
+body.tide .tide-chipp-tx b { font-size: 14px; white-space: nowrap; }
+body.tide .tide-chipp-tx span { font-size: 12px; color: #8e8e93; margin-top: 2px; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+
+/* More like this keeps the home row spacing (22px top padding stops hovered cards being clipped). */
+body.tide .tide-similar { margin-top: 56px; }
+
+/* Details (M2) */
+body.tide .tide-details-panels { display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px; padding: 20px var(--tide-gutter) 0; align-items: start; }
+body.tide .tide-panel { background: #141416; border-radius: 22px; padding: 26px; }
+body.tide .tide-panel h3 { margin: 0 0 20px; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+body.tide .tide-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 30px; }
+body.tide .tide-fact span { display: block; font-size: 13px; color: #8e8e93; }
+body.tide .tide-fact b { display: block; font-size: 15px; font-weight: 600; margin-top: 5px; }
+body.tide .tide-frow { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; padding: 12px 0; border-bottom: 1px solid #222; }
+body.tide .tide-frow:last-child { border-bottom: 0; }
+body.tide .tide-frow span { color: #8e8e93; }
+body.tide .tide-frow b { font-weight: 600; text-align: right; }
