@@ -27,7 +27,7 @@ export function renderEpisodes(seriesId: string, sorted: JfItem[], startIdx: num
   const count = h('span', { class: 'tide-ep-count' });
   const ddWrap = h('span', { class: 'tide-ep-ddwrap' }, dd);
   const el = h('section', { class: 'tide-dsec tide-eps', 'aria-label': 'Episodes' },
-    h('div', { class: 'tide-dsec-h' }, ddWrap, count), scroller.el);
+    h('div', { class: 'tide-dsec-h' }, opts?.heading ? h('h2', {}, opts.heading) : null, ddWrap, count), scroller.el);
 
   const show = (eps: JfItem[], glide: boolean) => {
     label.textContent = sorted[cur]!.Name;

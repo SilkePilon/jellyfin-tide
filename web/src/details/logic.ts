@@ -71,6 +71,11 @@ const monthYear = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-
 const people = (p: JfPerson[] | undefined, type: string) => (p ?? []).filter((x) => x.Type === type).map((x) => x.Name).join(', ');
 
 export function aboutFacts(item: JfDetail): [string, string][] {
+  if (item.Type === 'Episode') {
+    return ([['Directed by', people(item.People, 'Director')], ['Written by', people(item.People, 'Writer')], ['Aired', monthYear(item.PremiereDate)],
+      ['Rating', item.OfficialRating ?? ''], ['Season', item.ParentIndexNumber !== undefined ? String(item.ParentIndexNumber) : ''],
+      ['Runtime', fmtRuntime(item.RunTimeTicks)?.replace(/ 0(\d)m$/, ' $1m') ?? '']] as [string, string][]).filter(([, v]) => !!v);
+  }
   const studio = (item.Studios ?? []).map((s) => s.Name).slice(0, 2).join(', ');
   const genres = (item.Genres ?? []).join(', ');
   const facts: [string, string][] = item.Type === 'Series'
@@ -118,4 +123,10 @@ export function castList(p: JfPerson[] | undefined, expanded: boolean): JfPerson
 export function youtubeId(url?: string): string | null {
   const m = url?.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
   return m ? m[1]! : null;
+}
+
+export function endsAt(runtime?: number, position?: number, now: Date = new Date()): string | null {
+  if (!runtime) return null;
+  const end = new Date(now.getTime() + (runtime - (position ?? 0)) / 1e4);
+  return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
 }

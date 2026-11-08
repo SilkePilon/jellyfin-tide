@@ -120,3 +120,17 @@ body.tide .tide-frow b { font-weight: 600; text-align: right; }
   body.tide .tide-details-panels { grid-template-columns: 1fr; }
   body.tide .tide-facts { grid-template-columns: 1fr 1fr; }
 }
+
+/* Episode page */
+body.tide .tide-dh.tide-dh-ep { grid-template-columns: 520px minmax(0, 1fr); }
+body.tide .tide-dh-still { position: relative; aspect-ratio: 16/9; border-radius: 22px; overflow: hidden; background: center / cover #1d1d20; box-shadow: 0 50px 100px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.06); }
+body.tide .tide-dh-pb { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(255,255,255,.25); }
+body.tide .tide-dh-pb i { display: block; height: 100%; background: #fff; transform-origin: left center; }
+body.tide .tide-dh-ep .tide-dh-logo { max-height: 70px; margin-bottom: 14px; }
+body.tide .tide-dh-kick { font-size: 13px; font-weight: 800; letter-spacing: .12em; color: #a1a1a6; margin-bottom: 8px; }
+body.tide .tide-dh-eptitle { margin: 0 0 10px; font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+body.tide .tide-dh-ends { color: #8e8e93; }
+body.tide .tide-dh-back { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; color: #a1a1a6; font-weight: 600; font-size: 14px; text-decoration: none; }
+body.tide .tide-dh-back:hover { color: #fff; }
+@media (max-width: 899px) { body.tide .tide-dh.tide-dh-ep { grid-template-columns: 1fr; } }
+@media (max-width: 699px) { body.tide .tide-dh-still { display: none; } body.tide .tide-dh-eptitle { font-size: 28px; } }
