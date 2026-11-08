@@ -1,0 +1,55 @@
+/* ── Tide player (0.4.0) ───────────────────────────────────────────────────── */
+:root { --tide-sp: cubic-bezier(.22, 1, .36, 1); }
+#videoOsdPage.tide-taken :is(.videoOsdBottom, .skinHeader, .upNextContainer, .osdLockButton) { opacity: 0 !important; pointer-events: none !important; }
+html.tide-player-idle, html.tide-player-idle * { cursor: none !important; }
+body.tide .tide-player { position: fixed; inset: 0; z-index: 1000; color: #fff; font-family: var(--tide-font); --tide-lift: -132px; --tide-pb: 44px; --tide-pg: 48px; pointer-events: none; }
+body.tide .tide-player > * { pointer-events: auto; }
+body.tide .tide-pc { position: absolute; inset: 0; }
+body.tide .tide-pc-ui { transition: opacity .45s var(--tide-sp), transform .6s var(--tide-sp); }
+body.tide .tide-pc-idle .tide-pc-ui { opacity: 0; pointer-events: none; transition: opacity .35s ease, transform .45s ease; }
+body.tide .tide-pc-idle .tide-pc-hd { transform: translateY(-16px); }
+body.tide .tide-pc-idle .tide-pc-bt { transform: translateY(22px); }
+body.tide .tide-pc-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,.65), transparent 26%), linear-gradient(0deg, rgba(0,0,0,.85), rgba(0,0,0,.3) 30%, transparent 55%); }
+body.tide .tide-pc-hd { position: absolute; left: var(--tide-pg); top: 40px; }
+body.tide .tide-pc-logo { display: block; height: 54px; max-width: 420px; object-fit: contain; object-position: left center; filter: drop-shadow(0 2px 12px rgba(0,0,0,.6)); }
+body.tide .tide-pc-title { font-size: 34px; font-weight: 800; letter-spacing: -.03em; }
+body.tide .tide-pc-ep { font-size: 17px; font-weight: 600; color: #e5e5ea; margin-top: 8px; }
+body.tide .tide-pc-bt { position: absolute; left: var(--tide-pg); right: var(--tide-pg); bottom: 36px; }
+body.tide .tide-pc-scr { position: relative; height: 22px; display: flex; align-items: center; cursor: pointer; }
+body.tide .tide-pc-track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.25); transition: transform .2s var(--tide-sp); touch-action: none; }
+body.tide .tide-pc-scr:hover .tide-pc-track, body.tide .tide-pc-scr.drag .tide-pc-track { transform: scaleY(1.34); }
+body.tide :is(.tide-pc-buf, .tide-pc-fill) { position: absolute; inset: 0; border-radius: 3px; transform-origin: left center; transform: scaleX(0); }
+body.tide .tide-pc-buf { background: rgba(255,255,255,.35); }
+body.tide .tide-pc-fill { background: #fff; }
+body.tide .tide-pc-segs { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+body.tide .tide-pc-seg { position: absolute; top: 0; bottom: 0; background: #ffd60a; border-radius: 3px; }
+body.tide .tide-pc-knob { position: absolute; top: 50%; z-index: 3; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.6); transform: scale(0); transition: transform .2s var(--tide-sp); }
+body.tide .tide-pc-scr:is(:hover, .drag) .tide-pc-knob { transform: scale(1); }
+body.tide .tide-pc-tip { position: absolute; bottom: 30px; transform: translateX(-50%); background: #1c1c1e; border-radius: 10px; padding: 6px; text-align: center; font-size: 12px; font-weight: 700; opacity: 0; pointer-events: none; transition: opacity .2s; }
+body.tide .tide-pc-tipimg { display: block; width: 160px; aspect-ratio: 16/9; border-radius: 6px; background: #000 no-repeat; margin-bottom: 5px; }
+body.tide .tide-pc-scr:is(:hover, .drag) .tide-pc-tip { opacity: 1; }
+body.tide .tide-pc-times { display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px; font-weight: 600; color: #e5e5ea; font-variant-numeric: tabular-nums; }
+body.tide .tide-pc-row { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+body.tide .tide-pc-sp { flex: 1; }
+body.tide .tide-pc-b { width: 52px; height: 52px; border-radius: 50%; border: 0; background: #2a2a2e; color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: 0 0 auto; transition: transform .2s var(--tide-sp), background-color .2s; }
+body.tide .tide-pc-b .tide-ms { font-size: 26px; }
+body.tide .tide-pc-b:hover { background: #3a3a3c; transform: scale(1.06); }
+body.tide .tide-pc-b:active { transform: scale(.94); }
+body.tide .tide-pc-play { background: #fff; color: #000; }
+body.tide .tide-pc-play:hover { background: #e5e5ea; }
+body.tide .tide-pc-p { height: 46px; border-radius: 23px; border: 0; background: #2a2a2e; color: #fff; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; font: 700 15px var(--tide-font); cursor: pointer; transition: background-color .2s; }
+body.tide .tide-pc-p:hover { background: #3a3a3c; }
+body.tide .tide-pc-p.on, body.tide .tide-pc-w { background: #fff; color: #000; }
+body.tide .tide-pc-volw { display: flex; align-items: center; gap: 10px; }
+body.tide .tide-pc-vol { width: 100px; accent-color: #fff; opacity: 0; transform: scaleX(.6); transform-origin: left center; transition: opacity .3s var(--tide-sp), transform .3s var(--tide-sp); }
+body.tide .tide-pc-volw:hover .tide-pc-vol { opacity: 1; transform: none; }
+/* Floating pills: stay when controls hide; lift above them when shown (transform only). */
+body.tide .tide-pc-float { position: absolute; right: var(--tide-pg); bottom: var(--tide-pb); z-index: 5; opacity: 0; transform: translateY(14px) scale(.96); pointer-events: none; transition: opacity .45s var(--tide-sp), transform .7s var(--tide-sp); }
+body.tide .tide-pc-float.show { opacity: 1; transform: none; pointer-events: auto; }
+body.tide .tide-player:not(.tide-pc-idle):not(.tide-pz-on) .tide-pc-float.show { transform: translateY(var(--tide-lift)); }
+body.tide .tide-pc-idle .tide-pc-float { transition: opacity .45s var(--tide-sp), transform .6s var(--tide-sp) .08s; }
+body.tide .tide-pc-skip .tide-pc-p { height: 48px; padding: 0 22px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+body.tide .tide-pc-ctr { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); gap: 56px; align-items: center; }
+@media (prefers-reduced-motion: reduce) {
+  body.tide :is(.tide-pc-ui, .tide-pc-float) { transition: opacity .3s ease !important; transform: none !important; }
+}
