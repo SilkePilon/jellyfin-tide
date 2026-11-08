@@ -65,6 +65,7 @@ describe('animator', () => {
     const a = animator(el, 'x');
     a.to(800, 650);
     expect(el.classList.contains('tide-gliding')).toBe(true);
+    expect(el.style.scrollBehavior).toBe('auto'); // CSS smooth must not fight the per-frame steps
     vi.advanceTimersByTime(100);
     expect(el.scrollLeft).toBeGreaterThan(0);
     expect(el.scrollLeft).toBeLessThan(800);
@@ -72,6 +73,7 @@ describe('animator', () => {
     expect(el.scrollLeft).toBe(800);
     expect(a.running()).toBe(false);
     expect(el.classList.contains('tide-gliding')).toBe(false);
+    expect(el.style.scrollBehavior).toBe('');
   });
 
   test('retarget continues from the current position; same instance per element', () => {

@@ -40,6 +40,7 @@ export function animator(el: HTMLElement, axis: 'x' | 'y'): Anim {
     frame = 0;
     goal = null;
     if (axis === 'x') el.classList.remove('tide-gliding');
+    el.style.scrollBehavior = '';
   };
   const step = (now: number) => {
     if (goal === null) return;
@@ -58,9 +59,11 @@ export function animator(el: HTMLElement, axis: 'x' | 'y'): Anim {
       duration = ms;
       // Scroll snap fights a JS glide: off while running (CSS `.tide-gliding`), restored in stop().
       if (axis === 'x') el.classList.add('tide-gliding');
+      // CSS `scroll-behavior: smooth` would turn every per-frame assignment into its own (interrupted) smooth scroll.
+      el.style.scrollBehavior = 'auto';
       if (!frame) frame = requestAnimationFrame(step);
     },
-    jump(target) { stop(); el[prop] = clamp(target); },
+    jump(target) { stop(); el.style.scrollBehavior = 'auto'; el[prop] = clamp(target); el.style.scrollBehavior = ''; },
     cancel: stop,
     target: () => goal,
     running: () => goal !== null,

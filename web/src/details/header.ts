@@ -43,7 +43,9 @@ function metaLine(item: JfDetail): HTMLElement {
 
 export function renderHeader(item: JfDetail): Header {
   const poster = h('div', { class: 'tide-dh-poster' });
-  poster.style.backgroundImage = `url("${imageUrl(item.Id, 'Primary', 700)}")`;
+  const pimg = h('img', { src: imageUrl(item.Id, 'Primary', 700), alt: '' }) as HTMLImageElement;
+  pimg.onerror = () => pimg.replaceWith(h('span', { class: 'tide-dh-poster-t' }, item.Name));
+  poster.append(pimg);
   const titleText = () => h('h1', { class: 'tide-dh-title' }, item.Name);
   const logo: HTMLElement = h('img', { class: 'tide-dh-logo', src: imageUrl(item.Id, 'Logo', 900), alt: item.Name });
   (logo as HTMLImageElement).onerror = () => logo.replaceWith(titleText());

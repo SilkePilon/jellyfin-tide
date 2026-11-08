@@ -12,7 +12,9 @@ body.tide .tide-dsec-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter
 
 /* Header (C2) */
 body.tide .tide-dh { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 56px; align-items: end; padding: 0 var(--tide-gutter); }
-body.tide .tide-dh-poster { aspect-ratio: 2/3; border-radius: 22px; background: center / cover #1d1d20; box-shadow: 0 50px 100px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.06); }
+body.tide .tide-dh-poster img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+body.tide .tide-dh-poster-t { display: flex; height: 100%; align-items: center; justify-content: center; padding: 24px; text-align: center; font-size: 26px; font-weight: 800; letter-spacing: -.02em; color: #a1a1a6; }
+body.tide .tide-dh-poster { overflow: hidden; aspect-ratio: 2/3; border-radius: 22px; background: center / cover #1d1d20; box-shadow: 0 50px 100px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.06); }
 body.tide .tide-dh-logo { display: block; max-width: min(440px, 100%); max-height: 150px; object-fit: contain; object-position: left bottom; margin-bottom: 20px; filter: drop-shadow(0 4px 24px rgba(0,0,0,.6)); }
 body.tide .tide-dh-title { margin: 0 0 18px; font-size: 48px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
 body.tide .tide-dh-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 16px; font-weight: 500; color: #e5e5ea; }
@@ -97,7 +99,7 @@ body.tide .tide-frow b { font-weight: 600; text-align: right; }
   body.tide .tide-dh-desc { -webkit-line-clamp: 4; text-align: left; }
   body.tide .tide-dh-btns { justify-content: center; }
   body.tide .tide-dh-primary { flex: 1 0 100%; justify-content: center; }
-  body.tide .tide-dh-trailer { width: 54px; padding: 0; justify-content: center; font-size: 0; gap: 0; }
+  body.tide .tide-dh-trailer { width: 54px; padding: 0; justify-content: center; font-size: 0; gap: 0; border-radius: 50%; }
   body.tide .tide-dh-trailer .tide-ms { font-size: 24px; }
   body.tide .tide-nu { max-width: none; text-align: left; }
   body.tide .tide-cast-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, auto); grid-auto-columns: max-content; overflow-x: auto; scrollbar-width: none; }

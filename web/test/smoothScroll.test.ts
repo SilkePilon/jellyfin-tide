@@ -119,3 +119,18 @@ test('shift+wheel over a Tide row eases the row horizontally', () => {
   expect(track.scrollLeft).toBe(100);
   stop();
 });
+
+test('body with overflow:auto resolves to the document scroller, not body', () => {
+  document.body.style.overflowY = 'auto';
+  const root = (document.scrollingElement ?? document.documentElement) as HTMLElement;
+  Object.defineProperty(root, 'scrollHeight', { configurable: true, value: 4000 });
+  Object.defineProperty(root, 'clientHeight', { configurable: true, value: 900 });
+  Object.defineProperty(document.body, 'scrollHeight', { configurable: true, value: 4000 });
+  Object.defineProperty(document.body, 'clientHeight', { configurable: true, value: 900 });
+  const leaf = document.createElement('p');
+  document.body.append(leaf);
+  expect(scrollTarget(leaf, 'y', 1)).toBe(root);
+  document.body.style.overflowY = '';
+  delete (root as any).scrollHeight; delete (root as any).clientHeight;
+  delete (document.body as any).scrollHeight; delete (document.body as any).clientHeight;
+});

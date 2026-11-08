@@ -98,7 +98,7 @@ export function fileFacts(src: JfSource | undefined): [string, string][] {
   const facts: [string, string][] = [
     ['Quality', v ? [resLabel(v.Width, v.Height), range].filter(Boolean).join(' · ') : ''],
     ['Video', v ? [v.Codec?.toUpperCase(), v.Profile].filter(Boolean).join(' ') : ''],
-    ['Audio', a?.DisplayTitle ?? ''],
+    ['Audio', (a?.DisplayTitle ?? '').replace(/ - Default$/, '')],
     ['Subtitles', subtitleSummary(subs)],
     ['Size on disk', fmtBytes(src.Size) ?? ''],
   ];

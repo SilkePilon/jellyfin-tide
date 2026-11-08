@@ -35,9 +35,11 @@ function canScroll(el: Element, axis: 'x' | 'y', dir: number): boolean {
 /** Nearest ancestor (inclusive) that can scroll further in `dir`; at-limit areas pass the scroll on. */
 export function scrollTarget(start: Element | null, axis: 'x' | 'y', dir: number): HTMLElement | null {
   for (let el = start; el; el = el.parentElement) {
+    // body/html never scroll themselves in standards mode (12.4 gives body `overflow: auto`): use the document.
+    if (el === document.body || el === document.documentElement) break;
     if (canScroll(el, axis, dir)) return el as HTMLElement;
   }
-  const root = document.scrollingElement as HTMLElement | null;
+  const root = (document.scrollingElement ?? document.documentElement) as HTMLElement | null;
   return root && canScroll(root, axis, dir) ? root : null;
 }
 

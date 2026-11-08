@@ -7,5 +7,5 @@ services:
     volumes:
       - ./config:/config
       - ./media:/media:ro
-      - ./plugins/Tide:/config/plugins/Tide_0.2.0.0
+      - ./plugins/Tide:/config/plugins/Tide_0.3.0.0
     restart: "no"

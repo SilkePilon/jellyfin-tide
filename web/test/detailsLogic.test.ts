@@ -65,6 +65,8 @@ test('file facts', () => {
   });
   expect(f).toEqual([['Quality', '4K · HDR10'], ['Video', 'HEVC Main 10'], ['Audio', 'Dolby TrueHD + Dolby Atmos - 7.1'], ['Subtitles', 'English, Dutch'], ['Size on disk', '75.4 GB']]);
   expect(fileFacts(undefined)).toEqual([]);
+  expect(fileFacts({ Id: 'b', MediaStreams: [{ Type: 'Audio', DisplayTitle: 'AAC - Stereo - Default' }] })).toEqual([['Audio', 'AAC - Stereo']]);
+
 });
 
 test('cast: 12 actors by default; expanded adds the rest then crew in role order', () => {
