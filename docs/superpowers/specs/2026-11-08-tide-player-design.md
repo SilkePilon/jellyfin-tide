@@ -19,8 +19,8 @@
 Replace the stock video player controls with a Tide control layer that matches the rest of the theme. Jellyfin's own player keeps doing the actual playback underneath, so codecs, transcoding, casting, Jellyfin Desktop (mpv) and keyboard shortcuts keep working.
 
 The release also ships:
-- **Episode detail page:** a single-episode version of the series page (§9).
-- **Held 0.3.1 fixes:** the play-icon rotation and the scroll-jank fix, already committed on this branch (§10).
+- **Episode detail page:** a single-episode version of the series page (§7).
+- **Held 0.3.1 fixes:** the play-icon rotation and the scroll-jank fix, already committed on this branch (§9).
 
 ## 2. Decisions
 
