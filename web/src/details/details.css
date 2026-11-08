@@ -38,3 +38,21 @@ body.tide .tide-nu-k { font-size: 12px; font-weight: 800; letter-spacing: .12em;
 body.tide .tide-nu-t { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.tide .tide-nu-m { font-size: 13px; color: #a1a1a6; }
 body.tide .tide-nu-go { margin-left: auto; flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #000; display: flex; align-items: center; justify-content: center; }
+
+/* Episodes (P1) */
+body.tide .tide-ep-ddwrap { position: relative; }
+body.tide .tide-ep-dd { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--tide-tx); font: 700 22px var(--tide-font); letter-spacing: -.02em; padding: 6px 10px 6px 0; cursor: pointer; border-radius: 12px; }
+body.tide .tide-ep-dd .tide-ms { transition: transform .3s var(--tide-ease); }
+body.tide .tide-ep-dd.open .tide-ms { transform: rotate(180deg); }
+body.tide .tide-ep-count { font-size: 14px; color: #8e8e93; }
+body.tide .tide-ep-menu { width: 324px; }
+body.tide .tide-ep-mp { flex: 0 0 38px; aspect-ratio: 2/3; border-radius: 7px; background: center / cover #333; }
+body.tide .tide-ep-menu .tide-pop-label { display: flex; flex-direction: column; gap: 2px; }
+body.tide .tide-ep-menu .tide-pop-label b { font-size: 15px; }
+body.tide .tide-ep-mm { font-size: 12px; font-weight: 500; color: #a1a1a6; }
+body.tide .tide-ep-mbar { width: 90px; height: 4px; border-radius: 2px; background: #3a3a3c; overflow: hidden; margin-top: 6px; }
+body.tide .tide-ep-mbar i { display: block; height: 100%; background: #fff; transform-origin: left center; }
+body.tide .tide-pop-item[aria-current="true"] .tide-ep-mm { color: #3a3a3c; }
+body.tide .tide-pop-item[aria-current="true"] .tide-ep-mbar { background: #d1d1d6; }
+body.tide .tide-pop-item[aria-current="true"] .tide-ep-mbar i { background: #000; }
+body.tide .tide-ep-mdone { font-size: 20px; }
