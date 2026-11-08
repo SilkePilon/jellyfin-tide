@@ -29,6 +29,7 @@ async function resumeTicks(id: string): Promise<number> {
  */
 export async function play(id: string, startPositionTicks?: number): Promise<void> {
   try {
+    window.dispatchEvent(new CustomEvent('tide:play', { detail: { id } }));
     const sessionId = await ownSessionId();
     if (!sessionId) throw new Error('own session not found');
     const ticks = startPositionTicks ?? (await resumeTicks(id));
