@@ -1,0 +1,11 @@
+services:
+  jellyfin:
+    # Brief asked for 12.4.0; that tag does not exist on Docker Hub. This is the 12.4 release build.
+    image: jellyfin/jellyfin:12.4.20261026-211555
+    container_name: tide-jellyfin
+    ports: ["8096:8096"]
+    volumes:
+      - ./config:/config
+      - ./media:/media:ro
+      - ./plugins/Tide:/config/plugins/Tide_0.1.0.0
+    restart: "no"

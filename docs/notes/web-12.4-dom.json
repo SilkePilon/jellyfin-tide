@@ -1,0 +1,102 @@
+{
+  "url": "http://localhost:8096/web/#/home",
+  "hasApiClient": "object",
+  "apiClientFns": [
+    "serverAddress:function",
+    "accessToken:function",
+    "getCurrentUserId:function",
+    "serverId:function"
+  ],
+  "globals": [
+    "playbackManager:undefined",
+    "Emby:object",
+    "appRouter:undefined",
+    "Dashboard:object"
+  ],
+  "appBar": "header#.MuiPaper-root.MuiPaper-elevation.MuiPaper-elevation0.MuiAppBar-root.MuiAppBar-colorTransparent.MuiAppBar-positionFixed.mui-fixed.css-1u7mpsp",
+  "skinHeader": true,
+  "main": "main#.MuiBox-root.css-1iogify",
+  "homeCandidates": [
+    "#indexPage:true",
+    ".homePage:true",
+    "[data-testid=home]:false",
+    ".homeSectionsContainer:true",
+    ".sections:true"
+  ],
+  "mainChildren": [
+    "div#.mainAnimatedPages.skinBody",
+    "div#.skinBody"
+  ],
+  "muiIconTestIds": [
+    "FavoriteIcon",
+    "MovieIcon",
+    "TvIcon",
+    "GroupsIcon",
+    "CastIcon",
+    "SearchIcon",
+    "PersonIcon",
+    "GroupAddIcon",
+    "SettingsRemoteIcon",
+    "CloseIcon",
+    "AccountCircleIcon",
+    "SettingsIcon",
+    "DashboardIcon",
+    "EditIcon",
+    "PhonelinkLockIcon",
+    "LogoutIcon"
+  ],
+  "hashRouting": true,
+  "homeAncestry": [
+    "div#.verticalSection.section0.emby-scroller-container",
+    "div#.sections.homeSectionsContainer",
+    "div#homeTab.tabContent.pageTabContent.is-active",
+    "div#indexPage.page.mainAnimatedPage.homePage.libraryPage.allLibraryPage.pageWithAbsoluteTabs.withTabs",
+    "div#.",
+    "div#.skinBody",
+    "main#.MuiBox-root.css-1iogify"
+  ],
+  "indexPageChildren": [
+    "div#homeTab.tabContent.pageTabContent.is-active",
+    "div#favoritesTab.tabContent.pageTabContent"
+  ],
+  "mainAnimatedPagesChildren": [
+    "div#loginPage.page.standalonePage.backdropPage.mainAnimatedPage.hide"
+  ],
+  "appBarInsideMain": false,
+  "appBarInsideIndexPage": false,
+  "fontIcons": [
+    "material-icons.navMenuOptionIcon.home",
+    "material-icons.navMenuOptionIcon.movie",
+    "material-icons.navMenuOptionIcon.tv",
+    "material-icons.navMenuOptionIcon.dashboard",
+    "material-icons.navMenuOptionIcon.mode_edit",
+    "material-icons.navMenuOptionIcon.settings",
+    "material-icons.navMenuOptionIcon.exit_to_app",
+    "material-icons.arrow_back",
+    "material-icons.home",
+    "material-icons.menu",
+    "material-icons.groups",
+    "material-icons.music_note",
+    "material-icons.cast",
+    "material-icons.search",
+    "material-icons.person",
+    "material-icons.checkboxIcon.checkboxIcon-checked.check",
+    "material-icons.checkboxIcon.checkboxIcon-unchecked",
+    "material-icons.chevron_left",
+    "material-icons.chevron_right",
+    "cardImageIcon.material-icons.movie",
+    "material-icons.cardOverlayButtonIcon.cardOverlayButtonIcon-hover.more_vert",
+    "cardImageIcon.material-icons.tv",
+    "material-icons.cardOverlayButtonIcon.cardOverlayButtonIcon-hover.play_arrow",
+    "material-icons.cardOverlayButtonIcon.cardOverlayButtonIcon-hover.check.playstatebutton-icon-unplayed",
+    "material-icons.cardOverlayButtonIcon.cardOverlayButtonIcon-hover.favorite"
+  ],
+  "afterNavToMovies": {
+    "url": "http://localhost:8096/web/#/movies",
+    "indexPagePresent": false,
+    "indexPageHidden": null,
+    "mainAnimatedPagesChildren": [
+      "div#loginPage.page.standalonePage.backdropPage.mainAnimatedPage.hide"
+    ]
+  }
+}

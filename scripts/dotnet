@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Runs the .NET 10 SDK in Docker. Always call from the repo root.
+set -e
+exec docker run --rm -i \
+  -v "$PWD":/src -w /src \
+  -v tide-nuget:/root/.nuget/packages \
+  -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+  mcr.microsoft.com/dotnet/sdk:10.0 dotnet "$@"

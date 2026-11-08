@@ -1,0 +1,33 @@
+body.tide {
+  --tide-bg: #000;
+  --tide-s1: #141416;
+  --tide-s2: #1d1d20;
+  --tide-s3: #2a2a2e;
+  --tide-line: #2c2c2e;
+  --tide-tx: #f5f5f7;
+  --tide-mu: #a1a1a6;
+  --tide-di: #6e6e73;
+  --tide-ac: #fff;
+  --tide-star: #ffd60a;
+  --tide-critic: #ff6b5a;
+  --tide-hdr: linear-gradient(90deg, #ffd60a, #ff9f0a);
+  --tide-fav: #ff375f;
+  --tide-ease: cubic-bezier(.2, .8, .2, 1);
+  --tide-radius: 14px;
+  --tide-gutter: 56px;
+  --tide-font: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+@media (max-width: 699px) { body.tide { --tide-gutter: 16px; } }
+
+body.tide .tide-ms {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none;
+  display: inline-block; white-space: nowrap; direction: ltr;
+  font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 100, 'opsz' 24;
+  font-size: 22px; vertical-align: middle;
+}
+
+body.tide svg.tide-icon-hidden {
+  display: none !important;
+}

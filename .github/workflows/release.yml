@@ -1,0 +1,60 @@
+name: release
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: npm ci || npm install
+        working-directory: web
+      - run: npm run typecheck && npm test && npm run build
+        working-directory: web
+      - name: Guard web bundle
+        run: |
+          test -f web/dist/client.js
+          # Font URLs must be relative to client.css so a Jellyfin base URL (/jellyfin/Tide/...) still works.
+          if grep -q 'url(/' web/dist/client.css; then echo "absolute url(/...) in client.css"; exit 1; fi
+      - run: dotnet test Tide.slnx -c Release
+      - name: Publish plugin
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          dotnet publish server/Jellyfin.Plugin.Tide -c Release -o out -p:AssemblyVersion=$VERSION.0 -p:FileVersion=$VERSION.0
+          strings out/Jellyfin.Plugin.Tide.dll | grep -q "Tide.Web/client.js" || { echo "embedded client.js missing from DLL"; exit 1; }
+          cat > out/meta.json <<EOM
+          {"guid":"7c1d3e5a-9b2f-4c6d-8e0a-1f3b5d7e9a2c","name":"Tide","description":"Streaming-app theme and home screen.","overview":"Streaming-app theme and home screen.","owner":"${GITHUB_REPOSITORY_OWNER}","category":"General","version":"$VERSION.0","targetAbi":"12.4.0.0","changelog":"See release notes","timestamp":"$(date -u +%Y-%m-%dT%H:%M:%SZ)","status":"Active","autoUpdate":true}
+          EOM
+          (cd out && zip ../tide_$VERSION.zip Jellyfin.Plugin.Tide.dll meta.json)
+          unzip -Z1 tide_$VERSION.zip | sort | diff - <(printf 'Jellyfin.Plugin.Tide.dll\nmeta.json\n')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "MD5=$(md5sum tide_$VERSION.zip | cut -d' ' -f1)" >> $GITHUB_ENV
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: tide_${{ env.VERSION }}.zip
+      - name: Update manifest.json
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          python3 - <<'PY'
+          import json, os, datetime
+          v=os.environ['VERSION']; repo=os.environ['GITHUB_REPOSITORY']
+          m=json.load(open('manifest.json'))
+          entry={"version":f"{v}.0","changelog":f"v{v}","targetAbi":"12.4.0.0",
+                 "sourceUrl":f"https://github.com/{repo}/releases/download/v{v}/tide_{v}.zip",
+                 "checksum":os.environ['MD5'],"timestamp":datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}
+          m[0]["versions"]=[e for e in m[0]["versions"] if e["version"]!=entry["version"]]
+          m[0]["versions"].insert(0,entry)
+          json.dump(m,open('manifest.json','w'),indent=2)
+          PY
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add manifest.json && git commit -m "chore: update manifest for v${VERSION}" && git push origin HEAD:main

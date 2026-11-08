@@ -1,0 +1,6 @@
+{
+  "name": "tide-e2e",
+  "private": true,
+  "scripts": { "setup": "node setup.mjs", "discover": "node discover.mjs", "test": "playwright test" },
+  "devDependencies": { "@playwright/test": "1.52.0" }
+}

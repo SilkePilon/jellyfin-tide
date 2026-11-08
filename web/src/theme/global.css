@@ -1,0 +1,78 @@
+/* Global restyle of jellyfin-web Modern layout. Solid surfaces only. */
+body.tide-theme, body.tide-theme .backgroundContainer {
+  background-color: var(--tide-bg);
+  color: var(--tide-tx);
+}
+body.tide-theme, body.tide-theme button, body.tide-theme input, body.tide-theme select, body.tide-theme textarea,
+body.tide-theme .MuiTypography-root, body.tide-theme .MuiButtonBase-root {
+  font-family: var(--tide-font);
+  -webkit-font-smoothing: antialiased;
+}
+body.tide-theme * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+/* Surfaces: every Paper is solid (no translucency/gradients) */
+body.tide-theme .MuiPaper-root { background-color: var(--tide-s1); background-image: none; }
+/* Floating surfaces get border + radius */
+body.tide-theme .MuiDrawer-paper, body.tide-theme .MuiMenu-paper, body.tide-theme .MuiPopover-paper,
+body.tide-theme .MuiDialog-paper, body.tide-theme .dialog, body.tide-theme .actionSheet {
+  background: var(--tide-s1) !important;
+  background-image: none !important;
+  border: 1px solid var(--tide-line);
+  border-radius: var(--tide-radius);
+}
+
+/* Buttons */
+body.tide-theme .MuiButton-root { border-radius: var(--tide-radius); text-transform: none; font-weight: 600; box-shadow: none; }
+body.tide-theme .MuiButton-containedPrimary, body.tide-theme .button-submit { background: var(--tide-ac) !important; color: #000 !important; }
+body.tide-theme .MuiButton-containedSecondary, body.tide-theme .MuiButton-outlined { background: var(--tide-s3); color: var(--tide-tx); border-color: var(--tide-line); }
+body.tide-theme .MuiIconButton-root { border-radius: 50%; }
+
+/* Inputs */
+body.tide-theme .MuiOutlinedInput-root, body.tide-theme .MuiFilledInput-root, body.tide-theme .emby-input, body.tide-theme .emby-select {
+  background: var(--tide-s2) !important; border-radius: 12px; color: var(--tide-tx);
+}
+body.tide-theme .MuiOutlinedInput-notchedOutline { border-color: var(--tide-line) !important; }
+
+/* Progress / accents */
+body.tide-theme .MuiLinearProgress-bar, body.tide-theme .itemProgressBarForeground { background: #fff !important; }
+body.tide-theme .MuiLinearProgress-root { background-color: #3a3a3c; }
+body.tide-theme .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track { background: #fff !important; opacity: 1; }
+
+/* Scrollbars */
+body.tide-theme ::-webkit-scrollbar { width: 10px; height: 10px; }
+body.tide-theme ::-webkit-scrollbar-thumb { background: var(--tide-s3); border-radius: 5px; }
+body.tide-theme ::-webkit-scrollbar-track { background: transparent; }
+
+/* N1 top nav */
+body.tide-theme .MuiAppBar-root {
+  background: var(--tide-bg) !important; box-shadow: none !important; border: 0;
+  transition: background-color .3s var(--tide-ease);
+}
+body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root { background: transparent !important; }
+body.tide-theme .MuiAppBar-root .MuiButton-root {
+  border-radius: 22px; padding: 7px 15px; color: var(--tide-tx); font-weight: 500;
+}
+body.tide-theme .MuiAppBar-root .MuiButton-root[aria-current="page"],
+body.tide-theme .MuiAppBar-root .MuiButton-root.Mui-selected,
+body.tide-theme .MuiAppBar-root .MuiButton-root.active {
+  background: #fff !important; color: #000 !important; font-weight: 600;
+}
+body.tide-theme .MuiAppBar-root .MuiIconButton-root { background: var(--tide-s2); margin-left: 8px; }
+
+/* Stock cards everywhere else */
+body.tide-theme .cardScalable, body.tide-theme .cardImageContainer { border-radius: var(--tide-radius); }
+/* Phone, over the hero: plain icons on the image (the hero's top shade keeps them legible), no filled circles. */
+@media (max-width: 699px) {
+  body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiIconButton-root { background: none; }
+}
+/* Avatar: stock paints it the brand blue; keep the bar monochrome like the other round actions. */
+body.tide-theme .MuiAppBar-root .MuiAvatar-root { background-color: var(--tide-s3); color: var(--tide-tx); }
+/* Phone over the hero: the avatar (and the button wrapping it) drops its circle too, like the other icon buttons. */
+@media (max-width: 699px) {
+  body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiAvatar-root,
+  body.tide-theme.tide-on-home:not(.tide-scrolled) .MuiAppBar-root .MuiButtonBase-root:has(> .MuiAvatar-root) { background: none; }
+}
+
+/* Details page: stock uses a grey page and a translucent ribbon over the backdrop. Solid surfaces instead. */
+body.tide-theme .detailPageWrapperContainer { background-color: var(--tide-bg); }
+body.tide-theme .detailRibbon { background-color: var(--tide-s1); }

@@ -1,0 +1,53 @@
+body.tide .tide-home { background: var(--tide-bg); color: var(--tide-tx); padding-bottom: 80px; min-height: 100vh; }
+body.tide .tide-row { padding: 0 var(--tide-gutter); margin-top: 36px; }
+body.tide .tide-row-head { display: flex; align-items: center; margin-bottom: 16px; }
+body.tide .tide-row-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.015em; color: var(--tide-tx); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+body.tide .tide-row-title .tide-ms { color: var(--tide-di); }
+body.tide .tide-row-arrows { margin-left: auto; display: flex; gap: 8px; }
+body.tide .tide-row-track { display: grid; grid-auto-flow: column; gap: 18px; overflow-x: auto; overflow-y: visible; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 10px 4px 24px; margin: -10px -4px 0; }
+body.tide .tide-row-track::-webkit-scrollbar { display: none; }
+body.tide .tide-row-track > * { scroll-snap-align: start; }
+body.tide .tide-row-poster { grid-auto-columns: calc((100% - 18px * 6) / 7); }
+body.tide .tide-row-landscape { grid-auto-columns: calc((100% - 18px * 4) / 5); }
+body.tide .tide-row-square, body.tide .tide-row-round { grid-auto-columns: calc((100% - 18px * 7) / 8); }
+body.tide .tide-row-skeleton { height: 220px; border-radius: var(--tide-radius); background: var(--tide-s1); grid-column: 1 / -1; }
+body.tide .tide-row-error { color: var(--tide-mu); font-size: 14px; }
+body.tide .tide-row-error button { background: none; border: 0; color: #fff; font-weight: 600; cursor: pointer; text-decoration: underline; }
+body.tide .tide-edit-home { display: flex; justify-content: center; margin-top: 48px; }
+@media (max-width: 699px) {
+  body.tide .tide-row-arrows { display: none; }
+  body.tide .tide-row-poster { grid-auto-columns: 38%; }
+  body.tide .tide-row-landscape { grid-auto-columns: 78%; }
+  body.tide .tide-row-square, body.tide .tide-row-round { grid-auto-columns: 34%; }
+}
+body.tide .tide-hero-spacer { height: calc(96px + var(--tide-home-offset, 0px)); }
+body.tide .tide-edit-overlay { position: fixed; inset: 0; z-index: 2000; background: none; display: flex; justify-content: flex-end; }
+body.tide .tide-edit-panel { box-shadow: -30px 0 60px #000; }
+body.tide .tide-edit-panel { width: min(440px, 100%); height: 100%; background: var(--tide-s1); border-left: 1px solid var(--tide-line); display: flex; flex-direction: column; color: var(--tide-tx); }
+body.tide .tide-edit-panel header, body.tide .tide-edit-panel footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 24px; }
+body.tide .tide-edit-panel h2 { margin: 0; font-size: 20px; }
+body.tide .tide-edit-list { list-style: none; margin: 0; padding: 0 16px; overflow-y: auto; flex: 1; }
+body.tide .tide-edit-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px; background: var(--tide-s2); margin-bottom: 8px; }
+body.tide .tide-edit-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--tide-tx); }
+body.tide .tide-edit-handle { color: var(--tide-di); cursor: grab; }
+body.tide .tide-edit-item select { background: var(--tide-s3); color: var(--tide-tx); border: 0; border-radius: 8px; padding: 6px; }
+body.tide .tide-switch input { accent-color: #fff; width: 18px; height: 18px; }
+body.tide .tide-home-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000; background: var(--tide-s1); color: var(--tide-tx); border: 1px solid var(--tide-line); border-radius: 14px; padding: 14px 18px; font: 500 14px var(--tide-font); max-width: 90vw; box-shadow: 0 10px 30px #000; }
+@media (max-width: 699px) { body.tide.tide-has-tabbar .tide-home-toast { bottom: calc(80px + env(safe-area-inset-bottom)); } }
+/* Full-bleed hero under the transparent app bar, and first row overlapping the hero's bottom fade. */
+body.tide .tide-home { margin-top: calc(-1 * var(--tide-home-offset, 0px)); }
+body.tide .tide-home > .tide-hero ~ .tide-row:not([hidden]) { position: relative; z-index: 4; margin-top: -40px; }
+body.tide .tide-home > .tide-hero ~ .tide-row:not([hidden]) ~ .tide-row:not([hidden]) { margin-top: 36px; }
+@media (max-width: 699px) {
+  body.tide .tide-home > .tide-hero ~ .tide-row:not([hidden]) { margin-top: 0; }
+  body.tide .tide-home > .tide-hero ~ .tide-row:not([hidden]) ~ .tide-row:not([hidden]) { margin-top: 36px; }
+}
+/* The overlapping row must not swallow clicks meant for the hero beneath its empty areas. */
+body.tide .tide-home > .tide-hero ~ .tide-row, body.tide .tide-home > .tide-hero ~ .tide-row .tide-row-head { pointer-events: none; }
+body.tide .tide-home > .tide-hero ~ .tide-row > *, body.tide .tide-home > .tide-hero ~ .tide-row .tide-row-head > * { pointer-events: auto; }
+/* Row arrows: only when the row overflows; on pointer devices they fade in while the row is hovered or focused. */
+body.tide .tide-row:not(.tide-row-scrolls) .tide-row-arrows { visibility: hidden; }
+@media (hover: hover) {
+  body.tide .tide-row-arrows { opacity: 0; transition: opacity .25s var(--tide-ease); }
+  body.tide .tide-row:hover .tide-row-arrows, body.tide .tide-row:focus-within .tide-row-arrows { opacity: 1; }
+}

@@ -1,0 +1,21 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: npm ci || npm install
+        working-directory: web
+      - run: npm run typecheck && npm test && npm run build
+        working-directory: web
+      - name: Guard embedded web bundle
+        run: |
+          test -f web/dist/client.js
+          # Font URLs must be relative to client.css so a Jellyfin base URL (/jellyfin/Tide/...) still works.
+          if grep -q 'url(/' web/dist/client.css; then echo "absolute url(/...) in client.css"; exit 1; fi
+      - run: dotnet test Tide.slnx -c Release
