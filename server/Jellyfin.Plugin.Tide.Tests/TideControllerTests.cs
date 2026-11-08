@@ -44,4 +44,26 @@ public class TideControllerTests
         Assert.False(off.RootElement.GetProperty("enableDetails").GetBoolean());
         Assert.False(off.RootElement.GetProperty("enableSmoothScroll").GetBoolean());
     }
+
+    [Fact]
+    public void ClientConfigExposesPlayerSettings()
+    {
+        using var d = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(new PluginConfiguration(), "0.4.0", introSkipper: true)));
+        Assert.True(d.RootElement.GetProperty("enablePlayer").GetBoolean());
+        Assert.Equal(35, d.RootElement.GetProperty("creditsFallbackSeconds").GetInt32());
+        Assert.True(d.RootElement.GetProperty("introSkipper").GetBoolean());
+        using var c = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(new PluginConfiguration { CreditsFallbackSeconds = 9999, EnablePlayer = false }, "0.4.0")));
+        Assert.Equal(300, c.RootElement.GetProperty("creditsFallbackSeconds").GetInt32());
+        Assert.False(c.RootElement.GetProperty("enablePlayer").GetBoolean());
+        Assert.False(c.RootElement.GetProperty("introSkipper").GetBoolean());
+    }
+
+    [Theory]
+    [InlineData("c83d86bb-a1e0-4c35-a113-e2101cf4ee6b", "Whatever", true, true)]
+    [InlineData("00000000-0000-0000-0000-000000000001", "Intro Skipper", true, true)]
+    [InlineData("00000000-0000-0000-0000-000000000001", "intro skipper", true, true)]
+    [InlineData("c83d86bb-a1e0-4c35-a113-e2101cf4ee6b", "Intro Skipper", false, false)]
+    [InlineData("00000000-0000-0000-0000-000000000001", "Tide", true, false)]
+    public void IntroSkipperDetection(string id, string name, bool active, bool expected)
+        => Assert.Equal(expected, IntroSkipperProbe.IsActive(new[] { (Guid.Parse(id), name, active) }));
 }

@@ -12,6 +12,8 @@
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="EnableTrailers"><span>Hero trailers</span></label>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="EnableDetails"><span>Tide detail page (movies &amp; series)</span></label>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="EnableSmoothScroll"><span>Smooth scrolling</span></label>
+      <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="EnablePlayer"><span>Tide player</span></label>
+      <div class="inputContainer"><input is="emby-input" type="number" id="CreditsFallbackSeconds" min="0" max="300" label="Credits start (seconds before the end) when Intro Skipper is not installed"></div>
       <div class="inputContainer"><input is="emby-input" type="number" id="HeroSize" min="1" max="12" label="Hero titles"></div>
       <div class="inputContainer"><input is="emby-input" type="number" id="HeroSlotSeconds" min="8" max="120" label="Seconds per hero title"></div>
       <div class="inputContainer"><input is="emby-input" type="number" id="NewDays" min="1" max="90" label="'NEW' badge window (days)"></div>
@@ -24,8 +26,8 @@
     (function () {
       var id = '7c1d3e5a-9b2f-4c6d-8e0a-1f3b5d7e9a2c';
       var page = document.querySelector('#TideConfigPage');
-      var bools = ['EnableTheme', 'EnableIcons', 'EnableHome', 'EnableTrailers', 'EnableDetails', 'EnableSmoothScroll'];
-      var nums = ['HeroSize', 'HeroSlotSeconds', 'NewDays'];
+      var bools = ['EnableTheme', 'EnableIcons', 'EnableHome', 'EnableTrailers', 'EnableDetails', 'EnableSmoothScroll', 'EnablePlayer'];
+      var nums = ['HeroSize', 'HeroSlotSeconds', 'NewDays', 'CreditsFallbackSeconds'];
       var lists = ['DefaultRowOrder', 'DefaultHiddenRows'];
       page.addEventListener('pageshow', function () {
         Dashboard.showLoadingMsg();
