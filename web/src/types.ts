@@ -24,6 +24,8 @@ export interface ClientConfig {
   heroSlotSeconds: number; newDays: number; version: string;
   /** Admin defaults (normalised server-side): what "Reset to default" and a fresh user get. */
   defaultRowOrder?: string[]; defaultHiddenRows?: string[];
+  /** 0.3.0+. Missing (older server) means on. */
+  enableDetails?: boolean; enableSmoothScroll?: boolean;
 }
 
 /** Admin defaults from ClientConfig, falling back to the built-in order when the server is older. */
