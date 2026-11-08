@@ -68,6 +68,8 @@ New row IDs: `newThisWeek`, `discover`. They are added to `RowIds.All` on the se
 - Hero shade gradients become partially translucent so the glow shows through. Use the `body:not(.m-black)` values from the mockup.
 - With `prefers-reduced-motion`, there is no crossfade; the image swaps directly.
 
+- **No seam hero → page:** the hero backdrop itself is masked (`mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%)`) so it dissolves into the ambient layer; the hero shade must not end in an opaque colour that differs from what's behind the page. Verified by sampling pixels across the hero bottom edge (no step > 6 in luminance between consecutive rows).
+
 ### 3.2 Hero (X1)
 - **Height:** `86vh`, min 640px.
 - **Shade:** long, smooth multi-stop bottom fade, from `#000 0%` through `.92 10%`, `.7 22%`, `.38 36%`, `.12 50%` to `0 62%`. Left fade from `.78 22%` through `.35 42%` to `0 62%`. On ambient this is the translucent variant.
