@@ -187,3 +187,25 @@ test('play icon inside any progress ring is not rotated (only the ring is)', asy
     expect(iconT, cls).toBe('none');
   }
 });
+
+test('the ⋯ menu and season dropdown open above the sections below them', async ({ page, request }, info) => {
+  test.skip(info.project.name === 'phone', 'desktop');
+  const id = await find(request, 'Series', 'Blender Shorts');
+  await login(page);
+  await page.goto(`/web/#/details?id=${id}`);
+  const topmost = async (sel: string) => page.locator(sel).last().evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return !!hit && el.contains(hit);
+  });
+  await page.locator('.tide-ep-dd').click();
+  await expect(page.locator('.tide-pop .tide-pop-item').last()).toBeVisible();
+  expect(await topmost('.tide-pop .tide-pop-item')).toBe(true);
+  await page.keyboard.press('Escape');
+  // Sintel has cast chips right under the header: the ⋯ menu must cover them.
+  await page.goto(`/web/#/details?id=${await find(request, 'Movie', 'Sintel')}`);
+  await expect(page.locator('#itemDetailPage:not(.hide) .tide-chipp').first()).toBeVisible();
+  await page.locator('#itemDetailPage:not(.hide) .tide-dh-more').click();
+  await expect(page.locator('.tide-pop .tide-pop-item').last()).toBeVisible();
+  expect(await topmost('.tide-pop .tide-pop-item')).toBe(true);
+});

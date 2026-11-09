@@ -40,7 +40,7 @@ body.tide .tide-btn-w { background: #fff; color: #000; }
 body.tide .tide-hero-ring { width: 30px; height: 30px; margin-left: -6px; }
 body.tide .tide-hero-ring .tide-ring-track { stroke: #d1d1d6; }
 body.tide .tide-hero-ring .tide-ring-arc { stroke: #000; }
-body.tide .tide-hero-ring .tide-ms { font-size: 18px; color: #000; }
+body.tide .tide-btn .tide-hero-ring .tide-ms { font-size: 16px; color: #000; }
 body.tide .tide-hero-left { font-weight: 500; color: #6e6e73; font-size: .9em; }
 body.tide .tide-hero-mute { position: absolute; right: var(--tide-gutter); top: 100px; z-index: 5; width: 42px; height: 42px; background: var(--tide-s2); }
 /* T3 logo strip */

@@ -1,20 +1,33 @@
 import { h, icon } from '../ui/dom';
-import type { JfDetail } from '../api/item';
+import type { JfDetail, JfStream } from '../api/item';
 
 export interface SheetData { audio: { index: number; label: string; sub: string }[]; subtitles: { index: number; label: string; sub: string }[]; audioIndex: number | null; subtitleIndex: number | null; quality: string[]; qualityCur: string; speed: number; subSize: 'S' | 'M' | 'L' | 'XL' }
 export interface SettingsSheet { el: HTMLElement; open(): void; close(): void; isOpen(): boolean; setData(d: SheetData): void; dispose(): void }
 type Kind = 'audio' | 'subtitles' | 'quality' | 'speed' | 'subSize';
 
-/** "English - Dolby Digital+ - 5.1 - Default" -> label "English", sub "Dolby Digital+ · 5.1". */
-function split(t = ''): { label: string; sub: string } {
-  const parts = t.split(' - ').filter((p) => p && p !== 'Default' && p !== 'External');
-  return { label: parts[0] ?? '', sub: parts.slice(1).join(' · ') };
+const CODEC: Record<string, string> = { SUBRIP: 'SRT', SRT: 'SRT', PGSSUB: 'PGS', PGS: 'PGS', DVDSUB: 'VobSub', ASS: 'ASS', SSA: 'SSA', WEBVTT: 'VTT', MOV_TEXT: 'Text', DVBSUB: 'DVB' };
+const UNKNOWN = /^(undefined|und|unknown)$/i;
+
+/**
+ * Track label + second line. "English - Dolby Digital+ - 5.1 - Default" -> English / Dolby Digital+ · 5.1.
+ * Tracks without a language (Jellyfin says "Undefined") use their own Title, else "Track N".
+ */
+function describe(s: JfStream, n: number): { label: string; sub: string } {
+  const parts = (s.DisplayTitle ?? '').split(' - ').map((p) => p.trim()).filter((p) => p && !/^(default|external|forced)$/i.test(p));
+  const lang = parts[0] && !UNKNOWN.test(parts[0]) ? parts[0] : '';
+  const label = lang || s.Title?.trim() || `Track ${n}`;
+  const rest = parts.slice(1).map((p) => CODEC[p.toUpperCase()] ?? p);
+  if (!parts.length && s.Codec) rest.push(CODEC[s.Codec.toUpperCase()] ?? s.Codec.toUpperCase());
+  if (s.IsForced) rest.push('Forced');
+  if (s.IsHearingImpaired && !rest.includes('SDH')) rest.push('SDH');
+  if (lang && s.Title && s.Title.trim() !== lang && !rest.includes(s.Title.trim())) rest.unshift(s.Title.trim());
+  return { label, sub: rest.join(' · ') };
 }
 
 export function streamsToSheet(item: JfDetail): Pick<SheetData, 'audio' | 'subtitles'> {
   // Full items carry streams per MediaSource; session NowPlayingItems carry them top-level.
-  const streams = item.MediaSources?.[0]?.MediaStreams ?? (item as JfDetail & { MediaStreams?: NonNullable<JfDetail['MediaSources']>[0]['MediaStreams'] }).MediaStreams ?? [];
-  const pick = (type: string) => streams.filter((s) => s.Type === type).map((s) => ({ index: s.Index ?? -1, ...split(s.DisplayTitle) }));
+  const streams = item.MediaSources?.[0]?.MediaStreams ?? (item as JfDetail & { MediaStreams?: JfStream[] }).MediaStreams ?? [];
+  const pick = (type: string) => streams.filter((s) => s.Type === type).map((s, i) => ({ index: s.Index ?? -1, ...describe(s, i + 1) }));
   return { audio: pick('Audio'), subtitles: pick('Subtitle') };
 }
 

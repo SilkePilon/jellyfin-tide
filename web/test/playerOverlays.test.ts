@@ -58,3 +58,18 @@ test('end card: Watch credits dismisses; no autoplay = no countdown', () => {
   expect(c.isShowing()).toBe(false);
   expect(COUNTDOWN_S).toBe(10);
 });
+
+test('paused screen: repeated arm while still paused (buffer/position updates) does not restart the 4 s timer', () => {
+  vi.useFakeTimers();
+  const host = document.createElement('div');
+  const pz = createPausedScreen(host);
+  pz.setItem({ posterId: 's', logoId: 's', line: 'x', meta: '', overview: '', next: null }, () => {});
+  pz.arm(true, false);
+  for (let i = 0; i < 8; i++) { vi.advanceTimersByTime(500); pz.arm(true, false); }
+  expect(pz.isOn()).toBe(true);
+  pz.arm(false, false);
+  expect(pz.isOn()).toBe(false);
+  pz.arm(true, true);
+  vi.advanceTimersByTime(PAUSE_MS * 2);
+  expect(pz.isOn()).toBe(false);
+});

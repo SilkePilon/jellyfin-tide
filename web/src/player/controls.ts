@@ -5,7 +5,7 @@ import type { Bridge, PlayerState } from './bridge';
 import type { Segments } from './segments';
 
 export const IDLE_MS = 3000;
-export interface ControlsDeps { bridge: Bridge; onEpisodes(): void; onSettings(): void; onNext(): void; hasNext(): boolean; isSeries(): boolean }
+export interface ControlsDeps { bridge: Bridge; onEpisodes(): void; onSettings(): void; onNext(): void; hasNext(): boolean; isSeries(): boolean; onBack?(): void }
 export interface Controls {
   el: HTMLElement;
   setItem(info: { logoId: string; title: string; line: string; trickplay?: { id: string; mediaSourceId: string; info: TrickplayInfo } | null; stillId: string }): void;
@@ -33,7 +33,9 @@ export function createControls(deps: ControlsDeps): Controls {
   const logo = h('img', { class: 'tide-pc-logo', alt: '' }) as HTMLImageElement;
   const titleText = h('span', { class: 'tide-pc-title' });
   const epLine = h('div', { class: 'tide-pc-ep' });
-  const head = h('div', { class: 'tide-pc-hd tide-pc-ui' }, logo, titleText, epLine);
+  // Exit the player like the stock OSD's back arrow (leaving #/video stops playback).
+  const back = btn('tide-pc-back', 'arrow_back', 'Back', () => (deps.onBack ? deps.onBack() : history.back()));
+  const head = h('div', { class: 'tide-pc-hd tide-pc-ui' }, back, h('div', { class: 'tide-pc-hdtx' }, logo, titleText, epLine));
 
   const buf = h('div', { class: 'tide-pc-buf' });
   const fill = h('div', { class: 'tide-pc-fill' });

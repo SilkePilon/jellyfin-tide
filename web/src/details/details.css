@@ -134,3 +134,6 @@ body.tide .tide-dh-back { display: inline-flex; align-items: center; gap: 6px; m
 body.tide .tide-dh-back:hover { color: #fff; }
 @media (max-width: 899px) { body.tide .tide-dh.tide-dh-ep { grid-template-columns: 1fr; } }
 @media (max-width: 699px) { body.tide .tide-dh-still { display: none; } body.tide .tide-dh-eptitle { font-size: 28px; } }
+/* Sections share z-index 1, so a later section (cast) would cover a menu opened in an earlier one (⋯, season
+   dropdown): the section holding an open popover comes to the front. */
+body.tide .tide-details > :has(.tide-pop) { z-index: 20; }
