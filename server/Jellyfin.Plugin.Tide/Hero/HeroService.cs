@@ -4,6 +4,7 @@ using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Tide.Models;
 using Jellyfin.Plugin.Tide.Quality;
+using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -21,13 +22,47 @@ public sealed partial class HeroService
     private readonly IUserDataManager _userData;
     private readonly ITVSeriesManager _tv;
     private readonly QualityService _quality;
+    private readonly IImageProcessor _images;
 
-    public HeroService(ILibraryManager library, IUserDataManager userData, ITVSeriesManager tv, QualityService quality)
+    public HeroService(ILibraryManager library, IUserDataManager userData, ITVSeriesManager tv, QualityService quality, IImageProcessor images)
     {
         _library = library;
         _userData = userData;
         _tv = tv;
         _quality = quality;
+        _images = images;
+    }
+
+    /// <summary>
+    /// Jellyfin's cache tags for the hero's images (the same tags the stock client uses). With a tag the image URL is
+    /// served as cacheable for a year; it changes whenever the image does.
+    /// </summary>
+    private Dictionary<string, string> ImageTags(BaseItem item)
+    {
+        var tags = new Dictionary<string, string>();
+        foreach (var (key, type) in new[] { ("Backdrop", ImageType.Backdrop), ("Logo", ImageType.Logo), ("Thumb", ImageType.Thumb) })
+        {
+            var info = item.GetImageInfo(type, 0);
+            if (info is null)
+            {
+                continue;
+            }
+
+            try
+            {
+                var tag = _images.GetImageCacheTag(item, info);
+                if (!string.IsNullOrEmpty(tag))
+                {
+                    tags[key] = tag;
+                }
+            }
+            catch (Exception)
+            {
+                // No tag: the client falls back to the untagged URL.
+            }
+        }
+
+        return tags;
     }
 
     public IReadOnlyList<HeroItemDto> Build(User user, int size, int newDays)
@@ -121,6 +156,7 @@ public sealed partial class HeroService
             Quality = _quality.For(playable, user),
             HasLogo = display.HasImage(ImageType.Logo, 0),
             HasThumb = display.HasImage(ImageType.Thumb, 0),
+            ImageTags = ImageTags(display),
             IsFavorite = _userData.GetUserData(user, display)?.IsFavorite ?? false,
             Youtube = display.RemoteTrailers.Select(t => YoutubeId(t.Url)).Where(id => id is not null).Select(id => id!).Take(3).ToArray(),
             PlayTargetId = playable.Id.ToString("N"),

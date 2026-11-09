@@ -81,13 +81,17 @@ export function createControls(deps: ControlsDeps): Controls {
   };
   const wake = () => { if (idle) setIdle(false); arm(); };
 
+  /** Write text only when it changed: update() runs ~10×/s and each write is a DOM mutation + layout. */
+  const setText = (n: HTMLElement, t: string) => { if (n.textContent !== t) n.textContent = t; };
+  let playIcon = '';
+  let muteIcon = '';
   const pctOf = (sec: number) => (state && state.duration > 0 ? Math.max(0, Math.min(100, (sec / state.duration) * 100)) : 0);
   const paintTime = (pos: number) => {
     if (!state) return;
     fill.style.transform = `scaleX(${pctOf(pos) / 100})`;
     knob.style.left = `${pctOf(pos)}%`;
-    cur.textContent = clock(pos);
-    rem.textContent = `−${clock(Math.max(0, state.duration - pos))}`;
+    setText(cur, clock(pos));
+    setText(rem, `−${clock(Math.max(0, state.duration - pos))}`);
   };
   const paintSegs = () => {
     segBox.replaceChildren();
@@ -181,11 +185,16 @@ export function createControls(deps: ControlsDeps): Controls {
       if (drag === null) paintTime(s.position);
       if (s.buffered !== null && s.duration > 0) buf.style.transform = `scaleX(${Math.min(1, (s.position + s.buffered) / s.duration)})`;
       const iconName = s.paused ? 'play_arrow' : 'pause';
-      el.querySelectorAll('.tide-pc-play, .tide-pc-big').forEach((b) => b.replaceChildren(icon(iconName)));
-      muteBtn.replaceChildren(icon(s.muted || s.volume === 0 ? 'volume_off' : 'volume_up'));
+      if (iconName !== playIcon) {
+        playIcon = iconName;
+        el.querySelectorAll('.tide-pc-play, .tide-pc-big').forEach((b) => b.replaceChildren(icon(iconName)));
+      }
+      const mute = s.muted || s.volume === 0 ? 'volume_off' : 'volume_up';
+      if (mute !== muteIcon) { muteIcon = mute; muteBtn.replaceChildren(icon(mute)); }
       if (document.activeElement !== vol) vol.value = String(s.volume);
       skip.classList.toggle('show', !!segs.intro && s.position >= segs.intro[0] && s.position < segs.intro[1]);
-      nextBtn.hidden = !deps.hasNext();
+      const noNext = !deps.hasNext();
+      if (nextBtn.hidden !== noNext) nextBtn.hidden = noNext;
       if (pausedChanged) { if (s.paused) wake(); else arm(); }
     },
     wake,

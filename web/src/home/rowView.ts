@@ -1,4 +1,5 @@
 import { h, icon } from '../ui/dom';
+import { cached, HOME_TTL, peek } from '../api/cache';
 import { squareCard, wideCard } from '../ui/cards';
 import { createScroller } from './scroller';
 import { renderBento, renderDiscover } from './sections';
@@ -27,24 +28,35 @@ export function renderRow(def: RowDef, ctx: RowContext): RenderedRow {
   if (!titleText) section.hidden = true;
   let disposed = false;
 
+  // Keyed by title too: genre rows change genre between visits unless pinned.
+  const key = `row:${def.id}:${titleText}`;
+  const show = (list: JfItem[]) => {
+    if (!list.length) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+    track.replaceChildren(...list.map((i) => card(def, i)));
+    scroller.sync();
+  };
   const load = async () => {
     track.replaceChildren(h('div', { class: 'tide-row-skeleton' }));
     try {
-      const list = await def.fetch(ctx);
+      const list = await cached(key, HOME_TTL, () => def.fetch(ctx));
       if (disposed) return;
-      if (!list.length) {
-        section.hidden = true;
-        return;
-      }
-      section.hidden = false;
-      track.replaceChildren(...list.map((i) => card(def, i)));
-      scroller.sync();
+      show(list);
     } catch (e) {
       console.warn(`[Tide] row ${def.id} failed`, e);
       track.replaceChildren(h('div', { class: 'tide-row-error' }, "Couldn't load · ", h('button', { onclick: () => void load() }, 'Retry')));
     }
   };
 
+  // Data still cached from a moment ago (back from a details page): render now, no skeleton frame, no observer.
+  const ready = titleText ? peek<JfItem[]>(key, HOME_TTL) : null;
+  if (ready) {
+    show(ready.v);
+    return { el: section, dispose: () => { disposed = true; scroller.dispose(); } };
+  }
   const io = new IntersectionObserver((entries) => {
     if (entries.some((e) => e.isIntersecting)) {
       io.disconnect();

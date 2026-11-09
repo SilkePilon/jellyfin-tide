@@ -43,12 +43,45 @@ export function waitForSession(timeoutMs = 10000): Promise<Session | null> {
       const hasClient = !!jfApiClient();
       if (!hasClient && Date.now() - started >= timeoutMs) return finish(null);
       clearTimeout(timer);
-      timer = setTimeout(check, hasClient ? 1000 : 250);
+      // Poll fast at first: on a normal load ApiClient appears, then gets its token a few hundred ms later, and Tide's
+      // start (and the cloak) waits on that. A 1 s poll there cost up to a second on every app open. After 5 s we
+      // are on the login page: back off.
+      timer = setTimeout(check, Date.now() - started < 5000 ? 50 : hasClient ? 1000 : 250);
     }
     window.addEventListener('hashchange', check);
     window.addEventListener('popstate', check);
     check();
   });
+}
+
+/** Tide's own server base, from the client.js URL (".../Tide/client.js"): works behind a base URL too. */
+const scriptServer: string | null = (() => {
+  try {
+    const src = (document.currentScript as HTMLScriptElement | null)?.src ?? '';
+    const m = src.match(/^(.*)\/Tide\/client\.js(\?.*)?$/);
+    return m ? m[1]! : null;
+  } catch { return null; }
+})();
+
+/**
+ * The session jellyfin-web will restore, read from its stored credentials before its ApiClient is up (that takes
+ * seconds on a cold load). Only used to start requests early; anything it fetched is keyed by user, so a stale or
+ * different login just misses the cache.
+ */
+export function earlySession(): Session | null {
+  try {
+    if (!scriptServer) return null;
+    const c = JSON.parse(localStorage.getItem('jellyfin_credentials') ?? 'null') as { Servers?: { AccessToken?: string; UserId?: string; DateLastAccessed?: number }[] } | null;
+    const s = (c?.Servers ?? []).filter((x) => x.AccessToken && x.UserId).sort((a, b) => (b.DateLastAccessed ?? 0) - (a.DateLastAccessed ?? 0))[0];
+    return s ? { server: scriptServer, token: s.AccessToken!, userId: s.UserId! } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The live session, else the early one. */
+export function anySession(): Session | null {
+  return getSession() ?? earlySession();
 }
 
 type Query = Record<string, string | number | boolean | undefined | null>;
@@ -61,8 +94,8 @@ function qs(query?: Query): string {
   return parts.length ? `?${parts.join('&')}` : '';
 }
 
-export async function api<T>(path: string, opts: { method?: string; query?: Query; body?: unknown; timeoutMs?: number } = {}): Promise<T> {
-  const s = getSession();
+export async function api<T>(path: string, opts: { method?: string; query?: Query; body?: unknown; timeoutMs?: number; session?: Session | null } = {}): Promise<T> {
+  const s = opts.session ?? getSession();
   if (!s) throw new Error('No Jellyfin session');
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 10000);
@@ -83,8 +116,8 @@ export async function api<T>(path: string, opts: { method?: string; query?: Quer
   }
 }
 
-export function imageUrl(id: string, type: string, maxWidth: number): string {
-  return `${getSession()?.server ?? ''}/Items/${id}/Images/${type}?maxWidth=${maxWidth}&quality=88`;
+export function imageUrl(id: string, type: string, maxWidth: number, tag?: string): string {
+  return `${anySession()?.server ?? ''}/Items/${id}/Images/${type}?maxWidth=${maxWidth}&quality=88${tag ? `&tag=${encodeURIComponent(tag)}` : ''}`;
 }
 
 export function streamUrl(id: string): string {

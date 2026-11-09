@@ -3,6 +3,7 @@ import { imageUrl } from '../api/client';
 import { getEpisodes, getItem, getNextUp, getResumeEpisode, getSeasons, type JfDetail, type JfSource } from '../api/item';
 import { h } from '../ui/dom';
 import { createAmbient } from '../ui/ambient';
+import { backdropOf, chain, heroWidth, sources } from '../ui/images';
 import { ROUTES, SELECTORS } from '../router/selectors';
 import type { Takeover } from '../router/hook';
 import { renderHeader } from './header';
@@ -21,25 +22,36 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
   const params = ROUTES.detailsParams(loc);
   const id = params?.get('id');
   if (!id) return null;
-  const item: JfDetail = await getItem(id);
+  // Hide the stock page now, not after the item loads: otherwise it flashes for a moment and then swaps to Tide.
+  // Restored below if this item is not one Tide shows (or loading fails).
+  const wasTaken = host.classList.contains('tide-taken');
+  host.classList.add('tide-taken');
+  const release = () => { if (!wasTaken) host.classList.remove('tide-taken'); };
+  let item: JfDetail;
+  try {
+    item = await getItem(id);
+  } catch (e) {
+    release();
+    throw e;
+  }
   if (item.Type === 'Season' && item.SeriesId) {
+    release();
     const server = params?.get('serverId');
     nav.replace(`#/details?id=${encodeURIComponent(item.SeriesId)}&season=${item.IndexNumber ?? 0}${server ? `&serverId=${encodeURIComponent(server)}` : ''}`);
     return null;
   }
-  if (item.Type !== 'Movie' && item.Type !== 'Series' && item.Type !== 'Episode') return null;
+  if (item.Type !== 'Movie' && item.Type !== 'Series' && item.Type !== 'Episode') { release(); return null; }
 
   const disposers: (() => void)[] = [];
   let disposed = false;
   const ambient = createAmbient();
-  ambient.set(item.Id);
+  ambient.set(item.Id, backdropOf(item, 160));
   const header = renderHeader(item);
   // Same background system as the home hero: a sharp backdrop at the top that dissolves (mask) into the ambient glow.
-  const bgImg = h('img', { class: 'tide-dbg-img', alt: '', src: imageUrl(item.Type === 'Episode' ? item.SeriesId ?? item.Id : item.Id, 'Backdrop/0', 1920) }) as HTMLImageElement;
-  bgImg.onerror = () => bgImg.remove();
-  const bg = h('div', { class: 'tide-dbg', 'aria-hidden': 'true' }, bgImg, h('div', { class: 'tide-dbg-shade' }));
+  const bgImg = h('img', { class: 'tide-dbg-img', alt: '', fetchpriority: 'high' }) as HTMLImageElement;
+  const hasBg = chain(bgImg, sources([backdropOf(item, heroWidth()), item.Type === 'Episode' ? item.SeriesId ?? item.Id : item.Id, 'Backdrop/0', heroWidth()]), () => bgImg.remove());
+  const bg = h('div', { class: 'tide-dbg', 'aria-hidden': 'true' }, hasBg ? bgImg : null, h('div', { class: 'tide-dbg-shade' }));
   const root = h('div', { class: 'tide-details' }, ambient.el, bg, header.el);
-  host.classList.add('tide-taken');
   host.prepend(root);
   document.body.classList.add('tide-on-details');
   // Full-bleed backdrop under the transparent app bar: pull the root up by its natural page offset (as home does).
@@ -93,11 +105,9 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
         const eps = renderEpisodes(item.Id, sorted, startIdx, next, firstEps);
         disposers.push(eps.dispose);
         header.el.after(eps.el);
-        await qualityP;
-        if (target) {
-          const full = await getItem(target.Id).catch(() => null);
-          placeAbout({ src: full?.MediaSources?.[0], label: `Your file · ${epLabel(target)}` });
-        } else placeAbout(null);
+        // The episode's file info and the quality badge load in parallel.
+        const [full] = await Promise.all([target ? getItem(target.Id).catch(() => null) : Promise.resolve(null), qualityP]);
+        placeAbout(target ? { src: full?.MediaSources?.[0], label: `Your file · ${epLabel(target)}` } : null);
       } catch (e) {
         console.warn('[Tide] series sections failed', e);
         header.setTarget(null);
@@ -135,6 +145,7 @@ export async function mountDetails(host: HTMLElement, _cfg: ClientConfig, loc: L
 export const DETAILS_TAKEOVER: Takeover = {
   id: 'details',
   rootClass: 'tide-details',
+  cloak: true,
   matches: (cfg, loc) => cfg.enableDetails !== false && ROUTES.isDetails(loc),
   key: (loc) => ROUTES.detailsParams(loc)?.get('id') ?? '',
   findHost: () => document.querySelector<HTMLElement>(SELECTORS.detailsHost),
