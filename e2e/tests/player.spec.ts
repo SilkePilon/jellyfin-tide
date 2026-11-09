@@ -166,3 +166,16 @@ test('shelf keeps full-size cards in long seasons; back button leaves the player
   await expect(page).toHaveURL(/#\/details\?id=/);
   await expect(page.locator('.tide-player')).toHaveCount(0);
 });
+
+test('movies: no Episodes or Next episode buttons in the player', async ({ page, request }, info) => {
+  test.skip(info.project.name === 'phone', 'desktop');
+  const a = await auth(request);
+  const r = await request.get(`/Items?userId=${a.userId}&Recursive=true&IncludeItemTypes=Movie&SearchTerm=Sintel`, { headers: a.headers });
+  const id = (await r.json()).Items[0].Id as string;
+  await login(page);
+  await startPlayback(page, id);
+  await page.mouse.move(700, 450);
+  await expect(page.locator('.tide-pc-play')).toBeVisible();
+  await expect(page.locator('.tide-pc-epbtn')).toBeHidden();
+  await expect(page.locator('.tide-pc-next')).toBeHidden();
+});

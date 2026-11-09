@@ -199,3 +199,5 @@ body.tide .iconOsd { background: #2a2a2e !important; border-radius: 20px !import
 body.tide .iconOsd .iconOsdIcon, body.tide .iconOsd .material-icons, body.tide .iconOsd .tide-ms { color: #fff !important; }
 body.tide .iconOsdProgressOuter { background: #48484a !important; height: 6px !important; border-radius: 3px !important; overflow: hidden; }
 body.tide .iconOsdProgressInner { background: #fff !important; border-radius: 3px !important; }
+/* `hidden` must win over the buttons' own display (e.g. Episodes / Next episode for movies). */
+body.tide .tide-player [hidden] { display: none !important; }
