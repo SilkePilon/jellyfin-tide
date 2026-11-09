@@ -32,9 +32,11 @@ export function createPausedScreen(host: HTMLElement): PausedScreen {
         ...(nx ? [nx] : []));
     },
     arm(paused, blocked) {
-      clear();
-      if (!paused) { set(false); return; }
-      if (blocked || on) return;
+      // Called on every player state change (position, buffer, volume...). While still paused and unblocked, an
+      // already-running timer must keep running: buffering keeps changing state, and restarting would never fire.
+      if (!paused) { clear(); set(false); return; }
+      if (blocked) { clear(); return; }
+      if (on || timer) return;
       timer = setTimeout(() => { timer = undefined; set(true); }, PAUSE_MS);
     },
     dismiss() { clear(); set(false); },

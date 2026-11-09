@@ -147,3 +147,22 @@ test('episode detail page renders for an Episode id', async ({ page, request }) 
   await expect(page.locator('.tide-dh-back')).toBeVisible();
   await expect(page.locator('[data-id] .tide-wide-tag', { hasText: 'NOW VIEWING' })).toBeVisible();
 });
+
+test('shelf keeps full-size cards in long seasons; back button leaves the player', async ({ page, request }, info) => {
+  test.skip(info.project.name === 'phone', 'desktop');
+  const id = await firstEpisode(request);
+  await login(page);
+  await startPlayback(page, id);
+  await page.mouse.move(700, 450);
+  await page.keyboard.press('e');
+  await expect(page.locator('.tide-pshelf.open .tide-wide').first()).toBeVisible();
+  // Simulate a 22-episode season: the cards must not shrink to fit.
+  await page.evaluate(() => { const t = document.querySelector('.tide-pshelf .tide-row-track')!; const c = t.firstElementChild!; for (let i = 0; i < 20; i++) t.append(c.cloneNode(true)); });
+  const w = await page.locator('.tide-pshelf .tide-wide').first().evaluate((e) => e.getBoundingClientRect().width);
+  expect(w).toBeGreaterThan(300);
+  await page.keyboard.press('Escape');
+  await page.mouse.move(705, 455);
+  await page.locator('.tide-pc-back').click();
+  await expect(page).toHaveURL(/#\/details\?id=/);
+  await expect(page.locator('.tide-player')).toHaveCount(0);
+});

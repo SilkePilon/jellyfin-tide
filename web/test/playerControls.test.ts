@@ -84,3 +84,13 @@ test('scrubber: drag previews locally and seeks once on release', () => {
   document.dispatchEvent(Object.assign(new Event('pointerup'), { clientX: 700, pointerId: 1 }));
   expect(bridge.seek).toHaveBeenCalledWith(1800);
 });
+
+test('back button exits via onBack (default: history.back)', () => {
+  const onBack = vi.fn();
+  const bridge = { seek: vi.fn(), seekBy: vi.fn(), togglePlay: vi.fn() } as any;
+  const c = createControls({ bridge, onEpisodes: vi.fn(), onSettings: vi.fn(), onNext: vi.fn(), hasNext: () => false, isSeries: () => false, onBack });
+  document.body.append(c.el);
+  c.el.querySelector<HTMLButtonElement>('.tide-pc-back')!.click();
+  expect(onBack).toHaveBeenCalled();
+  c.dispose();
+});

@@ -55,3 +55,16 @@ test('shelf opens the current season with NOW PLAYING and no synopsis', async ()
   sh.close();
   expect(changes).toEqual([true, false]);
 });
+
+test('subtitle labels: unknown language uses title or Track N, codec names are readable, forced/SDH marked', () => {
+  const d = streamsToSheet({ Id: 'e', Name: 'E', Type: 'Episode', MediaSources: [{ Id: 'm', MediaStreams: [
+    { Type: 'Subtitle', Index: 3, DisplayTitle: 'Undefined - PGSSUB', Codec: 'PGSSUB' },
+    { Type: 'Subtitle', Index: 4, DisplayTitle: 'Undefined - PGSSUB', Title: 'Commentary', Codec: 'PGSSUB' },
+    { Type: 'Subtitle', Index: 5, DisplayTitle: 'English - SUBRIP - Forced', Codec: 'subrip', IsForced: true },
+    { Type: 'Subtitle', Index: 6, DisplayTitle: 'Dutch - PGSSUB', Codec: 'PGSSUB', IsHearingImpaired: true }] }] });
+  expect(d.subtitles).toEqual([
+    { index: 3, label: 'Track 1', sub: 'PGS' },
+    { index: 4, label: 'Commentary', sub: 'PGS' },
+    { index: 5, label: 'English', sub: 'SRT · Forced' },
+    { index: 6, label: 'Dutch', sub: 'PGS · SDH' }]);
+});

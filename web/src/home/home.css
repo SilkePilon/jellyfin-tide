@@ -74,3 +74,5 @@ body.tide .tide-home > .tide-hero ~ .tide-row:not([hidden]) ~ .tide-row:not([hid
 /* The overlapping row must not swallow clicks meant for the hero beneath its empty areas. */
 body.tide .tide-home > .tide-hero ~ .tide-row, body.tide .tide-home > .tide-hero ~ .tide-row .tide-row-head { pointer-events: none; }
 body.tide .tide-home > .tide-hero ~ .tide-row > *, body.tide .tide-home > .tide-hero ~ .tide-row .tide-row-head > * { pointer-events: auto; }
+/* A hovered card grows (transform), which changes its snap area: without this the row re-snaps on every hover. */
+body.tide .tide-row-track:has(> :hover) { scroll-snap-type: none; }
