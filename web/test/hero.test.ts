@@ -1,4 +1,4 @@
-import { backgroundUrl, createHero, desktopMeta, phoneMeta, reasonLine, runtime, trailerSources } from '../src/home/hero';
+import { heroWidth, backgroundUrl, createHero, desktopMeta, phoneMeta, reasonLine, runtime, trailerSources } from '../src/home/hero';
 import { setFavourite } from '../src/api/actions';
 import type { ClientConfig, HeroItem } from '../src/types';
 
@@ -328,4 +328,38 @@ test('fix a/b: youtube state messages drive vidplay; silent player falls back to
   await vi.advanceTimersByTimeAsync(1_600 + 2_500);
   expect(s2.classList.contains('vidplay')).toBe(true);
   silent.destroy();
+});
+
+test('only the active slide loads its images; the next one preloads shortly after', () => {
+  vi.useFakeTimers();
+  const items = [base, { ...base, id: 'h2' }, { ...base, id: 'h3' }];
+  const hero = createHero(items, { ...cfg, enableTrailers: false, heroSlotSeconds: 30 });
+  const bg = (i: number) => hero.el.querySelectorAll<HTMLElement>('.tide-hero-bg')[i]!.style.backgroundImage;
+  const logo = (i: number) => hero.el.querySelectorAll<HTMLImageElement>('img.tide-hero-logo')[i]!.getAttribute('src');
+  expect(bg(0)).toContain('/Items/h1/Images/');
+  expect(logo(0)).toContain('/Items/h1/Images/Logo');
+  expect(bg(1)).toBe('');
+  expect(logo(1)).toBeNull();
+  vi.advanceTimersByTime(3000);
+  expect(bg(1)).toContain('/Items/h2/Images/');
+  expect(bg(2)).toBe('');
+  hero.go(2);
+  expect(bg(2)).toContain('/Items/h3/Images/');
+  hero.destroy();
+  vi.useRealTimers();
+});
+
+test('hero image URLs carry the server-provided cache tags', () => {
+  expect(backgroundUrl({ id: 'h1', hasThumb: false, imageTags: { Backdrop: 'bt' } }, false)).toContain(`/Items/h1/Images/Backdrop/0?maxWidth=${heroWidth()}&quality=88&tag=bt`);
+  expect(backgroundUrl({ id: 'h1', hasThumb: true, imageTags: { Thumb: 'tt' } }, true)).toContain('&tag=tt');
+  const { el } = createHero([{ ...base, imageTags: { Logo: 'lt' } }], { ...cfg, enableTrailers: false });
+  expect(el.querySelector('img.tide-hero-logo')?.getAttribute('src')).toContain('&tag=lt');
+});
+
+test('hero backdrop width follows the screen (device pixels, 320px steps, max 1920)', () => {
+  expect(heroWidth(1440, 1)).toBe(1600);
+  expect(heroWidth(1280, 1)).toBe(1280);
+  expect(heroWidth(1440, 2)).toBe(1920);
+  expect(heroWidth(390, 3)).toBe(1280);
+  expect(heroWidth(2560, 1)).toBe(1920);
 });

@@ -105,7 +105,7 @@ body.tide .tide-frow b { font-weight: 600; text-align: right; }
 @media (max-width: 699px) {
   body.tide .tide-details { padding-top: calc(var(--tide-details-offset, 0px) + 16px); }
   body.tide .tide-dbg { height: 72vh; }
-  body.tide .tide-dh { grid-template-columns: 1fr; gap: 0; text-align: center; }
+  body.tide .tide-dh { grid-template-columns: minmax(0, 1fr); gap: 0; text-align: center; }
   body.tide .tide-dh-poster { display: none; }
   body.tide .tide-dh-logo { margin: 24px auto 16px; max-width: 72%; max-height: 110px; object-position: center bottom; }
   body.tide .tide-dh-title { font-size: 34px; }

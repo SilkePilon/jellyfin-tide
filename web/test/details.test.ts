@@ -74,3 +74,13 @@ test('season redirects to its series with the season hint; other types decline',
   expect(await mountDetails(host(), cfg, loc('#/details?id=p1'))).toBeNull();
   expect(host().classList.contains('tide-taken')).toBe(false);
 });
+
+test('stock page is hidden while the item loads (no flash), and restored when loading fails', async () => {
+  let resolve!: (r: Response) => void;
+  vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise<Response>((r) => { resolve = r; }));
+  const p = mountDetails(host(), cfg, loc('#/details?id=m'));
+  expect(host().classList.contains('tide-taken')).toBe(true);
+  resolve(new Response('x', { status: 500 }));
+  await expect(p).rejects.toThrow();
+  expect(host().classList.contains('tide-taken')).toBe(false);
+});

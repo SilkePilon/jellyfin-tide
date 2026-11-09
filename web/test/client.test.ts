@@ -87,3 +87,17 @@ test('url helpers', () => {
   expect(imageUrl('abc', 'Backdrop/0', 1920)).toBe('http://jf.local/Items/abc/Images/Backdrop/0?maxWidth=1920&quality=88');
   expect(streamUrl('vid')).toBe('http://jf.local/Videos/vid/stream?static=true&ApiKey=tok123');
 });
+
+test('waitForSession picks up a token that arrives shortly after ApiClient (no 1 s poll on app open)', async () => {
+  vi.useFakeTimers();
+  let token = '';
+  (window as any).ApiClient = { serverAddress: () => 'http://jf', accessToken: () => token, getCurrentUserId: () => 'u' };
+  let got: unknown = null;
+  void waitForSession(10000).then((s) => (got = s));
+  await vi.advanceTimersByTimeAsync(300);
+  token = 't';
+  await vi.advanceTimersByTimeAsync(60);
+  expect(got).toEqual({ server: 'http://jf', token: 't', userId: 'u' });
+  vi.useRealTimers();
+  delete (window as any).ApiClient;
+});

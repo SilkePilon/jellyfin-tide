@@ -68,3 +68,28 @@ test('subtitle labels: unknown language uses title or Track N, codec names are r
     { index: 5, label: 'English', sub: 'SRT · Forced' },
     { index: 6, label: 'Dutch', sub: 'PGS · SDH' }]);
 });
+
+test('settings sheet keeps its DOM (focus, hover) when the same data arrives again', async () => {
+  const { createSettingsSheet } = await import('../src/player/settingsSheet');
+  const sheet = createSettingsSheet(() => {}, () => {});
+  const d = { audio: [{ index: 1, label: 'English', sub: '' }], subtitles: [], audioIndex: 1, subtitleIndex: null, quality: ['Auto'], qualityCur: 'Auto', speed: 1, subSize: 'M' as const };
+  sheet.setData(d);
+  const first = sheet.el.querySelector('[data-kind="audio"]');
+  sheet.setData({ ...d });
+  expect(sheet.el.querySelector('[data-kind="audio"]')).toBe(first);
+  sheet.setData({ ...d, speed: 2 });
+  expect(sheet.el.querySelector('[data-kind="audio"]')).not.toBe(first);
+});
+
+test('audio labels: no language/title shows "Track N" with the codec, muxer handler names are not titles', () => {
+  const d = streamsToSheet({ Id: 'm', Name: 'M', Type: 'Movie', MediaSources: [{ Id: 'm', MediaStreams: [
+    { Type: 'Audio', Index: 1, DisplayTitle: 'AAC - Stereo - Default', Codec: 'aac', Language: 'und' },
+    { Type: 'Audio', Index: 2, DisplayTitle: 'SoundHandler - AAC - Stereo - Default', Title: 'SoundHandler', Codec: 'aac', Language: 'und' },
+    { Type: 'Audio', Index: 3, DisplayTitle: 'English - AAC - Stereo - Default', Codec: 'aac', Language: 'eng' },
+    { Type: 'Audio', Index: 4, DisplayTitle: 'Director’s commentary - English - AC3 - Stereo', Title: 'Director’s commentary', Codec: 'ac3', Language: 'eng' }] }] } as never);
+  expect(d.audio.map((a) => [a.label, a.sub])).toEqual([
+    ['Track 1', 'AAC · Stereo'],
+    ['Track 2', 'AAC · Stereo'],
+    ['English', 'AAC · Stereo'],
+    ['Director’s commentary', 'English · AC3 · Stereo']]);
+});

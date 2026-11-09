@@ -350,5 +350,36 @@ test('row title link and details route open real pages (desktop)', async ({ page
   await card.locator('.tide-wide-art').click({ position: { x: 40, y: 20 } }); // card click -> ROUTES.details
   await expect.poll(() => new URL(page.url()).hash).toBe(`#/details?id=${id}`);
   await expect(page.locator('.itemDetailPage:not(.hide), #itemDetailPage:not(.hide)').first()).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator('.itemDetailPage:not(.hide) .itemName').filter({ hasText: /\S/ }).first()).toBeVisible({ timeout: 15_000 });
+  // Tide's details page replaces the stock one (which is never shown, not even briefly).
+  await expect(page.locator('#itemDetailPage:not(.hide) .tide-details .tide-dh')).toBeVisible({ timeout: 15_000 });
+});
+
+test('back from a details page returns to the same Home scroll position; a fresh visit starts at the top (desktop)', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  await page.waitForSelector('.tide-home .tide-wide');
+  await page.mouse.move(700, 450);
+  for (let i = 0; i < 5; i++) { await page.mouse.wheel(0, 200); await page.waitForTimeout(60); }
+  await page.waitForTimeout(1200);
+  const pt = await page.evaluate(() => {
+    for (const c of document.querySelectorAll('section.tide-row .tide-wide')) {
+      const r = c.getBoundingClientRect();
+      if (r.top > 200 && r.bottom < innerHeight - 50 && r.left > 0 && r.left < 900) return { x: r.left + 40, y: r.top + 20 };
+    }
+    return null;
+  });
+  expect(pt).not.toBeNull();
+  const at = await page.evaluate(() => Math.round(scrollY));
+  expect(at).toBeGreaterThan(500);
+  await page.mouse.click(pt!.x, pt!.y);
+  await page.waitForSelector('#itemDetailPage:not(.hide) .tide-dh');
+  await page.goBack();
+  await page.waitForSelector('.tide-home .tide-hero-slide.on');
+  await expect.poll(() => page.evaluate(() => Math.round(scrollY))).toBe(at);
+  await page.evaluate(() => { location.hash = '#/movies'; });
+  await page.waitForTimeout(1000);
+  await page.evaluate(() => { location.hash = '#/home'; });
+  await page.waitForSelector('.tide-home .tide-hero-slide.on');
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
 });

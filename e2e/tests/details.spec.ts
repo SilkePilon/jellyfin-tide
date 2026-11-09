@@ -171,6 +171,19 @@ test('phone layout: no poster column, full-width primary', async ({ page, reques
   expect(b!.width).toBeGreaterThan(300);
 });
 
+test('phone series page fits the screen (the next-up strip must not widen the header)', async ({ page, request }, info) => {
+  test.skip(info.project.name !== 'phone', 'phone only');
+  const id = await find(request, 'Series', 'Blender Shorts');
+  await login(page);
+  await page.goto(`/web/#/details?id=${id}`);
+  await expect(page.locator('#itemDetailPage:not(.hide) .tide-nu')).toBeVisible();
+  const vw = page.viewportSize()!.width;
+  for (const sel of ['.tide-dh-col', '.tide-dh-primary', '.tide-nu']) {
+    const box = await page.locator(`#itemDetailPage:not(.hide) ${sel}`).first().boundingBox();
+    expect(box!.x + box!.width, sel).toBeLessThanOrEqual(vw + 1);
+  }
+});
+
 test('play icon inside any progress ring is not rotated (only the ring is)', async ({ page }) => {
   await login(page);
   const out = await page.evaluate(() => ['tide-ring tide-wide-ring', 'tide-end-ring', 'tide-ld-ring'].map((cls) => {

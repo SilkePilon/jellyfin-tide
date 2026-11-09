@@ -21,8 +21,14 @@ export function createBridge(root: HTMLElement): Bridge {
   let duration = 0;
   const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s);
   const click = (s: string) => q<HTMLButtonElement>(s)?.click();
-  const video = () => document.querySelector<HTMLVideoElement>('.videoPlayerContainer video');
-  const slider = () => q<HTMLInputElement>(SEL.slider);
+  // read() runs every animation frame: keep the hot elements and re-query only once they leave the DOM.
+  const keep = <T extends Element>(find: () => T | null) => {
+    let el: T | null = null;
+    return () => (el?.isConnected ? el : (el = find()));
+  };
+  const video = keep(() => document.querySelector<HTMLVideoElement>('.videoPlayerContainer video'));
+  const slider = keep(() => q<HTMLInputElement>(SEL.slider));
+  const volumeSlider = keep(() => q<HTMLInputElement>(SEL.volume));
   const icon = (s: string) => (q(`${s} .material-icons, ${s} .tide-ms`)?.textContent ?? '').trim();
 
   const read = (): PlayerState => {
@@ -40,7 +46,7 @@ export function createBridge(root: HTMLElement): Bridge {
       percent: pct, position, duration,
       paused: v ? v.paused : icon(SEL.pause) === 'play_arrow',
       muted: v ? v.muted : icon(SEL.mute) === 'volume_off',
-      volume: Number(q<HTMLInputElement>(SEL.volume)?.value ?? 100),
+      volume: Number(volumeSlider()?.value ?? 100),
       buffered, hasVideo: !!v,
     };
   };
@@ -69,7 +75,7 @@ export function createBridge(root: HTMLElement): Bridge {
       let frame = 0;
       const tick = () => {
         const s = read();
-        const key = JSON.stringify([s.percent, Math.round(s.position * 10), s.paused, s.muted, s.volume, s.buffered === null ? null : Math.round(s.buffered * 10)]);
+        const key = `${s.percent}|${Math.round(s.position * 10)}|${+s.paused}|${+s.muted}|${s.volume}|${s.buffered === null ? '' : Math.round(s.buffered * 10)}`;
         if (key !== last) { last = key; cb(s); }
         frame = requestAnimationFrame(tick);
       };

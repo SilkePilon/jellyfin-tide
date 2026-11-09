@@ -1,5 +1,6 @@
 import './player.css';
 import { jfApiClient } from '../api/client';
+import { invalidate } from '../api/cache';
 import { play } from '../api/actions';
 import { getEpisodes, getItem, type JfDetail } from '../api/item';
 import { fmtRuntime, h, icon } from '../ui/dom';
@@ -22,6 +23,7 @@ import type { ClientConfig, JfItem } from '../types';
 const loading = createLoading();
 
 export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise<() => void> {
+  invalidate(); // resume points / Next Up change while watching
   host.classList.add('tide-taken');
   const root = h('div', { class: 'tide-player' });
   document.body.append(root);
@@ -175,6 +177,7 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
     loading.hide();
     root.remove();
     host.classList.remove('tide-taken');
+    invalidate();
   };
 }
 

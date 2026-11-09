@@ -1,0 +1,24 @@
+/* See boot/cloak.ts. Only the stock page contents hide (the app bar stays); Tide's own roots stay visible. */
+html.tide-cloak #indexPage.homePage > :not(.tide-home),
+html.tide-cloak #itemDetailPage > :not(.tide-details) {
+  visibility: hidden !important;
+}
+/* A quiet spinner, faded in late so quick loads never show it. */
+.tide-cloak-ind {
+  position: fixed; left: 50%; top: 50%; z-index: 1400; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border-radius: 50%; border: 3px solid rgba(255, 255, 255, .16); border-top-color: #fff;
+  opacity: 0; visibility: hidden; pointer-events: none;
+}
+html.tide-cloak .tide-cloak-ind {
+  visibility: visible; opacity: 1; animation: tide-cloak-spin .8s linear infinite;
+  transition: opacity .3s ease .35s, visibility 0s;
+}
+/* Once Tide's page has content the spinner must not sit on top of it. */
+html.tide-cloak:has(.tide-home > .tide-hero, .tide-home > .tide-hero-spacer, .tide-details > .tide-dh) .tide-cloak-ind { opacity: 0; }
+@keyframes tide-cloak-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { html.tide-cloak .tide-cloak-ind { animation-duration: 2.4s; } }
+/* jellyfin-web's own page spinner: while cloaked and on Tide's pages it belongs to the hidden stock page (and would sit
+   next to / over Tide's content). */
+html.tide-cloak .docspinner, html.tide-cloak .mdl-spinner,
+body.tide-on-home .docspinner, body.tide-on-home .mdl-spinner,
+body.tide-on-details .docspinner, body.tide-on-details .mdl-spinner { display: none !important; }

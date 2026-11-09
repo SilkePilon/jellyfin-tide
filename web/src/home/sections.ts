@@ -3,6 +3,8 @@ import { api, imageUrl } from '../api/client';
 import { openDetails, play, setFavourite } from '../api/actions';
 import { h, icon } from '../ui/dom';
 import { toggleButton } from '../ui/toggle';
+import { cached, HOME_TTL, peek } from '../api/cache';
+import { backdropOf, chain, logoOf, primaryOf, sources } from '../ui/images';
 import type { RenderedRow } from './rowView';
 import type { RowContext, RowDef } from './rows';
 import type { JfItem } from '../types';
@@ -18,11 +20,10 @@ function lazySection(section: HTMLElement, load: () => Promise<void>): () => voi
   return () => io.disconnect();
 }
 
-function logoOrTitle(id: string, title: string, cls: string): HTMLElement {
+function logoOrTitle(item: JfItem, title: string, cls: string): HTMLElement {
   const text = () => h('span', { class: `${cls} ${cls}-text` }, title);
-  const img = h('img', { class: cls, src: imageUrl(id, 'Logo', 480), alt: title, loading: 'lazy', decoding: 'async' }) as HTMLImageElement;
-  img.onerror = () => img.replaceWith(text());
-  return img;
+  const img = h('img', { class: cls, alt: title, loading: 'lazy', decoding: 'async' }) as HTMLImageElement;
+  return chain(img, sources([logoOf(item, 480), item.Id, 'Logo', 480]), () => img.replaceWith(text())) ? img : text();
 }
 
 // ── New this week (bento) ─────────────────────────────────────────────────────────────────────────────────────────
@@ -31,20 +32,26 @@ export function renderBento(def: RowDef, ctx: RowContext): RenderedRow {
   const grid = h('div', { class: 'tide-bento' });
   const section = h('section', { class: 'tide-row tide-row-bento', 'data-row': def.id }, h('div', { class: 'tide-row-head' }, h('h2', { class: 'tide-row-title' }, def.title(ctx))), grid);
   let disposed = false;
+  const show = (list: JfItem[]) => {
+    if (list.length < 3) { section.hidden = true; return; }
+    grid.dataset.count = String(list.length);
+    grid.replaceChildren(...list.map((item, i) => {
+      const w = i === 0 ? 1280 : 720;
+      const art = h('img', { class: 'tide-bento-art', alt: '', loading: 'lazy', decoding: 'async' }) as HTMLImageElement;
+      const hasArt = chain(art, sources([backdropOf(item, w), item.Id, 'Backdrop/0', w], [primaryOf(item, 720), item.Id, 'Primary', 720]), () => art.remove());
+      return h('a', { class: `tide-bento-tile tide-bento-${i}`, href: '#', 'data-id': item.Id, 'aria-label': item.Name,
+        onclick: (e: Event) => { e.preventDefault(); void openDetails(item.Id); } },
+        h('span', { class: 'tide-card-shadow', 'aria-hidden': 'true' }),
+        hasArt ? art : null, logoOrTitle(item, item.Name, 'tide-bento-logo'), h('span', { class: 'tide-chip tide-chip-w tide-bento-new' }, 'NEW'));
+    }));
+  };
+  const ready = peek<JfItem[]>(`row:${def.id}`, HOME_TTL);
+  if (ready) { show(ready.v); return { el: section, dispose: () => { disposed = true; } }; }
   const stop = lazySection(section, async () => {
     try {
-      const list = await def.fetch(ctx);
+      const list = await cached(`row:${def.id}`, HOME_TTL, () => def.fetch(ctx));
       if (disposed) return;
-      if (list.length < 3) { section.hidden = true; return; }
-      grid.dataset.count = String(list.length);
-      grid.replaceChildren(...list.map((item, i) => {
-        const art = h('img', { class: 'tide-bento-art', alt: '', loading: 'lazy', decoding: 'async', src: imageUrl(item.Id, 'Backdrop/0', i === 0 ? 1280 : 720) }) as HTMLImageElement;
-        art.onerror = () => { if (art.dataset.fallback) { art.remove(); return; } art.dataset.fallback = '1'; art.src = imageUrl(item.Id, 'Primary', 720); };
-        return h('a', { class: `tide-bento-tile tide-bento-${i}`, href: '#', 'data-id': item.Id, 'aria-label': item.Name,
-          onclick: (e: Event) => { e.preventDefault(); void openDetails(item.Id); } },
-          h('span', { class: 'tide-card-shadow', 'aria-hidden': 'true' }),
-          art, logoOrTitle(item.Id, item.Name, 'tide-bento-logo'), h('span', { class: 'tide-chip tide-chip-w tide-bento-new' }, 'NEW'));
-      }));
+      show(list);
     } catch (e) {
       console.warn('[Tide] new this week failed', e);
       section.hidden = true;
@@ -120,11 +127,16 @@ export function renderDiscover(def: RowDef, ctx: RowContext): RenderedRow {
   const section = h('section', { class: 'tide-row tide-row-disc', 'data-row': def.id }, h('div', { class: 'tide-row-head' }, h('h2', { class: 'tide-row-title' }, def.title(ctx))), wrap);
   let disposed = false;
   let cleanup: (() => void) | null = null;
-  const stop = lazySection(section, async () => {
-    const picks = await pickDiscover(ctx).catch(() => [] as DiscoverItem[]);
-    if (disposed) return;
+  const show = (picks: DiscoverItem[]) => {
     if (picks.length < 5) { section.hidden = true; return; }
     cleanup = mountConstellation(wrap, picks);
+  };
+  const ready = peek<DiscoverItem[]>('row:discover', HOME_TTL);
+  if (ready) { show(ready.v); return { el: section, dispose: () => { disposed = true; cleanup?.(); } }; }
+  const stop = lazySection(section, async () => {
+    const picks = await cached('row:discover', HOME_TTL, () => pickDiscover(ctx)).catch(() => [] as DiscoverItem[]);
+    if (disposed) return;
+    show(picks);
   });
   return { el: section, dispose: () => { disposed = true; stop(); cleanup?.(); } };
 }
@@ -139,7 +151,7 @@ export function mountConstellation(wrap: HTMLElement, picks: DiscoverItem[]): ()
   const infoBox = h('div', { class: 'tide-disc-under' });
   const posters = picks.map((d, i) => {
     const p = h('button', { class: 'tide-disc-poster', type: 'button', 'aria-label': d.item.Name, 'data-i': i },
-      h('img', { src: imageUrl(d.item.Id, 'Primary', 500), alt: '', loading: 'lazy', decoding: 'async', draggable: 'false' }));
+      h('img', { src: primaryOf(d.item, 500) || imageUrl(d.item.Id, 'Primary', 500), alt: '', loading: 'lazy', decoding: 'async', draggable: 'false' }));
     return p;
   });
   const pills = Object.keys(PILL_SLOTS).map((k) => [Number(k), h('span', { class: 'tide-disc-pill' })] as const);
@@ -149,7 +161,8 @@ export function mountConstellation(wrap: HTMLElement, picks: DiscoverItem[]): ()
   let order = picks.map((_, i) => i); // order[slot] = pick index
   const setBg = (idx: number) => {
     const next = bgs[bgi ^ 1]!;
-    next.style.backgroundImage = `url("${imageUrl(picks[idx]!.item.Id, 'Backdrop/0', 160)}")`;
+    const it = picks[idx]!.item;
+    next.style.backgroundImage = `url("${backdropOf(it, 160) || imageUrl(it.Id, 'Backdrop/0', 160)}")`;
     next.classList.add('on');
     bgs[bgi]!.classList.remove('on');
     bgi ^= 1;

@@ -78,6 +78,7 @@ body.tide .tide-wide:focus-visible { outline: none; }
 /* Square / round (music) */
 body.tide .tide-sq-img { aspect-ratio: 1; border-radius: var(--tide-radius); background: var(--tide-s1) center/cover; box-shadow: 0 10px 24px rgba(0,0,0,.55); transition: transform .45s var(--tide-ease); }
 body.tide .tide-sq-img.tide-round { border-radius: 50%; }
+body.tide .tide-sq-img > img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; -webkit-user-drag: none; }
 body.tide .tide-card-sq:hover .tide-sq-img { transform: scale(1.04); }
 
 @media (prefers-reduced-motion: reduce) {

@@ -4,6 +4,8 @@ import { openDetails, play, setFavourite } from '../api/actions';
 import { fmtRuntime, h, icon } from '../ui/dom';
 import { toggleButton } from '../ui/toggle';
 import { progressRing } from '../ui/cards';
+import { heroWidth } from '../ui/images';
+export { heroWidth };
 import type { ClientConfig, HeroItem } from '../types';
 
 export type TrailerSource = { kind: 'local'; url: string } | { kind: 'youtube'; id: string };
@@ -67,8 +69,10 @@ export function phoneMeta(item: HeroItem, chip: string | null): HTMLElement {
 }
 
 /** Phone uses the Thumb image (a wider-subject crop) when the server says the item has one; otherwise the Backdrop. */
-export function backgroundUrl(item: Pick<HeroItem, 'id' | 'hasThumb'>, phone = isPhone()): string {
-  return phone && item.hasThumb ? imageUrl(item.id, 'Thumb', 1280) : imageUrl(item.id, 'Backdrop/0', 1920);
+export function backgroundUrl(item: Pick<HeroItem, 'id' | 'hasThumb' | 'imageTags'>, phone = isPhone()): string {
+  return phone && item.hasThumb
+    ? imageUrl(item.id, 'Thumb', Math.min(1280, heroWidth()), item.imageTags?.Thumb)
+    : imageUrl(item.id, 'Backdrop/0', heroWidth(), item.imageTags?.Backdrop);
 }
 
 /** Desktop meta (X1): one quiet line, "2022 · Action · 2h 10m · ★ 8.2". Quality lives on the detail page. */
@@ -85,12 +89,24 @@ export function desktopMeta(item: HeroItem, chip: string | null): HTMLElement {
   return h('div', { class: 'tide-hero-meta' }, chip === 'NEW' ? h('span', { class: 'tide-chip tide-chip-w' }, 'NEW') : null, ...dotted);
 }
 
+/** Start loading a slide's backdrop and logo (idempotent). */
+function loadSlide(s: HTMLElement | undefined): void {
+  const bg = s?.querySelector<HTMLElement>('.tide-hero-bg[data-src]');
+  if (bg) { bg.style.backgroundImage = `url("${bg.dataset.src}")`; delete bg.dataset.src; }
+  const logo = s?.querySelector<HTMLImageElement>('img.tide-hero-logo[data-src]');
+  if (logo) { logo.src = logo.dataset.src!; delete logo.dataset.src; }
+}
+
+/** The next slide's images are fetched this long after a slide starts, so they are ready before it shows. */
+const PRELOAD_MS = 2500;
+
 function slide(item: HeroItem, idx: number): HTMLElement {
   const r = reasonLine(item);
-  const bg = h('div', { class: 'tide-hero-bg' });
-  bg.style.backgroundImage = `url("${backgroundUrl(item)}")`;
+  // Images load when the slide is shown (loadSlide), not all at once: the first slide's 1920px backdrop no longer
+  // competes with every other slide's.
+  const bg = h('div', { class: 'tide-hero-bg', 'data-src': backgroundUrl(item) });
   const title = () => h('div', { class: 'tide-hero-title' }, item.name);
-  const logo = item.hasLogo ? h('img', { class: 'tide-hero-logo', src: imageUrl(item.id, 'Logo', 800), alt: item.name }) : title();
+  const logo = item.hasLogo ? h('img', { class: 'tide-hero-logo', 'data-src': imageUrl(item.id, 'Logo', 800, item.imageTags?.Logo), alt: item.name }) : title();
   if (logo instanceof HTMLImageElement) logo.onerror = () => logo.replaceWith(title());
   const meta = desktopMeta(item, r.chip);
   const episode = r.episode
@@ -115,7 +131,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
   const muteBtn = h('button', { class: 'tide-ib tide-hero-mute', 'aria-label': 'Unmute' }, icon('volume_off'));
   const strip = h('div', { class: 'tide-t3' }, ...items.map((it, i) => {
     const text = () => h('span', { class: 'tide-t3-text' }, it.name);
-    const logo = it.hasLogo ? h('img', { src: imageUrl(it.id, 'Logo', 260), alt: it.name }) : text();
+    const logo = it.hasLogo ? h('img', { src: imageUrl(it.id, 'Logo', 260, it.imageTags?.Logo), alt: it.name }) : text();
     if (logo instanceof HTMLImageElement) logo.onerror = () => logo.replaceWith(text());
     return h('button', { class: 'tide-t3-item', 'data-i': i, 'aria-label': it.name, onclick: () => go(i) }, logo, h('span', { class: 'tide-t3-bar' }, h('i')));
   }));
@@ -136,6 +152,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
   let hsTimer: ReturnType<typeof setInterval> | undefined;
   let playOffTimer: ReturnType<typeof setTimeout> | undefined;
   let silentTimer: ReturnType<typeof setTimeout> | undefined;
+  let preloadTimer: ReturnType<typeof setTimeout> | undefined;
   let tabHidden = typeof document !== 'undefined' && document.hidden === true;
   let offscreen = false;
   let paused = tabHidden;
@@ -344,6 +361,10 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
       stopVideo(slides[cur]!);
     }
     cur = ((n % items.length) + items.length) % items.length;
+    loadSlide(slides[cur]);
+    if (preloadTimer !== undefined) clearTimeout(preloadTimer);
+    const following = slides[(cur + 1) % items.length];
+    preloadTimer = setTimeout(() => { preloadTimer = undefined; loadSlide(following); }, PRELOAD_MS);
     slides.forEach((_, i) => setActive(i, i === cur));
     onChange?.(items[cur]!);
     trailerStarted = false;
@@ -427,6 +448,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     destroy(): void {
       destroyed = true;
       clearTimers();
+      if (preloadTimer !== undefined) clearTimeout(preloadTimer);
       gen++;
       slides.forEach(stopVideo);
       document.removeEventListener('visibilitychange', onVis);

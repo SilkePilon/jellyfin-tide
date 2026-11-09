@@ -2,6 +2,7 @@ import { mountHome } from '../home/home';
 import { ROUTES, SELECTORS, WEB_VERIFIED_VERSION } from './selectors';
 import { onLocationChange } from './location';
 import type { ClientConfig } from '../types';
+import { hold, release } from '../boot/cloak';
 
 export function shouldTakeOver(cfg: ClientConfig, loc: Location = location): boolean {
   return cfg.enableHome && ROUTES.isHome(loc);
@@ -28,6 +29,9 @@ export async function adminToast(message: string): Promise<void> {
   } catch { /* storage blocked */ }
 }
 
+/** How long a takeover waits for jellyfin-web to create its page host before giving up (stock page stays). */
+export const HOST_WAIT_MS = 5000;
+
 const nextFrame = (cb: () => void): void => {
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(cb);
   else setTimeout(cb, 16);
@@ -37,6 +41,8 @@ export interface Takeover {
   id: string;
   /** Class of the root element mount() adds as a direct child of the host. */
   rootClass: string;
+  /** Hide the stock page (boot/cloak.ts) while this takeover mounts. */
+  cloak?: boolean;
   matches(cfg: ClientConfig, loc: Location): boolean;
   /** Identity of what is shown (home: constant; details: item id). A change remounts even on the same host. */
   key(loc: Location): string;
@@ -48,6 +54,7 @@ export interface Takeover {
 export const HOME_TAKEOVER: Takeover = {
   id: 'home',
   rootClass: 'tide-home',
+  cloak: true,
   matches: (cfg, loc) => shouldTakeOver(cfg, loc),
   key: () => 'home',
   findHost: () => document.querySelector<HTMLElement>(SELECTORS.homeHost),
@@ -89,19 +96,28 @@ export function initTakeover(t: Takeover, cfg: ClientConfig): () => void {
     u?.();
   }
 
+  const cloakId = `takeover:${t.id}`;
+  const unCloak = () => { if (t.cloak) release(cloakId); };
+
   async function sync(): Promise<void> {
     if (disposed) return;
-    if (!active()) { teardown(); return; }
+    if (!active()) { unCloak(); teardown(); return; }
     if (mounting) return;
     if (unmount) {
-      if (mountedOk()) return;
+      if (mountedOk()) { unCloak(); return; }
       teardown();
     }
+    // A host that already failed / declined for this key stays stock: don't cloak it.
+    const known = t.findHost();
+    if (t.cloak && (!known || canTry(known))) hold(cloakId);
     mounting = true;
     try {
+      // The host usually appears a few frames after the route change: look every frame (a cheap querySelector)
+      // rather than sleeping 250 ms between looks, which delayed every details page by up to a quarter second.
       let host = t.findHost();
-      for (let i = 0; !host && i < 20 && active() && !disposed; i++) {
-        await new Promise((r) => setTimeout(r, 250));
+      const until = Date.now() + HOST_WAIT_MS;
+      while (!host && Date.now() < until && active() && !disposed) {
+        await new Promise<void>((r) => nextFrame(r));
         host = t.findHost();
       }
       if (!active() || disposed) return;
@@ -133,6 +149,7 @@ export function initTakeover(t: Takeover, cfg: ClientConfig): () => void {
       }
     } finally {
       mounting = false;
+      unCloak();
     }
     schedule();
   }
@@ -155,6 +172,7 @@ export function initTakeover(t: Takeover, cfg: ClientConfig): () => void {
 
   return () => {
     disposed = true;
+    unCloak();
     obs.disconnect();
     unsubscribe();
     teardown();

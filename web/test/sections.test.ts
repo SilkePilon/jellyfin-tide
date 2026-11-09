@@ -1,3 +1,4 @@
+import { invalidate } from '../src/api/cache';
 import { mountConstellation, moodFor, pickDiscover, renderBento, SLOTS } from '../src/home/sections';
 import { ROWS } from '../src/home/rows';
 import type { JfItem, UserPrefs } from '../src/types';
@@ -79,6 +80,7 @@ test('bento hides with fewer than 3 new items and shows NEW tiles otherwise', as
   const few = { ...ROWS.newThisWeek, fetch: async () => [item('a'), item('b')] };
   const { el: hidden } = renderBento(few, ctx());
   await vi.waitFor(() => expect(hidden.hidden).toBe(true));
+  invalidate(); // a later visit, after the row cache expired
   const many = { ...ROWS.newThisWeek, fetch: async () => [item('a'), item('b'), item('c'), item('d'), item('e')] };
   const { el } = renderBento(many, ctx());
   await vi.waitFor(() => expect(el.querySelectorAll('.tide-bento-tile')).toHaveLength(5));
