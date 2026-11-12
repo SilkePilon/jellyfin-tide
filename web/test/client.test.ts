@@ -101,3 +101,19 @@ test('waitForSession picks up a token that arrives shortly after ApiClient (no 1
   vi.useRealTimers();
   delete (window as any).ApiClient;
 });
+
+test('api(): an external AbortSignal aborts the request', async () => {
+  (window as any).ApiClient = { serverAddress: () => 'http://jf', accessToken: () => 't', getCurrentUserId: () => 'u' };
+  let seen: AbortSignal | undefined;
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (_u, init) => {
+    seen = (init as RequestInit).signal ?? undefined;
+    return new Promise<Response>((_res, rej) => seen!.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError'))));
+  });
+  const { api } = await import('../src/api/client');
+  const ctrl = new AbortController();
+  const p = api('/x', { signal: ctrl.signal });
+  ctrl.abort();
+  await expect(p).rejects.toThrow();
+  expect(seen?.aborted).toBe(true);
+  vi.restoreAllMocks();
+});
