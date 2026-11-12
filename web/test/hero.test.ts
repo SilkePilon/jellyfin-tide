@@ -381,3 +381,35 @@ test('hero backdrop width follows the screen (device pixels, 320px steps, max 19
   expect(heroWidth(390, 3)).toBe(1280);
   expect(heroWidth(2560, 1)).toBe(1920);
 });
+
+test('jank guard: no trailer starts while the user is scrolling; it waits for 1.5 s of quiet', async () => {
+  vi.useFakeTimers();
+  const hero = createHero([base, { ...base, id: 'h2' }], cfg);
+  await vi.advanceTimersByTimeAsync(2_500);
+  window.dispatchEvent(new Event('wheel'));
+  await vi.advanceTimersByTimeAsync(1_000); // 3.5 s since start, but only 1 s quiet
+  expect(fetch).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(700);
+  expect(fetch).toHaveBeenCalled();
+  hero.destroy();
+});
+
+test('jank guard: scrolling while the YouTube embed is still loading drops it and retries once quiet', async () => {
+  vi.useFakeTimers();
+  const hero = createHero([base, { ...base, id: 'h2' }], cfg);
+  await vi.advanceTimersByTimeAsync(3_100);
+  const slide = hero.el.querySelector('.tide-hero-slide.on')!;
+  expect(slide.querySelector('iframe')).not.toBeNull();
+  window.dispatchEvent(new Event('scroll'));
+  expect(slide.querySelector('iframe')).toBeNull(); // its scripts stop with it
+  await vi.advanceTimersByTimeAsync(1_000);
+  expect(slide.querySelector('iframe')).toBeNull();
+  await vi.advanceTimersByTimeAsync(4_000);
+  const f = slide.querySelector('iframe')!;
+  expect(f.getAttribute('src')).toContain('Klc__shdj88'); // same source again, not skipped as failed
+  f.dispatchEvent(new Event('load'));
+  await vi.advanceTimersByTimeAsync(1_600); // loaded: from now on scrolling keeps it
+  window.dispatchEvent(new Event('scroll'));
+  expect(slide.querySelector('iframe')).not.toBeNull();
+  hero.destroy();
+});

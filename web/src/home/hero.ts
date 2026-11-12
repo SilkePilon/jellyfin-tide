@@ -11,6 +11,12 @@ import type { ClientConfig, HeroItem } from '../types';
 export type TrailerSource = { kind: 'local'; url: string } | { kind: 'youtube'; id: string };
 
 const START_DELAY = 3000;
+/**
+ * Loading the YouTube embed runs ~2.5 s of script on the page's main thread (150–385 ms chunks; Jellyfin Desktop and
+ * headless Chromium keep the iframe in-process). Tide's wheel smoothing also runs there, so a load during a scroll
+ * freezes it: trailers only start after this much scroll-free time, and a still-loading embed is dropped on scroll.
+ */
+export const QUIET_MS = 1500;
 const LOAD_TIMEOUT = 6000;
 const YT_ORIGIN = 'https://www.youtube-nocookie.com';
 /** YouTube draws its own controls (centre pause button, title bar, logo) for ~4 s after every start / resume (measured). */
@@ -160,6 +166,9 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
   let offscreen = false;
   let paused = tabHidden;
   let trailerStarted = false;
+  let lastInput = -Infinity;
+  /** Cancels the YouTube embed while it is still loading (null once it plays or when none loads). */
+  let ytLoading: (() => void) | null = null;
   let remainingMs = slotMs;
   let slotStartedAt = 0;
   /** In-flight trailer attempt (until it plays or fails); its load timeout is suspended while paused. */
@@ -178,6 +187,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     playOffTimer = silentTimer = revealTimer = undefined;
     attempt = null;
     deferred = null;
+    ytLoading = null;
   };
 
   /** `.tide-hero-playing` on the hero while the active slide shows a trailer (phone shows the mute button only then). */
@@ -240,8 +250,14 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     }
   }
 
-  function startTrailerTimer(i: number, g: number): void {
-    startTimer = setTimeout(() => { trailerStarted = true; void startTrailer(i, g); }, START_DELAY);
+  function startTrailerTimer(i: number, g: number, ms = START_DELAY): void {
+    startTimer = setTimeout(() => {
+      startTimer = undefined;
+      const quiet = Date.now() - lastInput;
+      if (quiet < QUIET_MS) { startTrailerTimer(i, g, QUIET_MS - quiet); return; }
+      trailerStarted = true;
+      void startTrailer(i, g);
+    }, ms);
   }
 
   async function startTrailer(i: number, g: number): Promise<void> {
@@ -271,6 +287,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     const fail = (force = false) => {
       if ((done && !force) || g !== gen || box.firstChild !== node) return;
       done = true;
+      ytLoading = null;
       if (loadTimer !== undefined) { clearTimeout(loadTimer); loadTimer = undefined; }
       if (hsTimer !== undefined) { clearInterval(hsTimer); hsTimer = undefined; }
       s.classList.remove('vidon');
@@ -283,6 +300,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     const ok = () => {
       if (done || g !== gen) return;
       done = true;
+      ytLoading = null;
       if (loadTimer !== undefined) { clearTimeout(loadTimer); loadTimer = undefined; }
       box.classList.add('show');
     };
@@ -334,6 +352,18 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
       }, { once: true });
       node = f;
       box.replaceChildren(f);
+      // Scrolling before it is ready: drop the embed (its remaining script work goes with it) and retry when quiet.
+      ytLoading = () => {
+        ytLoading = null;
+        if (done || g !== gen || box.firstChild !== node) return;
+        done = true;
+        if (loadTimer !== undefined) { clearTimeout(loadTimer); loadTimer = undefined; }
+        if (hsTimer !== undefined) { clearInterval(hsTimer); hsTimer = undefined; }
+        attempt = null;
+        box.replaceChildren();
+        trailerStarted = false;
+        if (!paused) startTrailerTimer(i, g, QUIET_MS);
+      };
     }
   }
 
@@ -441,6 +471,9 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
   });
 
   const onVis = () => { tabHidden = document.hidden; setPaused(); };
+  const onUserScroll = () => { lastInput = Date.now(); ytLoading?.(); };
+  const SCROLL_INPUTS = ['wheel', 'touchmove', 'scroll'] as const;
+  SCROLL_INPUTS.forEach((t) => window.addEventListener(t, onUserScroll, { passive: true }));
   document.addEventListener('visibilitychange', onVis);
   window.addEventListener('message', onYtMessage);
   const io = typeof IntersectionObserver === 'function'
@@ -466,6 +499,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
       gen++;
       slides.forEach(stopVideo);
       document.removeEventListener('visibilitychange', onVis);
+      SCROLL_INPUTS.forEach((t) => window.removeEventListener(t, onUserScroll));
       window.removeEventListener('message', onYtMessage);
       io?.disconnect();
     },
