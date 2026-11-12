@@ -1,17 +1,10 @@
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
+import { login } from './auth';
 
 const CLIENT = 'MediaBrowser Client="e2e", Device="e2e", DeviceId="e2e", Version="1"';
 const PLUGIN_ID = '7c1d3e5a-9b2f-4c6d-8e0a-1f3b5d7e9a2c';
 test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } });
 
-async function login(page: Page) {
-  await page.goto('/web/');
-  await page.waitForSelector('input[type=password]');
-  await page.fill('input[type=text], #txtManualName', 'tide');
-  await page.fill('input[type=password]', 'tide');
-  await page.keyboard.press('Enter');
-  await page.waitForSelector('.tide-home', { timeout: 30_000 });
-}
 async function auth(request: APIRequestContext) {
   const r = await request.post('/Users/AuthenticateByName', { headers: { Authorization: CLIENT }, data: { Username: 'tide', Pw: 'tide' } });
   const j = await r.json();

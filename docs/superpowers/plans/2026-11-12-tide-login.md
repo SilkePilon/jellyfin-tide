@@ -494,12 +494,27 @@ function waitFor<T>(find: () => T | null | undefined | false, ms: number): Promi
   });
 }
 
+/**
+ * Set an input the way a user would: through the native value setter, then `input`. React-controlled inputs (12.4's
+ * forgot-password pages) ignore a plain `el.value = …` and re-render back to their own (empty) state.
+ */
 const setValue = (el: HTMLInputElement | null, v: string) => {
   if (!el) return;
-  el.value = v;
+  const native = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  if (native) native.call(el, v);
+  else el.value = v;
   el.dispatchEvent(new Event('input', { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
 };
+/** jellyfin-web initialises a page (and clears its form) just after showing it: fill only once that is done. */
+export const PAGE_SETTLE_MS = 400;
+const settle = () => new Promise((r) => setTimeout(r, PAGE_SETTLE_MS));
+/** Set a field, give the page a moment, and set it again if the page reset it meanwhile. */
+async function fill(el: HTMLInputElement | null, v: string): Promise<void> {
+  setValue(el, v);
+  await new Promise((r) => setTimeout(r, 50));
+  if (el && el.value !== v) setValue(el, v);
+}
 const submit = (form: HTMLFormElement) => {
   if (typeof form.requestSubmit === 'function') form.requestSubmit();
   else form.querySelector<HTMLElement>('[type="submit"]')?.click();
@@ -511,7 +526,11 @@ export function newestDialog(): HTMLElement | null {
 }
 export function dialogMessage(d: Element): string {
   const body = d.querySelector('.formDialogContent') ?? d.querySelector('.text') ?? d;
-  return (body.textContent ?? '').replace(/\s+/g, ' ').trim();
+  // Text of separate elements joined with spaces ("…proceed" + "Enter PIN…" must not run together).
+  const parts: string[] = [];
+  const walk = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) parts.push(n.textContent ?? '');
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 const newDialog = (before: Element | null) => () => { const d = newestDialog(); return d && d !== before ? d : null; };
 
@@ -551,7 +570,8 @@ export function cancelQuickConnect(): void {
 export async function forgotPassword(name: string, timeoutMs = 8000): Promise<{ message: string; pin: boolean }> {
   loginPage()?.querySelector<HTMLElement>('.btnForgotPassword')?.click();
   const page = await waitFor(() => visible('#forgotPasswordPage'), 3000);
-  setValue(page.querySelector('#txtName'), name);
+  await settle();
+  await fill(page.querySelector('#txtName'), name);
   const before = newestDialog();
   const form = page.querySelector<HTMLFormElement>('form');
   if (form) submit(form);
@@ -563,7 +583,8 @@ export async function forgotPassword(name: string, timeoutMs = 8000): Promise<{ 
 
 export async function submitPin(pin: string, timeoutMs = 8000): Promise<{ message: string; done: boolean }> {
   const page = await waitFor(() => visible('.forgotPasswordPinPage'), 3000);
-  setValue(page.querySelector('#txtPin'), pin);
+  await settle();
+  await fill(page.querySelector('#txtPin'), pin);
   const before = newestDialog();
   const form = page.querySelector<HTMLFormElement>('form');
   if (form) submit(form);
@@ -1658,8 +1679,18 @@ import type { Page } from '@playwright/test';
 /** Sign in through whichever sign-in is showing: Tide's login screen (0.6.0+) or the stock page. */
 export async function login(page: Page, user = 'tide', password = 'tide'): Promise<void> {
   await page.goto('/web/');
-  await page.waitForSelector('.tide-lg-card, #loginPage:not(.hide) input[type=password]', { timeout: 30_000 });
-  if (await page.locator('.tide-lg-card').count()) {
+  await fillSignIn(page, user, password);
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('.tide-home', { timeout: 30_000 });
+  // Clicking "Other user" leaves the pointer mid-screen, where it would hover whatever Home puts there.
+  await page.mouse.move(0, 0);
+}
+
+/** Fill the sign-in that is showing (Tide's card or the stock page) without submitting it. */
+export async function fillSignIn(page: Page, user = 'tide', password = 'tide'): Promise<void> {
+  // Prefer Tide's card: a selector list would latch onto the hidden stock field that comes first in the DOM.
+  const tide = await page.locator('.tide-lg-card').waitFor({ timeout: 15_000 }).then(() => true, () => false);
+  if (tide) {
     const other = page.locator('.tide-lg-card [data-lg="other"]');
     if (await other.count()) await other.click();
     await page.fill('.tide-lg-card input[name="username"]', user);
@@ -1670,8 +1701,6 @@ export async function login(page: Page, user = 'tide', password = 'tide'): Promi
     await page.fill('#loginPage:not(.hide) #txtManualName', user);
     await page.fill('#loginPage:not(.hide) #txtManualPassword', password);
   }
-  await page.keyboard.press('Enter');
-  await page.waitForSelector('.tide-home', { timeout: 30_000 });
 }
 ```
 
@@ -1679,6 +1708,7 @@ In each of `home.spec.ts`, `details.spec.ts`, `player.spec.ts` and `search.spec.
 1. Delete the local `async function login(page: Page) { … }`.
 2. Add `import { login } from './auth';`.
 3. Keep `Page` in the existing import only where it is still used.
+4. In `home.spec.ts`, the two tests that sign in by hand (`disabling home restores stock home` and `boot survives a slow login`) use `fillSignIn(page)` then Enter instead of the stock `input[type=password]` selectors, which never appear under Tide's profile picker. `disabling home` restores `EnableHome` with a fresh `authHeaders(request)`, so a failed body cannot leave Home off for later tests. The slow-login test waits for `.tide-lg-card` before its 12 s pause.
 
 In `e2e/setup.mjs`, after the library folders loop, add idempotent test profiles:
 ```js
@@ -1712,7 +1742,10 @@ async function auth(request: APIRequestContext) {
   return { headers: { Authorization: `${CLIENT}, Token="${j.AccessToken}"` } };
 }
 const currentUserName = (page: import('@playwright/test').Page) =>
-  page.evaluate(async () => { const c = (window as any).ApiClient; return (await c.getCurrentUser()).Name as string; });
+  // getCurrentUser() rejects with no reason while nobody is signed in (mid switch), so that reads as null.
+  page.evaluate(async () => {
+    try { return ((await (window as any).ApiClient?.getCurrentUser())?.Name ?? null) as string | null; } catch { return null; }
+  }).catch(() => null);
 
 test('profiles over the poster wall; the stock page stays hidden', async ({ page }) => {
   await page.goto('/web/');
@@ -1738,7 +1771,7 @@ test('wrong password shows the error in the card; right password signs in', asyn
 test('a profile without a password signs in with an empty field', async ({ page }) => {
   await page.goto('/web/');
   await page.locator('.tide-lg-person', { hasText: 'noah' }).click();
-  await page.keyboard.press('Enter');
+  await page.locator('.tide-lg-card button[type="submit"]').click();
   await page.waitForSelector('.tide-home', { timeout: 30_000 });
   expect(await currentUserName(page)).toBe('noah');
 });
@@ -1761,7 +1794,7 @@ test('Forgot password shows Jellyfin\'s answer and asks for the PIN', async ({ p
   await page.locator('.tide-lg-person', { hasText: 'mila' }).click();
   await page.locator('.tide-lg-card [data-lg="forgot"]').click();
   await expect(page.locator('.tide-lg-card input[name="username"]')).toHaveValue('mila');
-  await page.keyboard.press('Enter');
+  await page.locator('.tide-lg-card button[type="submit"]').click();
   await expect(page.locator('.tide-lg-card[data-state="pin"]')).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('.tide-lg-msg').first()).toContainText('server');
 });

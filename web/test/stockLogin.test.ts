@@ -29,7 +29,7 @@ const dialog = (id: string, text: string, button = 'Got It', onClick?: () => voi
   const d = document.createElement('div');
   d.className = 'dialog opened';
   if (id) d.id = id;
-  d.innerHTML = `<div class="formDialogHeader"><h1>Title</h1></div><div class="formDialogContent"><div class="text">${text}</div></div><button>${button}</button>`;
+  d.innerHTML = `<div class="formDialogHeader"><h1>Title</h1></div><div class="formDialogContent"><div class="text">${text.replace(' Enter PIN', '</div><div>Enter PIN')}</div></div><button>${button}</button>`;
   d.querySelector('button')!.addEventListener('click', () => { d.remove(); onClick?.(); });
   document.querySelector('.dialogContainer')!.append(d);
   return d;
@@ -89,6 +89,7 @@ test('forgot password: submits the name, returns the alert text, PIN step submit
   expect(r.pin).toBe(true);
   expect(r.message).toContain('created on your server');
   expect(r.message).not.toContain('Got It');
+  expect(r.message).toContain('proceed Enter PIN');
   expect((document.querySelector('#txtName') as HTMLInputElement).value).toBe('mila');
   const p = await stock.submitPin('1234', 1000);
   expect(p).toEqual({ message: 'Invalid PIN', done: false });
@@ -98,4 +99,13 @@ test('disclaimer and server switch come from the stock page', () => {
   fakeLogin();
   expect(stock.disclaimer()).toBe('Be nice.');
   expect(stock.canSelectServer()).toBe(false);
+});
+
+test('inputs are set through the native setter (React-controlled pages track that, not el.value =)', async () => {
+  const { page } = fakeLogin({ password: 'x' });
+  const input = page.querySelector<HTMLInputElement>('#txtManualName')!;
+  let viaSetter = '';
+  Object.defineProperty(input, 'value', { configurable: true, get: () => viaSetter, set: () => { throw new Error('plain assignment'); } });
+  // A plain `input.value = …` would hit the throwing instance setter (as React shadows it); the driver uses the prototype's.
+  await expect(stock.signIn('mila', 'x', true, 300)).resolves.toBeDefined();
 });

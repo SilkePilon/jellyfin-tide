@@ -23,12 +23,27 @@ function waitFor<T>(find: () => T | null | undefined | false, ms: number): Promi
   });
 }
 
+/**
+ * Set an input the way a user would: through the native value setter, then `input`. React-controlled inputs (12.4's
+ * forgot-password pages) ignore a plain `el.value = …` and re-render back to their own (empty) state.
+ */
 const setValue = (el: HTMLInputElement | null, v: string) => {
   if (!el) return;
-  el.value = v;
+  const native = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  if (native) native.call(el, v);
+  else el.value = v;
   el.dispatchEvent(new Event('input', { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
 };
+/** jellyfin-web initialises a page (and clears its form) just after showing it: fill only once that is done. */
+export const PAGE_SETTLE_MS = 400;
+const settle = () => new Promise((r) => setTimeout(r, PAGE_SETTLE_MS));
+/** Set a field, give the page a moment, and set it again if the page reset it meanwhile. */
+async function fill(el: HTMLInputElement | null, v: string): Promise<void> {
+  setValue(el, v);
+  await new Promise((r) => setTimeout(r, 50));
+  if (el && el.value !== v) setValue(el, v);
+}
 const submit = (form: HTMLFormElement) => {
   if (typeof form.requestSubmit === 'function') form.requestSubmit();
   else form.querySelector<HTMLElement>('[type="submit"]')?.click();
@@ -40,7 +55,11 @@ export function newestDialog(): HTMLElement | null {
 }
 export function dialogMessage(d: Element): string {
   const body = d.querySelector('.formDialogContent') ?? d.querySelector('.text') ?? d;
-  return (body.textContent ?? '').replace(/\s+/g, ' ').trim();
+  // Text of separate elements joined with spaces ("…proceed" + "Enter PIN…" must not run together).
+  const parts: string[] = [];
+  const walk = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) parts.push(n.textContent ?? '');
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 const newDialog = (before: Element | null) => () => { const d = newestDialog(); return d && d !== before ? d : null; };
 
@@ -80,7 +99,8 @@ export function cancelQuickConnect(): void {
 export async function forgotPassword(name: string, timeoutMs = 8000): Promise<{ message: string; pin: boolean }> {
   loginPage()?.querySelector<HTMLElement>('.btnForgotPassword')?.click();
   const page = await waitFor(() => visible('#forgotPasswordPage'), 3000);
-  setValue(page.querySelector('#txtName'), name);
+  await settle();
+  await fill(page.querySelector('#txtName'), name);
   const before = newestDialog();
   const form = page.querySelector<HTMLFormElement>('form');
   if (form) submit(form);
@@ -92,7 +112,8 @@ export async function forgotPassword(name: string, timeoutMs = 8000): Promise<{ 
 
 export async function submitPin(pin: string, timeoutMs = 8000): Promise<{ message: string; done: boolean }> {
   const page = await waitFor(() => visible('.forgotPasswordPinPage'), 3000);
-  setValue(page.querySelector('#txtPin'), pin);
+  await settle();
+  await fill(page.querySelector('#txtPin'), pin);
   const before = newestDialog();
   const form = page.querySelector<HTMLFormElement>('form');
   if (form) submit(form);

@@ -1,17 +1,10 @@
-import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
+import { fillSignIn, login } from './auth';
 
 const CLIENT = 'MediaBrowser Client="e2e", Device="e2e", DeviceId="e2e", Version="1"';
 const TRANSPARENT = /^(transparent|rgba\(\s*0,\s*0,\s*0,\s*0(\.0+)?\s*\))$/;
 const PLUGIN_ID = '7c1d3e5a-9b2f-4c6d-8e0a-1f3b5d7e9a2c';
 
-async function login(page: Page) {
-  await page.goto('/web/');
-  await page.waitForSelector('input[type=password]');
-  await page.fill('input[type=text], #txtManualName', 'tide');
-  await page.fill('input[type=password]', 'tide');
-  await page.keyboard.press('Enter');
-  await page.waitForSelector('.tide-home', { timeout: 30_000 });
-}
 
 async function authHeaders(request: APIRequestContext) {
   const auth = await request.post('/Users/AuthenticateByName', {
@@ -280,16 +273,14 @@ test('disabling home restores stock home', async ({ page, request }, info) => {
   await request.post(`/Plugins/${PLUGIN_ID}/Configuration`, { headers: h, data: { ...cfg, EnableHome: false } });
   try {
     await page.goto('/web/');
-    await page.waitForSelector('input[type=password]');
-    await page.fill('input[type=text], #txtManualName', 'tide');
-    await page.fill('input[type=password]', 'tide');
+    await fillSignIn(page);
     await page.keyboard.press('Enter');
     await expect(page.locator('#indexPage.homePage, #homeTab').first()).toBeVisible({ timeout: 30_000 });
     await page.waitForTimeout(1500); // grace: Tide would mount shortly after stock home
     await expect(page.locator('.tide-home')).toHaveCount(0);
     await expect(page.locator('body')).toHaveClass(/tide-theme/);
   } finally {
-    await request.post(`/Plugins/${PLUGIN_ID}/Configuration`, { headers: h, data: { ...cfg, EnableHome: true } });
+    await request.post(`/Plugins/${PLUGIN_ID}/Configuration`, { headers: await authHeaders(request), data: { ...cfg, EnableHome: true } });
   }
 });
 
@@ -297,10 +288,9 @@ test('boot survives a slow login: 12 s on the login page, then Tide home mounts 
   test.skip(info.project.name !== 'desktop');
   test.setTimeout(90_000);
   await page.goto('/web/');
-  await page.waitForSelector('input[type=password]');
+  await page.waitForSelector('.tide-lg-card');
   await page.waitForTimeout(12_000); // longer than the 10 s ApiClient timeout
-  await page.fill('input[type=text], #txtManualName', 'tide');
-  await page.fill('input[type=password]', 'tide');
+  await fillSignIn(page);
   await page.keyboard.press('Enter');
   await expect(page.locator('.tide-home')).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('body')).toHaveClass(/tide-theme/);
