@@ -13,3 +13,18 @@ beforeEach(() => {
   releaseAll();
   try { localStorage.clear(); } catch { /* none */ }
 });
+// Features observe document.body for the life of the page and are never torn down. When a test file ends, jsdom's
+// teardown removes the page's nodes, and their observer callbacks would then run after `document` and `location` are
+// gone ("document is not defined"). Disconnect every observer a test file created before that happens.
+const observers = new Set<MutationObserver>();
+const NativeObserver = globalThis.MutationObserver;
+globalThis.MutationObserver = class extends NativeObserver {
+  constructor(cb: MutationCallback) {
+    super(cb);
+    observers.add(this);
+  }
+};
+afterAll(() => {
+  for (const o of observers) o.disconnect();
+  observers.clear();
+});
