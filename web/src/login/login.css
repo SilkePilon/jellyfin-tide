@@ -80,3 +80,21 @@ html.tide-cloak :is(#loginPage, #forgotPasswordPage, .forgotPasswordPinPage) { v
   .tide-lg-wall { animation: none; }
   .tide-lg-in, .tide-lg-form.shake { animation: none; }
 }
+
+/* Switch profile overlay (signed in) and the hidden stock menu while Tide signs out through it. */
+html.tide-switching #app-user-menu { opacity: 0 !important; }
+.tide-lg-font { font-family: 'Inter Variable', Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.tide-sw { position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.78); color: #f5f5f7; animation: tide-lg-in .3s ease both; }
+.tide-sw-in { display: flex; flex-direction: column; align-items: center; gap: 30px; }
+.tide-sw h2 { margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -.03em; }
+.tide-sw-people { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; max-width: 900px; }
+.tide-sw-person { display: flex; flex-direction: column; align-items: center; gap: 10px; border: 0; background: none; color: #d1d1d6; font-weight: 600; font-size: 15px; font-family: inherit; cursor: pointer; }
+.tide-sw-person .tide-lg-av { transition: box-shadow .2s, transform .3s cubic-bezier(.22,1,.36,1); }
+.tide-sw-person:is(:hover, :focus-visible) .tide-lg-av, .tide-sw-person.cur .tide-lg-av { box-shadow: 0 0 0 4px #fff; }
+.tide-sw-person:is(:hover, :focus-visible) .tide-lg-av { transform: scale(1.05); }
+.tide-sw-person small { color: #8e8e93; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.tide-sw-add { width: 110px; height: 110px; background: #1c1c1e !important; box-shadow: inset 0 0 0 2px #3a3a3c; color: #a1a1a6; }
+.tide-sw-card { width: min(440px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 20px; padding: 34px 36px 26px; border-radius: 28px; background: #141416; box-shadow: 0 0 0 1px #2a2a2e, 0 40px 100px rgba(0,0,0,.8); }
+.tide-sw-card h2 { font-size: 28px; text-align: center; }
+.tide-sw .tide-lg-who { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.tide-sw [hidden] { display: none !important; }

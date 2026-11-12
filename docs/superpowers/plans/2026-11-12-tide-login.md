@@ -1508,11 +1508,12 @@ export async function stockSignOut(timeoutMs = 3000): Promise<boolean> {
     document.querySelector<HTMLElement>('.MuiAppBar-root button[aria-controls="app-user-menu"], .MuiAppBar-root button[aria-label="User Menu"]')?.click();
     const out = await waitFor(() => document.querySelector('#app-user-menu [data-testid="LogoutIcon"]')?.closest<HTMLElement>('li, [role="menuitem"]'), timeoutMs);
     out.click();
+    // Keep the stock menu hidden while it closes behind the sign-out.
+    setTimeout(() => html.classList.remove('tide-switching'), 800);
     return true;
   } catch {
+    html.classList.remove('tide-switching');
     return false;
-  } finally {
-    setTimeout(() => html.classList.remove('tide-switching'), 800);
   }
 }
 

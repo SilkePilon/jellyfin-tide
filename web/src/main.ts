@@ -11,6 +11,7 @@ import { initPlayLoading, PLAYER_TAKEOVER } from './player/player';
 import { initTabbar } from './mobile/tabbar';
 import { initSearch } from './search/index';
 import { initLogin } from './login/index';
+import { initSwitchProfile } from './login/switchProfile';
 import { preloadFonts, readHint, release, releaseAll, saveHint, startBootCloak, wouldTakeOver } from './boot/cloak';
 import { onLocationChange } from './router/location';
 import { ROUTES } from './router/selectors';
@@ -92,6 +93,7 @@ registerFeature((cfg) => void initPlayLoading(cfg));
 registerFeature((cfg) => void initRouter(cfg));
 registerFeature(() => void initTabbar());
 registerFeature((cfg) => void initSearch(cfg));
+registerFeature((cfg) => void initSwitchProfile(cfg));
 
 if (typeof window !== 'undefined' && !(window as unknown as { __TIDE_TEST__?: boolean }).__TIDE_TEST__) {
   startBootCloak();
