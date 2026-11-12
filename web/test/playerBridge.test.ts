@@ -47,12 +47,15 @@ test('reads state from the stock OSD and the web video', () => {
 test('without a web <video> (desktop/mpv): paused from the stock icon, buffered null', () => {
   const root = osd();
   document.querySelector('video')!.remove();
-  root.querySelector('.btnPause .material-icons')!.textContent = 'play_arrow';
+  // Real 12.4 markup: the icon is a CSS class on an empty span (videoosd sets classList play_arrow / pause).
+  root.querySelector('.btnPause')!.innerHTML = '<span class="xlargePaperIconButton material-icons play_arrow" aria-hidden="true"></span>';
+  root.querySelector('.buttonMute')!.innerHTML = '<span class="xlargePaperIconButton material-icons volume_off" aria-hidden="true"></span>';
   const b = createBridge(root);
   b.setDuration(100);
   const s = b.read();
   expect(s.hasVideo).toBe(false);
   expect(s.paused).toBe(true);
+  expect(s.muted).toBe(true);
   expect(s.buffered).toBeNull();
   expect(s.position).toBe(25);
 });
@@ -89,4 +92,14 @@ test('onState only calls back when something changed', async () => {
   root.querySelector<HTMLInputElement>('.osdPositionSlider')!.value = '30';
   await vi.waitFor(() => expect(cb.mock.calls.length).toBe(n + 1));
   stop();
+});
+
+test('desktop/mpv: playing state from the class-based stock pause icon', () => {
+  const root = osd();
+  document.querySelector('video')!.remove();
+  root.querySelector('.btnPause')!.innerHTML = '<span class="xlargePaperIconButton material-icons pause" aria-hidden="true"></span>';
+  root.querySelector('.buttonMute')!.innerHTML = '<span class="xlargePaperIconButton material-icons volume_up" aria-hidden="true"></span>';
+  const s = createBridge(root).read();
+  expect(s.paused).toBe(false);
+  expect(s.muted).toBe(false);
 });

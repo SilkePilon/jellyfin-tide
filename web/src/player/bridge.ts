@@ -29,7 +29,14 @@ export function createBridge(root: HTMLElement): Bridge {
   const video = keep(() => document.querySelector<HTMLVideoElement>('.videoPlayerContainer video'));
   const slider = keep(() => q<HTMLInputElement>(SEL.slider));
   const volumeSlider = keep(() => q<HTMLInputElement>(SEL.volume));
-  const icon = (s: string) => (q(`${s} .material-icons, ${s} .tide-ms`)?.textContent ?? '').trim();
+  const pauseBtn = keep(() => q(SEL.pause));
+  const muteBtn = keep(() => q(SEL.mute));
+  /** Stock icon name. 12.4 videoosd marks state with a class on an empty span (`material-icons play_arrow`); ligature text is the fallback. */
+  const icon = (btn: Element | null, names: readonly string[]) => {
+    const el = btn?.querySelector('.material-icons, .tide-ms');
+    if (!el) return '';
+    return names.find((n) => el.classList.contains(n)) ?? (el.textContent ?? '').trim();
+  };
 
   const read = (): PlayerState => {
     const v = video();
@@ -44,8 +51,8 @@ export function createBridge(root: HTMLElement): Bridge {
     }
     return {
       percent: pct, position, duration,
-      paused: v ? v.paused : icon(SEL.pause) === 'play_arrow',
-      muted: v ? v.muted : icon(SEL.mute) === 'volume_off',
+      paused: v ? v.paused : icon(pauseBtn(), ['play_arrow', 'pause']) === 'play_arrow',
+      muted: v ? v.muted : icon(muteBtn(), ['volume_off', 'volume_up']) === 'volume_off',
       volume: Number(volumeSlider()?.value ?? 100),
       buffered, hasVideo: !!v,
     };

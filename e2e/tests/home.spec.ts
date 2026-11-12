@@ -85,18 +85,10 @@ test('cards per row adapt to window width', async ({ browser }, info) => {
   }
 });
 
-test('discover: clicking a poster brings it to the centre and updates the reason (desktop)', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop');
+test('Discover section is gone (removed in 0.4.3)', async ({ page }) => {
   await login(page);
-  const sec = page.locator('section[data-row="discover"]');
-  await sec.scrollIntoViewIfNeeded();
-  await expect(sec.locator('.tide-disc-poster.center')).toHaveCount(1, { timeout: 15_000 });
-  await expect(sec.locator('.tide-row-title')).toHaveText('Discover');
-  const other = sec.locator('.tide-disc-poster:not(.center)').first();
-  const name = await other.getAttribute('aria-label');
-  await other.click();
-  await expect(sec.locator('.tide-disc-poster.center')).toHaveAttribute('aria-label', name!);
-  await expect(sec.locator('.tide-disc-meta')).toContainText(name!);
+  await expect(page.locator('.tide-home section.tide-row:not([hidden])').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('section[data-row="discover"], .tide-disc')).toHaveCount(0);
 });
 
 test('new this week bento shows NEW tiles (desktop)', async ({ page }, info) => {
@@ -382,4 +374,21 @@ test('back from a details page returns to the same Home scroll position; a fresh
   await page.waitForSelector('.tide-home .tide-hero-slide.on');
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+test('playing trailer: no masks on the video layer and the ambient glow fades out (compositing cost)', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  await page.locator('.tide-hero-slide.on').waitFor();
+  const read = () => page.evaluate(() => {
+    const vid = document.querySelector('.tide-hero-slide.on .tide-hero-vid')!;
+    const amb = document.querySelector('.tide-ambient.on');
+    const cs = getComputedStyle(vid);
+    return { mask: cs.maskImage || (cs as any).webkitMaskImage, ambient: amb ? getComputedStyle(amb).opacity : null };
+  });
+  const before = await read();
+  expect(before.mask).not.toBe('none');
+  await page.evaluate(() => document.querySelector('.tide-hero-slide.on')!.classList.add('vidon', 'vidplay'));
+  await expect.poll(async () => (await read()).mask).toBe('none');
+  await expect.poll(async () => Number((await read()).ambient ?? 0), { timeout: 3000 }).toBe(0);
 });

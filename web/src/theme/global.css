@@ -98,4 +98,4 @@ body.tide-theme .detailRibbon { background-color: var(--tide-s1); }
    visibly slid up while navigating). Keyboard scrolling is smooth natively; the wheel is eased in smoothScroll.ts. */
 
 /* No hover reveals while scrolling (see theme/scrolling.ts). */
-html.tide-is-scrolling body.tide :is(.tide-card, .tide-bento-tile, .tide-disc-poster, .tide-chipp, .tide-nu) { pointer-events: none; }
+html.tide-is-scrolling body.tide :is(.tide-card, .tide-bento-tile, .tide-chipp, .tide-nu) { pointer-events: none; }

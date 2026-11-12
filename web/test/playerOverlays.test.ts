@@ -4,7 +4,8 @@ import { createPausedScreen, PAUSE_MS } from '../src/player/paused';
 beforeEach(() => { (window as any).ApiClient = { serverAddress: () => 'http://jf', accessToken: () => 't', getCurrentUserId: () => 'u' }; });
 afterEach(() => { vi.useRealTimers(); document.body.innerHTML = ''; });
 
-test('paused screen appears after 4 s paused, not when blocked, and dismisses', () => {
+test('paused screen appears after 3 s paused, not when blocked, and dismisses', () => {
+  expect(PAUSE_MS).toBe(3000);
   vi.useFakeTimers();
   const host = document.createElement('div');
   const pz = createPausedScreen(host);
@@ -59,7 +60,7 @@ test('end card: Watch credits dismisses; no autoplay = no countdown', () => {
   expect(COUNTDOWN_S).toBe(10);
 });
 
-test('paused screen: repeated arm while still paused (buffer/position updates) does not restart the 4 s timer', () => {
+test('paused screen: repeated arm while still paused (buffer/position updates) does not restart the 3 s timer', () => {
   vi.useFakeTimers();
   const host = document.createElement('div');
   const pz = createPausedScreen(host);

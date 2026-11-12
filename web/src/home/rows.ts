@@ -47,7 +47,6 @@ export const ROWS: Record<RowId, RowDef> = {
     },
   },
   newThisWeek: { id: 'newThisWeek', kind: 'custom', title: () => 'New this week', fetch: (ctx) => newThisWeek(ctx) },
-  discover: { id: 'discover', kind: 'custom', title: () => 'Discover', fetch: () => Promise.resolve([]) },
   topRated: { id: 'topRated', kind: 'wide', title: () => 'Top rated, not watched yet', fetch: (ctx) => userItems(ctx, { IncludeItemTypes: 'Movie,Series', IsPlayed: false, SortBy: 'CommunityRating', SortOrder: 'Descending' }) },
   genre1: genreRow('genre1'),
   genre2: genreRow('genre2'),

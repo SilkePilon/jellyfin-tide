@@ -57,3 +57,74 @@ test('stock Play button click starts the loading screen', async () => {
   expect(document.querySelector('.tide-ld.show')).not.toBeNull();
   stop();
 });
+
+test('paused screen stays up on mouse move and leaves only when playback resumes (click resumes)', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const host = stockOsd();
+  const v = document.querySelector('video')!;
+  let isPaused = true;
+  Object.defineProperty(v, 'paused', { configurable: true, get: () => isPaused });
+  const pauseBtn = host.querySelector<HTMLButtonElement>('.btnPause')!;
+  const toggle = vi.fn(() => { isPaused = !isPaused; });
+  pauseBtn.addEventListener('click', toggle);
+  const un = await mountPlayer(host, cfg as any);
+  const root = document.querySelector('.tide-player')!;
+  await vi.advanceTimersByTimeAsync(3100);
+  await vi.waitFor(() => expect(root.classList.contains('tide-pz-on')).toBe(true));
+  root.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }));
+  await vi.advanceTimersByTimeAsync(100);
+  expect(root.classList.contains('tide-pz-on')).toBe(true);
+  root.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  expect(toggle).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(100);
+  await vi.waitFor(() => expect(root.classList.contains('tide-pz-on')).toBe(false));
+  un();
+  vi.useRealTimers();
+});
+
+test('wheel over Tide panels scrolls them instead of reaching the stock volume handler', async () => {
+  const host = stockOsd();
+  const un = await mountPlayer(host, cfg as any);
+  const stockVolume = vi.fn();
+  document.addEventListener('wheel', stockVolume);
+  const shelf = document.querySelector<HTMLElement>('.tide-pshelf')!;
+  const track = document.createElement('div');
+  track.className = 'tide-row-track';
+  const card = document.createElement('button');
+  track.append(card);
+  shelf.append(track);
+  const overShelf = new WheelEvent('wheel', { deltaY: 100, bubbles: true, cancelable: true });
+  card.dispatchEvent(overShelf);
+  expect(stockVolume).not.toHaveBeenCalled();
+  expect(overShelf.defaultPrevented).toBe(true); // vertical notch over the episode row pages it sideways
+  document.querySelector('.tide-pset')!.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+  expect(stockVolume).not.toHaveBeenCalled();
+  document.querySelector('.tide-player')!.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+  expect(stockVolume).toHaveBeenCalledTimes(1); // over the video itself the stock wheel-volume stays
+  document.removeEventListener('wheel', stockVolume);
+  un();
+});
+
+test('Jellyfin Desktop (no web <video>): play/pause button and paused screen follow the class-based stock icon', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const host = stockOsd();
+  document.querySelector('.videoPlayerContainer')!.remove(); // mpv renders outside the page
+  const stockIcon = host.querySelector('.btnPause')!;
+  stockIcon.innerHTML = '<span class="xlargePaperIconButton material-icons pause" aria-hidden="true"></span>';
+  const un = await mountPlayer(host, cfg as any);
+  const root = document.querySelector('.tide-player')!;
+  const shown = () => { const i = root.querySelector('.tide-pc-play > :first-child')!; return i.getAttribute('data-icon') ?? i.textContent; };
+  await vi.advanceTimersByTimeAsync(100);
+  expect(shown()).toBe('pause');
+  stockIcon.querySelector('span')!.className = 'xlargePaperIconButton material-icons play_arrow'; // what videoosd does on pause
+  await vi.advanceTimersByTimeAsync(100);
+  expect(shown()).toBe('play_arrow');
+  await vi.advanceTimersByTimeAsync(3_100);
+  expect(root.classList.contains('tide-pz-on')).toBe(true);
+  stockIcon.querySelector('span')!.className = 'xlargePaperIconButton material-icons pause';
+  await vi.advanceTimersByTimeAsync(100);
+  expect(shown()).toBe('pause');
+  expect(root.classList.contains('tide-pz-on')).toBe(false);
+  un();
+  vi.useRealTimers();
+});

@@ -1,7 +1,7 @@
 import { imageUrl } from '../api/client';
 import { h, icon } from '../ui/dom';
 
-export const PAUSE_MS = 4000;
+export const PAUSE_MS = 3000;
 export interface PausedScreen {
   el: HTMLElement;
   setItem(d: { posterId: string; logoId: string; line: string; meta: string; overview: string; next: { id: string; label: string; runtime: string } | null }, onNext: () => void): void;
