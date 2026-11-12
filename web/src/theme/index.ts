@@ -3,6 +3,7 @@ import './tokens.css';
 import './global.css';
 import { onLocationChange } from '../router/location';
 import { SELECTORS } from '../router/selectors';
+import { labelNavLinks, measureUserBox } from './navbar';
 import type { ClientConfig } from '../types';
 
 export function updateScrolled(y: number): void {
@@ -52,9 +53,12 @@ export function initTheme(cfg: ClientConfig): void {
   const queue = () => {
     if (queued) return;
     queued = true;
-    requestAnimationFrame(() => { queued = false; markActiveNav(); });
+    requestAnimationFrame(() => { queued = false; markActiveNav(); labelNavLinks(); measureUserBox(); });
   };
   onLocationChange(queue);
   new MutationObserver(queue).observe(document.body, { childList: true, subtree: true });
   markActiveNav();
+  labelNavLinks();
+  measureUserBox();
+  window.addEventListener('resize', queue);
 }
