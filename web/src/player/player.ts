@@ -146,14 +146,11 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
     toggleControls: () => (controls.isIdle() ? controls.wake() : root.classList.add('tide-pc-idle')),
     togglePlay: () => bridge.togglePlay(), seekBy: (d) => bridge.seekBy(d), openShelf: openShelf, ripple,
   });
-  root.addEventListener('pointermove', (e) => {
-    if (paused.isOn() && (e.target as Element).closest('[data-pz-next]')) return;
-    if (paused.isOn()) paused.dismiss();
-    controls.wake();
-  });
+  // The paused screen leaves only when playback resumes (paused.arm(false) on the next state); moving the mouse keeps it.
+  root.addEventListener('pointermove', () => { if (!paused.isOn()) controls.wake(); });
   root.addEventListener('click', (e) => {
     const t = e.target as Element;
-    if (paused.isOn()) { paused.dismiss(); controls.wake(); return; }
+    if (paused.isOn()) { if (!t.closest('[data-pz-next]')) bridge.togglePlay(); return; }
     if (sheet.isOpen() && !t.closest('.tide-pset')) { sheet.close(); return; }
     if (shelf.isOpen() && !t.closest('.tide-pshelf')) { shelf.close(); return; }
     if (t.closest('.tide-pc-b, .tide-pc-p, .tide-pc-scr, .tide-pshelf, .tide-pset, .tide-end, .tide-pz-next')) return;
@@ -162,7 +159,7 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
   });
   const onEsc = (e: KeyboardEvent) => {
     if (e.key !== 'Escape') return;
-    if (sheet.isOpen()) sheet.close(); else if (shelf.isOpen()) shelf.close(); else if (paused.isOn()) paused.dismiss(); else return;
+    if (sheet.isOpen()) sheet.close(); else if (shelf.isOpen()) shelf.close(); else return;
     e.preventDefault(); e.stopPropagation();
   };
   document.addEventListener('keydown', onEsc, true);

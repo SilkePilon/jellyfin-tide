@@ -57,3 +57,27 @@ test('stock Play button click starts the loading screen', async () => {
   expect(document.querySelector('.tide-ld.show')).not.toBeNull();
   stop();
 });
+
+test('paused screen stays up on mouse move and leaves only when playback resumes (click resumes)', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const host = stockOsd();
+  const v = document.querySelector('video')!;
+  let isPaused = true;
+  Object.defineProperty(v, 'paused', { configurable: true, get: () => isPaused });
+  const pauseBtn = host.querySelector<HTMLButtonElement>('.btnPause')!;
+  const toggle = vi.fn(() => { isPaused = !isPaused; });
+  pauseBtn.addEventListener('click', toggle);
+  const un = await mountPlayer(host, cfg as any);
+  const root = document.querySelector('.tide-player')!;
+  await vi.advanceTimersByTimeAsync(3100);
+  await vi.waitFor(() => expect(root.classList.contains('tide-pz-on')).toBe(true));
+  root.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }));
+  await vi.advanceTimersByTimeAsync(100);
+  expect(root.classList.contains('tide-pz-on')).toBe(true);
+  root.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  expect(toggle).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(100);
+  await vi.waitFor(() => expect(root.classList.contains('tide-pz-on')).toBe(false));
+  un();
+  vi.useRealTimers();
+});
