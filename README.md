@@ -2,6 +2,7 @@
 
 A streaming-app theme for Jellyfin 12.4+ (Modern web layout). Works in the browser, Jellyfin Desktop and the Android app.
 
+- **Sign-in:** a poster-wall sign-in screen with a "Who's watching?" profile picker, Quick Connect and password reset; switch profile from the avatar menu.
 - **Top bar:** two floating islands (libraries as icons, the current one as a pill; actions and profile), see-through over a hero.
 - **Home:** a hero with trailers, large landscape cards, custom sections and rows each user can reorder or hide.
 - **Detail pages** for movies, series and episodes: floating poster/still, next-up strip, season dropdown, cast, more like this, and your file's quality.
@@ -23,7 +24,7 @@ A streaming-app theme for Jellyfin 12.4+ (Modern web layout). Works in the brows
 3. Optional but recommended: also install **File Transformation**. Without it, Tide patches `jellyfin-web/index.html` directly, so the web folder must be writable by Jellyfin.
 
 ## Configure
-Dashboard → Plugins → Tide: turn the theme, icons, home, trailers, detail pages, smooth scrolling, the player and the search dialog on or off; set hero length, the NEW window, the default row order and when credits start without Intro Skipper.
+Dashboard → Plugins → Tide: turn the theme, icons, home, trailers, detail pages, smooth scrolling, the player, the search dialog and the login screen on or off; set hero length, the NEW window, the default row order and when credits start without Intro Skipper.
 Each user can reorder or hide rows with **Edit home** at the bottom of Home.
 
 ## Develop
