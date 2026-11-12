@@ -16,5 +16,6 @@ public sealed class PluginServiceRegistrator : IPluginServiceRegistrator
         services.AddSingleton(_ => new UserPrefsStore(Path.Combine(Plugin.Instance!.DataFolderPath, "prefs")));
         services.AddSingleton<QualityService>();
         services.AddSingleton<HeroService>();
+        services.AddSingleton<Login.LoginService>();
     }
 }

@@ -78,7 +78,20 @@ public sealed record ClientConfig(
     [property: JsonPropertyName("enablePlayer")] bool EnablePlayer,
     [property: JsonPropertyName("creditsFallbackSeconds")] int CreditsFallbackSeconds,
     [property: JsonPropertyName("introSkipper")] bool IntroSkipper,
-    [property: JsonPropertyName("enableSearch")] bool EnableSearch);
+    [property: JsonPropertyName("enableSearch")] bool EnableSearch,
+    [property: JsonPropertyName("enableLogin")] bool EnableLogin);
+
+public sealed record LoginPosterDto(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("tag")] string Tag);
+
+public sealed record LoginConfigDto(
+    [property: JsonPropertyName("enabled")] bool Enabled,
+    [property: JsonPropertyName("serverName")] string? ServerName,
+    [property: JsonPropertyName("posters")] LoginPosterDto[] Posters)
+{
+    public static LoginConfigDto Disabled { get; } = new(false, null, Array.Empty<LoginPosterDto>());
+}
 
 public sealed record SubtitleCapabilityDto(
     [property: JsonPropertyName("canSearch")] bool CanSearch,

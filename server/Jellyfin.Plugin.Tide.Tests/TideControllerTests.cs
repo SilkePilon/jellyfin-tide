@@ -75,4 +75,13 @@ public class TideControllerTests
         using var off = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(new PluginConfiguration { EnableSearch = false }, "0.5.0")));
         Assert.False(off.RootElement.GetProperty("enableSearch").GetBoolean());
     }
+
+    [Fact]
+    public void ClientConfigCarriesEnableLogin()
+    {
+        using var on = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(new PluginConfiguration(), "0.6.0")));
+        Assert.True(on.RootElement.GetProperty("enableLogin").GetBoolean());
+        using var off = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(new PluginConfiguration { EnableLogin = false }, "0.6.0")));
+        Assert.False(off.RootElement.GetProperty("enableLogin").GetBoolean());
+    }
 }

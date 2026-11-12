@@ -124,7 +124,7 @@ public class TideController : ControllerBase
             cfg.EnableTheme, cfg.EnableIcons, cfg.EnableHome, cfg.EnableTrailers,
             Math.Clamp(cfg.HeroSlotSeconds, 8, 120), NewDays(cfg.NewDays), version,
             defaults.RowOrder, defaults.Hidden, cfg.EnableDetails, cfg.EnableSmoothScroll,
-            cfg.EnablePlayer, Math.Clamp(cfg.CreditsFallbackSeconds, 0, 300), introSkipper, cfg.EnableSearch);
+            cfg.EnablePlayer, Math.Clamp(cfg.CreditsFallbackSeconds, 0, 300), introSkipper, cfg.EnableSearch, cfg.EnableLogin);
     }
 
     internal static int NewDays(int configured) => Math.Clamp(configured, 1, 90);
