@@ -926,8 +926,8 @@ export function createLoginScreen(d: LoginDeps): LoginScreen {
   const el = h('div', { class: 'tide-lg' }, wall(d.config), h('div', { class: 'tide-lg-shade' }), brand, card);
   let state: LoginState = 'profiles';
 
-  const btn = (cls: string, lg: string, label: string | Node, ...more: Node[]) =>
-    h('button', { class: cls, type: 'button', 'data-lg': lg }, ...(typeof label === 'string' ? [label] : [label]), ...more);
+  const btn = (cls: string, lg: string, ...kids: (Node | string)[]) =>
+    h('button', { class: cls, type: 'button', 'data-lg': lg }, ...kids);
   const back = (text: string, to: () => void) => {
     const b = btn('tide-lg-lnk tide-lg-back', 'back', icon('arrow_back'), text);
     b.addEventListener('click', to);

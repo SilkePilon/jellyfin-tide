@@ -1,0 +1,71 @@
+/* Tide login (L3 poster wall). Runs before sign-in: no body.tide tokens, literal colours only. */
+html.tide-login #loginPage, html.tide-login #forgotPasswordPage, html.tide-login .forgotPasswordPinPage,
+html.tide-login .toast, html.tide-login .dialogContainer, html.tide-login .dialogBackdrop,
+html.tide-login .MuiAppBar-root, html.tide-login .skinHeader { opacity: 0 !important; pointer-events: none !important; }
+html.tide-cloak :is(#loginPage, #forgotPasswordPage, .forgotPasswordPinPage) { visibility: hidden !important; }
+
+.tide-lg { position: fixed; inset: 0; z-index: 1300; overflow: hidden; background: #000; color: #f5f5f7; font-family: 'Inter Variable', Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.tide-lg-wall { position: absolute; inset: -120px -200px; display: grid; grid-template-columns: repeat(9, 1fr); gap: 16px; opacity: .38; transform: rotate(-8deg); animation: tide-lg-drift 60s linear infinite; pointer-events: none; }
+.tide-lg-wall i { aspect-ratio: 2/3; border-radius: 12px; background: center / cover #1c1c1e; }
+@keyframes tide-lg-drift { from { transform: rotate(-8deg) translateY(0); } to { transform: rotate(-8deg) translateY(-50%); } }
+.tide-lg-shade { position: absolute; inset: 0; background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(0,0,0,.25), rgba(0,0,0,.85)); pointer-events: none; }
+.tide-lg-brand { position: absolute; left: 40px; top: 34px; display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 16px; color: #e5e5ea; }
+.tide-lg-brand svg { width: 34px; height: 34px; }
+.tide-lg-brand small { display: block; font-size: 12px; font-weight: 600; color: #8e8e93; }
+.tide-lg-card { position: absolute; left: 50%; top: 50%; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 40px); overflow-y: auto; transform: translate(-50%, -50%); background: #141416; border-radius: 30px; box-shadow: 0 0 0 1px #2a2a2e, 0 40px 100px rgba(0,0,0,.8); padding: 38px 40px 30px; scrollbar-width: none; }
+.tide-lg-in { display: flex; flex-direction: column; gap: 22px; animation: tide-lg-in .45s cubic-bezier(.22,1,.36,1) both; }
+@keyframes tide-lg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.tide-lg h2 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.03em; text-align: center; }
+.tide-lg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 10px; }
+.tide-lg-person { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px 0; border: 0; border-radius: 18px; background: none; color: #d1d1d6; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
+.tide-lg-person:is(:hover, :focus-visible) { background: #1c1c1e; color: #fff; outline: none; }
+.tide-lg-person:focus-visible .tide-lg-av { box-shadow: 0 0 0 3px #fff; }
+.tide-lg-av { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; border-radius: 50%; background: center / cover #2a2a2e; color: #fff; font-weight: 800; }
+.tide-lg-who { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.tide-lg-who b { font-size: 22px; }
+.tide-lg-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.tide-lg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 54px; padding: 0 22px; border: 0; border-radius: 16px; font-weight: 700; font-size: 16px; font-family: inherit; cursor: pointer; }
+.tide-lg-btn.w { background: #fff; color: #000; }
+.tide-lg-btn.g { height: 46px; background: #2a2a2e; color: #fff; }
+.tide-lg-btn.g:hover { background: #3a3a3c; }
+.tide-lg-btn:disabled { cursor: default; }
+.tide-lg-form { display: flex; flex-direction: column; gap: 12px; }
+.tide-lg-form.shake { animation: tide-lg-shake .4s cubic-bezier(.22,1,.36,1); }
+@keyframes tide-lg-shake { 20% { transform: translateX(-8px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(2px); } }
+.tide-lg-field { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 12px 0 16px; border-radius: 16px; background: #1c1c1e; box-shadow: 0 0 0 1px #2a2a2e; transition: box-shadow .2s; }
+.tide-lg-field:focus-within { box-shadow: 0 0 0 2px #fff; }
+.tide-lg-field > .tide-ms { color: #8e8e93; font-size: 22px; }
+.tide-lg-field input { flex: 1; min-width: 0; border: 0; background: none; color: #fff; font-weight: 500; font-size: 16px; font-family: inherit; outline: none; }
+.tide-lg-field input::placeholder { color: #6e6e73; }
+.tide-lg-eye { display: inline-flex; padding: 4px; border: 0; background: none; color: #8e8e93; cursor: pointer; }
+.tide-lg-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tide-lg-chk { display: inline-flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: #d1d1d6; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
+.tide-lg-chk i { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 7px; background: #fff; color: #000; }
+.tide-lg-chk i .tide-ms { font-size: 18px; }
+.tide-lg-chk.off i { background: #2a2a2e; }
+.tide-lg-chk.off i .tide-ms { visibility: hidden; }
+.tide-lg-lnk { display: inline-flex; align-items: center; gap: 6px; padding: 6px 4px; border: 0; background: none; color: #a1a1a6; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
+.tide-lg-lnk:hover { color: #fff; }
+.tide-lg-back { align-self: center; }
+.tide-lg-err { display: flex; align-items: center; gap: 6px; color: #ff6961; font-size: 14px; font-weight: 600; }
+.tide-lg-msg { margin: 0; color: #a1a1a6; line-height: 1.55; text-align: center; overflow-wrap: anywhere; }
+.tide-lg-msg b { color: #fff; }
+.tide-lg-code { display: flex; justify-content: center; gap: 10px; }
+.tide-lg-code b { display: flex; align-items: center; justify-content: center; width: 56px; height: 68px; border-radius: 14px; background: #1c1c1e; box-shadow: 0 0 0 1px #2a2a2e; font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tide-lg-wait { display: flex; align-items: center; justify-content: center; gap: 10px; color: #a1a1a6; font-size: 14px; font-weight: 600; }
+.tide-lg-spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #48484a; border-top-color: currentColor; animation: tide-lg-spin .8s linear infinite; }
+.tide-lg-btn.w .tide-lg-spin { border-color: #c7c7cc; border-top-color: #000; }
+@keyframes tide-lg-spin { to { transform: rotate(360deg); } }
+.tide-lg-disc { color: #8e8e93; font-size: 12.5px; line-height: 1.5; text-align: center; }
+.tide-lg [hidden] { display: none !important; }
+@media (max-width: 699px) {
+  .tide-lg-card { padding: 28px 20px 22px; border-radius: 24px; }
+  .tide-lg-grid { grid-template-columns: repeat(3, 1fr); }
+  .tide-lg h2 { font-size: 26px; }
+  .tide-lg-brand { left: 20px; top: 20px; }
+  .tide-lg-code b { width: 44px; height: 56px; font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tide-lg-wall { animation: none; }
+  .tide-lg-in, .tide-lg-form.shake { animation: none; }
+}
