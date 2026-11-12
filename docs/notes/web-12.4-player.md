@@ -53,3 +53,21 @@ Probed on `jellyfin/jellyfin:12.4.20261026-211555` with `e2e/probe-player.mjs`. 
 ## Media segments
 
 `GET /MediaSegments/{itemId}` returns 200 (empty `Items` without a segment provider). Intro Skipper fills it with `Intro` / `Outro` segments.
+
+## Stock settings sheet (probed for 0.5.0)
+
+**Opening and reading**
+- `.btnVideoOsdSettings` opens `.dialogContainer .actionSheet.opened`, with items `[data-id]` (`.actionSheetItemText`, `.actionSheetItemAsideText`).
+- Main rows on web: `aspectratio` (Auto), `playbackrate` (1x), `quality` ("Auto 420 kbps"), `repeatmode` (None), `suboffset`, `stats`.
+- A submenu marks the current option with a visible `.actionsheetMenuItemIcon`; the others have `visibility:hidden`.
+- Web speeds are 0.5–4x. Jellyfin Desktop builds its aspect ratios from `jmpInfo.settingsDescriptions.video.aspect`, so it has more than web's Auto / Cover / Fill.
+
+**Closing**
+- Opening a sheet adds `dialogs` to `history.state.usr`.
+- **Escape, backdrop clicks and outside clicks do not close it.** `history.back()` closes the newest sheet and stays on `#/video`.
+- Clicking an item closes its sheet (a submenu replaces the main sheet).
+
+**Subtitle offset**
+- `suboffset` shows `.subtitleSync`, containing `.subtitleSyncSlider` (`emby-slider`, min -30, max 30, step 0.1) and `.subtitleSyncTextField` ("1.5s").
+- Setting `value` and dispatching `input` and `change` applies the offset, also while the panel is hidden.
+- `.subtitleSync-closeButton` hides the panel; the value stays.

@@ -99,3 +99,45 @@ body.tide-theme .detailRibbon { background-color: var(--tide-s1); }
 
 /* No hover reveals while scrolling (see theme/scrolling.ts). */
 html.tide-is-scrolling body.tide :is(.tide-card, .tide-bento-tile, .tide-chipp, .tide-nu) { pointer-events: none; }
+
+/* ── Top bar F1 · C3 (desktop): two floating solid islands, icon-only libraries. The app bar's FIRST toolbar is
+   Stack (home + libraries) | Box (SyncPlay, Cast, Search) | Box (User Menu) on every page; library pages add a second
+   toolbar (title, count, sort) which keeps a plain solid strip. The actions box's fill reaches under the user box, so
+   actions + avatar read as one island. ── */
+@media (min-width: 700px) {
+  body.tide-theme .MuiAppBar-root,
+  body.tide-theme:is(.tide-on-home, .tide-on-details):not(.tide-scrolled) .MuiAppBar-root { background: transparent !important; padding-top: calc(12px + env(titlebar-area-height, 0px)) !important; pointer-events: none; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:not(:first-child) { pointer-events: auto; background: var(--tide-bg); }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child { position: relative; z-index: 2; min-height: 46px !important; padding: 0 28px !important; gap: 0; pointer-events: none; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > :is(.MuiStack-root, .MuiBox-root) { pointer-events: auto; position: relative; isolation: isolate; height: 46px; padding: 0 5px; gap: 2px !important; align-items: center; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root { border-radius: 23px; }
+  /* Stock lets the actions box grow to push it right: it must hug its buttons, or its fill spans the bar. */
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root + .MuiBox-root { flex: 0 0 auto !important; margin-left: auto; border-radius: 23px 0 0 23px; padding-right: 0; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiBox-root:last-child { flex: 0 0 auto !important; padding: 0 5px 0 2px; border-radius: 0 23px 23px 0; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > :is(.MuiStack-root, .MuiStack-root + .MuiBox-root)::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 23px; background: #141416;
+    box-shadow: 0 0 0 1px #2a2a2e, 0 14px 34px rgba(0,0,0,.5); transition: opacity .35s var(--tide-ease);
+  }
+  /* --tide-ub-w: the user box's measured width (theme/navbar.ts measureUserBox). */
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root + .MuiBox-root::before { right: calc(-1 * var(--tide-ub-w, 43px)); }
+  body.tide-theme:is(.tide-on-home, .tide-on-details):not(.tide-scrolled) .MuiAppBar-root > .MuiToolbar-root:first-child > *::before { opacity: 0; }
+
+  /* Logo + libraries: 36 px circles; the current library is a white pill with its name. */
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root { min-width: 0 !important; height: 36px; padding: 0 !important; border-radius: 18px !important; margin: 0 !important; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root[href="#/"] { width: 36px; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root[href="#/"] img { height: 24px; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root:not([href="#/"]) { width: 36px; justify-content: center; font-size: 0 !important; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root:not([href="#/"]) .MuiButton-startIcon { margin: 0 !important; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root:not([href="#/"]) .tide-ms { font-size: 20px; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root[aria-current="page"] { width: auto; padding: 0 13px 0 10px !important; font-size: 14px !important; font-weight: 600; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root[aria-current="page"] .MuiButton-startIcon { margin-right: 6px !important; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiStack-root > a.MuiButton-root:not([aria-current="page"])[data-tide-label]:is(:hover, :focus-visible)::after {
+    content: attr(data-tide-label); position: absolute; top: 44px; left: 50%; transform: translateX(-50%); z-index: 2; padding: 5px 9px; border-radius: 8px;
+    background: #2a2a2e; color: #fff; font: 600 12.5px var(--tide-font); white-space: nowrap; pointer-events: none;
+  }
+
+  /* Actions + avatar. */
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiBox-root :is(.MuiIconButton-root, button:not(.MuiButton-root), .headerButton) { width: 36px !important; min-width: 36px !important; height: 36px !important; padding: 0 !important; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child > .MuiBox-root :is(.MuiIconButton-root, button:not(.MuiButton-root), .headerButton) :is(.tide-ms, .material-icons, svg:not(.tide-icon-hidden)) { font-size: 20px !important; width: 20px; height: 20px; line-height: 20px; }
+  body.tide-theme .MuiAppBar-root > .MuiToolbar-root:first-child .MuiAvatar-root { width: 30px; height: 30px; }
+}

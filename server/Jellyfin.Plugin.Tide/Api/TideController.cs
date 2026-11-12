@@ -1,4 +1,6 @@
+using Jellyfin.Data;
 using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Tide.Hero;
 using Jellyfin.Plugin.Tide.Models;
 using Jellyfin.Plugin.Tide.Prefs;
@@ -6,6 +8,7 @@ using Jellyfin.Plugin.Tide.Quality;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Controller.Net;
+using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Plugins;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,8 +27,10 @@ public class TideController : ControllerBase
     private readonly QualityService _quality;
     private readonly UserPrefsStore _prefs;
     private readonly IPluginManager _plugins;
+    private readonly ILibraryManager _library;
+    private readonly ISubtitleManager _subtitles;
 
-    public TideController(IAuthorizationContext auth, IUserManager users, HeroService hero, QualityService quality, UserPrefsStore prefs, IPluginManager plugins)
+    public TideController(IAuthorizationContext auth, IUserManager users, HeroService hero, QualityService quality, UserPrefsStore prefs, IPluginManager plugins, ILibraryManager library, ISubtitleManager subtitles)
     {
         _auth = auth;
         _users = users;
@@ -33,6 +38,8 @@ public class TideController : ControllerBase
         _quality = quality;
         _prefs = prefs;
         _plugins = plugins;
+        _library = library;
+        _subtitles = subtitles;
     }
 
     private static Configuration.PluginConfiguration Cfg => Plugin.Instance!.Configuration;
@@ -80,6 +87,28 @@ public class TideController : ControllerBase
         return LoadPrefs(user);
     }
 
+    [HttpGet("Subtitles/Capability")]
+    public async Task<ActionResult<SubtitleCapabilityDto>> GetSubtitleCapability([FromQuery] Guid itemId)
+    {
+        var user = await CurrentUser();
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var item = _library.GetItemById(itemId);
+        if (item is null)
+        {
+            return NotFound();
+        }
+
+        var providers = _subtitles.GetSupportedProviders(item).Select(p => p.Name);
+        return SubtitleCapability.Evaluate(
+            user.HasPermission(PermissionKind.IsAdministrator),
+            user.HasPermission(PermissionKind.EnableSubtitleManagement),
+            providers);
+    }
+
     private UserPrefs LoadPrefs(User user) => _prefs.Load(user.Id, Cfg.DefaultRowOrder, Cfg.DefaultHiddenRows);
 
     private ClientConfig BuildClientConfig()
@@ -95,7 +124,7 @@ public class TideController : ControllerBase
             cfg.EnableTheme, cfg.EnableIcons, cfg.EnableHome, cfg.EnableTrailers,
             Math.Clamp(cfg.HeroSlotSeconds, 8, 120), NewDays(cfg.NewDays), version,
             defaults.RowOrder, defaults.Hidden, cfg.EnableDetails, cfg.EnableSmoothScroll,
-            cfg.EnablePlayer, Math.Clamp(cfg.CreditsFallbackSeconds, 0, 300), introSkipper);
+            cfg.EnablePlayer, Math.Clamp(cfg.CreditsFallbackSeconds, 0, 300), introSkipper, cfg.EnableSearch);
     }
 
     internal static int NewDays(int configured) => Math.Clamp(configured, 1, 90);

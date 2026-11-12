@@ -11,6 +11,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool EnableDetails { get; set; } = true;
     public bool EnableSmoothScroll { get; set; } = true;
     public bool EnablePlayer { get; set; } = true;
+    public bool EnableSearch { get; set; } = true;
     public int CreditsFallbackSeconds { get; set; } = 35;
     public int HeroSize { get; set; } = 6;
     public int HeroSlotSeconds { get; set; } = 30;

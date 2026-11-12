@@ -32,6 +32,8 @@ test('home renders hero and rows', async ({ page }) => {
 test('wide card: no text under it; hover reveals readable info + actions and is not clipped (desktop)', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop');
   await login(page);
+  // Rows lazy-load near the viewport; how far down this one starts depends on the library state (Next Up etc.).
+  await page.locator('section[data-row="latestMovies"]').scrollIntoViewIfNeeded();
   const card = page.locator('section[data-row="latestMovies"] .tide-wide').nth(1);
   await card.scrollIntoViewIfNeeded();
   await expect(page.locator('.tide-card-title, .tide-card-sub')).toHaveCount(0);
@@ -118,14 +120,20 @@ test('favourite keeps a grey button; only the heart turns red (desktop)', async 
   }
 });
 
-test('top bar: breathing room above, every bar button (incl. another plugin\'s) is the same 44px circle (desktop)', async ({ page }, info) => {
+test('top bar (F1 · C3): room above, every bar button (incl. another plugin\'s) is the same 36px circle inside the island (desktop)', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop');
   await login(page);
   await page.evaluate(() => { const box = document.querySelector('.MuiAppBar-root .MuiToolbar-root > div:last-child')!; const b = document.createElement('button'); b.className = 'plugin-dummy'; b.innerHTML = '<span class="material-icons">casino</span>'; box.prepend(b); });
   const top = await page.locator('.MuiAppBar-root .MuiToolbar-root').evaluate((t) => t.getBoundingClientRect().top);
-  expect(top).toBeGreaterThanOrEqual(16);
+  expect(top).toBeGreaterThanOrEqual(12);
   const sizes = await page.locator('.MuiAppBar-root .MuiIconButton-root, .MuiAppBar-root .plugin-dummy').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return `${Math.round(r.width)}x${Math.round(r.height)}`; }));
-  expect(new Set(sizes)).toEqual(new Set(['44x44']));
+  expect(new Set(sizes)).toEqual(new Set(['36x36']));
+  // The right island's fill reaches exactly under the (now wider) user box.
+  await expect.poll(() => page.evaluate(() => {
+    const tb = document.querySelector<HTMLElement>('.MuiAppBar-root .MuiToolbar-root')!;
+    const box = tb.querySelector<HTMLElement>(':scope > .MuiBox-root:last-child')!;
+    return tb.style.getPropertyValue('--tide-ub-w') === `${box.offsetWidth}px` && box.offsetWidth >= 36 * 2;
+  })).toBe(true);
 });
 
 test('edit home: hide a row persists after reload', async ({ page, request }, info) => {
@@ -175,19 +183,23 @@ test('phone shows tab bar and no row arrows', async ({ page }, info) => {
   await expect(page.locator('.tide-row-chev').first()).toBeHidden();
 });
 
-test('hero starts at top under transparent app bar (desktop)', async ({ page }, info) => {
+test('hero starts at top under the see-through app bar; islands turn solid on scroll (desktop)', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop');
   await login(page);
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(page.locator('.tide-hero')).toBeVisible();
   const box = await page.locator('.tide-hero').boundingBox();
   expect(Math.abs(box!.y)).toBeLessThanOrEqual(2);
+  // F1 · C3: the bar itself stays see-through; its islands turn solid once you scroll.
   const bar = page.locator('.MuiAppBar-root').first();
   const bg = () => bar.evaluate((e) => getComputedStyle(e).backgroundColor);
+  const fill = () => page.evaluate(() => getComputedStyle(document.querySelector('.MuiAppBar-root .MuiToolbar-root > .MuiStack-root')!, '::before').opacity);
   await expect.poll(bg).toMatch(TRANSPARENT);
+  await expect.poll(fill).toBe('0');
   await page.mouse.move(700, 450);
   await page.mouse.wheel(0, 400);
-  await expect.poll(bg).not.toMatch(TRANSPARENT);
+  await expect.poll(fill).toBe('1');
+  await expect.poll(bg).toMatch(TRANSPARENT);
 });
 
 test('phone hero meta does not overflow and dots do not overlap (phone)', async ({ page }, info) => {
@@ -318,12 +330,16 @@ test('phone avatar has no filled circle over the hero (phone)', async ({ page },
 test('tab bar routes open real pages (phone)', async ({ page }, info) => {
   test.skip(info.project.name !== 'phone');
   await login(page);
-  for (const [label, hash, pageId] of [['Movies', '#/movies', '#moviesPage'], ['Shows', '#/tv', '#tvshowsPage'], ['Search', '#/search', '#searchPage']]) {
+  for (const [label, hash, pageId] of [['Movies', '#/movies', '#moviesPage'], ['Shows', '#/tv', '#tvshowsPage']]) {
     await page.locator('.tide-tabbar a', { hasText: label }).click();
     await expect.poll(() => new URL(page.url()).hash).toContain(hash);
     await expect(page.locator(`${pageId}:not(.hide)`).first()).toBeVisible({ timeout: 15_000 });
-    if (label !== 'Search') await expect(page.locator(`${pageId}:not(.hide) .card`).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(`${pageId}:not(.hide) .card`).first()).toBeVisible({ timeout: 15_000 });
   }
+  // 0.5.0: the Search tab opens Tide's search dialog (the stock search page is replaced).
+  await page.locator('.tide-tabbar a', { hasText: 'Search' }).click();
+  await expect(page.locator('.tide-sd-wrap.open')).toBeVisible();
+  await expect.poll(() => new URL(page.url()).hash).not.toContain('#/search');
 });
 
 test('row title link and details route open real pages (desktop)', async ({ page }, info) => {
@@ -351,15 +367,21 @@ test('back from a details page returns to the same Home scroll position; a fresh
   await login(page);
   await page.waitForSelector('.tide-home .tide-wide');
   await page.mouse.move(700, 450);
-  for (let i = 0; i < 5; i++) { await page.mouse.wheel(0, 200); await page.waitForTimeout(60); }
-  await page.waitForTimeout(1200);
-  const pt = await page.evaluate(() => {
+  // Wheel down until a wide card sits fully in view (where that is depends on which rows the library fills).
+  const find = () => page.evaluate(() => {
     for (const c of document.querySelectorAll('section.tide-row .tide-wide')) {
       const r = c.getBoundingClientRect();
       if (r.top > 200 && r.bottom < innerHeight - 50 && r.left > 0 && r.left < 900) return { x: r.left + 40, y: r.top + 20 };
     }
     return null;
   });
+  for (let i = 0; i < 5; i++) { await page.mouse.wheel(0, 200); await page.waitForTimeout(60); }
+  await page.waitForTimeout(1200);
+  let pt = await find();
+  for (let i = 0; i < 10 && !pt; i++) { await page.mouse.wheel(0, 200); await page.waitForTimeout(400); pt = await find(); }
+  // Cards ignore clicks while a user scroll is still easing (theme/scrolling.ts): let it settle, then aim.
+  await page.waitForTimeout(1200);
+  pt = await find();
   expect(pt).not.toBeNull();
   const at = await page.evaluate(() => Math.round(scrollY));
   expect(at).toBeGreaterThan(500);
@@ -391,4 +413,20 @@ test('playing trailer: no masks on the video layer and the ambient glow fades ou
   await page.evaluate(() => document.querySelector('.tide-hero-slide.on')!.classList.add('vidon', 'vidplay'));
   await expect.poll(async () => (await read()).mask).toBe('none');
   await expect.poll(async () => Number((await read()).ambient ?? 0), { timeout: 3000 }).toBe(0);
+});
+
+test('top bar: two islands, see-through over the hero and solid after scrolling; current library is a pill', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  const fill = () => page.evaluate(() => getComputedStyle(document.querySelector('.MuiAppBar-root .MuiToolbar-root > .MuiStack-root')!, '::before').opacity);
+  await expect.poll(fill).toBe('0');
+  expect(await page.evaluate(() => document.querySelector('.MuiAppBar-root .MuiToolbar-root > .MuiStack-root')!.getBoundingClientRect().height)).toBe(46);
+  await page.evaluate(() => window.scrollTo(0, 600));
+  await expect.poll(fill).toBe('1');
+  const movies = page.locator('.MuiAppBar-root .MuiStack-root a[href^="#/movies"]');
+  await expect(movies).toHaveAttribute('data-tide-label', 'Movies');
+  await expect.poll(() => movies.evaluate((a) => getComputedStyle(a).fontSize)).toBe('0px');
+  await movies.click();
+  await expect(movies).toHaveAttribute('aria-current', 'page');
+  await expect.poll(() => movies.evaluate((a) => getComputedStyle(a).fontSize)).toBe('14px');
 });

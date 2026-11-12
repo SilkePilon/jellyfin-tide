@@ -94,10 +94,14 @@ function qs(query?: Query): string {
   return parts.length ? `?${parts.join('&')}` : '';
 }
 
-export async function api<T>(path: string, opts: { method?: string; query?: Query; body?: unknown; timeoutMs?: number; session?: Session | null } = {}): Promise<T> {
+export async function api<T>(path: string, opts: { method?: string; query?: Query; body?: unknown; timeoutMs?: number; session?: Session | null; signal?: AbortSignal } = {}): Promise<T> {
   const s = opts.session ?? getSession();
   if (!s) throw new Error('No Jellyfin session');
   const ctrl = new AbortController();
+  if (opts.signal) {
+    if (opts.signal.aborted) ctrl.abort();
+    else opts.signal.addEventListener('abort', () => ctrl.abort(), { once: true });
+  }
   const timer = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 10000);
   try {
     const headers: Record<string, string> = { Authorization: `MediaBrowser Token="${s.token}"` };

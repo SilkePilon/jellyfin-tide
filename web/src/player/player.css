@@ -65,22 +65,6 @@ body.tide .tide-pshelf { --tide-cw: 330px; --tide-gap: 18px; }
 body.tide .tide-player.tide-ps-open .tide-pc-shade { background: linear-gradient(0deg, rgba(0,0,0,.95), rgba(0,0,0,.6) 55%, rgba(0,0,0,.1) 85%); }
 body.tide .tide-player.tide-ps-open .tide-pc-skip { opacity: 0 !important; pointer-events: none !important; }
 /* S3 settings sheet */
-body.tide .tide-pset { position: absolute; left: var(--tide-pg); right: var(--tide-pg); bottom: 118px; z-index: 21; display: grid; grid-template-columns: 1fr 1fr 1.1fr; gap: 10px; padding: 18px; background: #141416; border-radius: 24px; box-shadow: 0 30px 60px rgba(0,0,0,.8); opacity: 0; transform: translateY(16px); pointer-events: none; transition: opacity .3s var(--tide-sp), transform .5s var(--tide-sp); }
-body.tide .tide-pset.open { opacity: 1; transform: none; pointer-events: auto; }
-body.tide .tide-pset-col { min-width: 0; display: flex; flex-direction: column; max-height: min(520px, calc(100vh - 300px)); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3a3a3c transparent; }
-body.tide .tide-pset-col h5 { position: sticky; top: 0; background: #141416; z-index: 1; margin: 0; padding: 10px 14px 6px; }
-body.tide .tide-pset-col + .tide-pset-col { border-left: 1px solid #222; padding-left: 10px; }
-body.tide .tide-pset h5 { margin: 10px 14px 6px; font-size: 12px; font-weight: 800; letter-spacing: .1em; color: #8e8e93; }
-body.tide .tide-pset-opt { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border: 0; border-radius: 12px; background: none; color: #fff; font: 600 14px var(--tide-font); text-align: left; cursor: pointer; }
-body.tide .tide-pset-opt:hover { background: #2a2a2e; }
-body.tide .tide-pset-opt small { display: block; color: #8e8e93; font-weight: 500; font-size: 12px; margin-top: 2px; }
-body.tide .tide-pset-ck { margin-left: auto; font-size: 20px; opacity: 0; }
-body.tide .tide-pset-opt.on .tide-pset-ck { opacity: 1; }
-body.tide .tide-pset-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 14px 10px; }
-body.tide .tide-pset-chip { padding: 8px 14px; border: 0; border-radius: 12px; background: #2a2a2e; color: #fff; font: 700 13px var(--tide-font); cursor: pointer; }
-body.tide .tide-pset-chip:hover { background: #3a3a3c; }
-body.tide .tide-pset-chip.on { background: #fff; color: #000; }
-body.tide .tide-player.tide-pset-open::before { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.45); pointer-events: none; }
 /* Subtitle size (rendered subtitles) */
 html[data-tide-subsize="S"] .videoSubtitles { font-size: 80% !important; } html[data-tide-subsize="L"] .videoSubtitles { font-size: 125% !important; } html[data-tide-subsize="XL"] .videoSubtitles { font-size: 150% !important; }
 html[data-tide-subsize="S"] video::cue { font-size: 80%; } html[data-tide-subsize="L"] video::cue { font-size: 125%; } html[data-tide-subsize="XL"] video::cue { font-size: 150%; }
@@ -173,10 +157,8 @@ body.tide .tide-buf small { height: 32px; display: inline-flex; align-items: cen
   body.tide .tide-pc-ctr .tide-pc-b { background: rgba(0,0,0,.45); }
   body.tide .tide-pc-ctr .tide-pc-big { width: 72px; height: 72px; background: rgba(0,0,0,.55); }
   body.tide .tide-pc-ctr .tide-pc-big .tide-ms { font-size: 44px; }
-  body.tide .tide-player:is(.tide-ps-open, .tide-pset-open, .tide-end-on) .tide-pc-ctr { opacity: 0 !important; pointer-events: none; }
+  body.tide .tide-player:is(.tide-ps-open, .tide-pset-open, .tide-psub-open, .tide-end-on) .tide-pc-ctr { opacity: 0 !important; pointer-events: none; }
   body.tide .tide-pshelf { bottom: 92px; --tide-cw: 220px; --tide-gap: 12px; }
-  body.tide .tide-pset { left: 0; right: 0; bottom: 0; border-radius: 24px 24px 0 0; grid-template-columns: 1fr 1fr; max-height: 78%; overflow: auto; scrollbar-width: none; }
-  body.tide .tide-pset-col:nth-child(3) { grid-column: 1 / -1; border-left: 0; padding-left: 0; border-top: 1px solid #222; }
   body.tide .tide-pz-block { left: 40px; gap: 22px; } body.tide .tide-pz-poster { flex-basis: 110px; } body.tide .tide-pz-text { width: 420px; gap: 8px; }
   body.tide .tide-pz-logo { height: 34px; } body.tide .tide-pz-line { font-size: 16px; } body.tide .tide-pz-syn { font-size: 13px; }
   body.tide .tide-pz-paused { top: 16px; font-size: 13px; } body.tide .tide-pz-next { width: 260px; }
@@ -201,3 +183,77 @@ body.tide .iconOsdProgressOuter { background: #48484a !important; height: 6px !i
 body.tide .iconOsdProgressInner { background: #fff !important; border-radius: 3px !important; }
 /* `hidden` must win over the buttons' own display (e.g. Episodes / Next episode for movies). */
 body.tide .tide-player [hidden] { display: none !important; }
+
+/* 0.5.0: Tide drives the stock settings sheets invisibly (player/stockMenu.ts). */
+html.tide-stock-hidden .dialogContainer, html.tide-stock-hidden .dialogBackdrop { opacity: 0 !important; pointer-events: none !important; }
+/* Subtitle offset is Tide's "Timing" control: the stock slider panel stays hidden while Tide's player is up. */
+body.tide:has(.tide-player) .subtitleSync { opacity: 0 !important; pointer-events: none !important; }
+
+/* ── 0.5.0 player menus (player/menu.ts): solid popover above its button, right edges lined up ── */
+body.tide .tide-pmenu { position: absolute; right: var(--tide-pg); bottom: 132px; z-index: 21; max-width: calc(100vw - 32px); background: #141416; color: #f5f5f7; border-radius: 20px; box-shadow: 0 0 0 1px #2a2a2e, 0 24px 60px rgba(0,0,0,.6); overflow: hidden; opacity: 0; transform: translateY(10px) scale(.97); transform-origin: bottom right; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+body.tide .tide-pmenu.open { opacity: 1; transform: none; pointer-events: auto; transition: opacity .26s var(--tide-sp), transform .34s var(--tide-sp); }
+body.tide .tide-pm-h6 { margin: 0; padding: 16px 18px 8px; font: 800 12px var(--tide-font); letter-spacing: .1em; color: #8e8e93; }
+body.tide .tide-pm-list { padding: 4px 6px 8px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #3a3a3c transparent; }
+body.tide .tide-pm-opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; border: 0; border-radius: 12px; background: none; color: inherit; font: 600 15px var(--tide-font); text-align: left; cursor: pointer; }
+body.tide .tide-pm-opt:is(:hover, :focus-visible) { background: #2a2a2e; outline: none; }
+body.tide .tide-pm-ic { width: 24px; font-size: 22px; color: #d1d1d6; }
+body.tide .tide-pm-lb { flex: 1; min-width: 0; }
+body.tide .tide-pm-lb small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 500; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.tide .tide-pm-val { max-width: 130px; color: #8e8e93; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.tide .tide-pm-chev { color: #636366; font-size: 20px; }
+body.tide .tide-pm-ck { font-size: 20px; visibility: hidden; }
+body.tide .tide-pm-opt.on .tide-pm-ck { visibility: visible; }
+body.tide .tide-pm-toggle { position: relative; flex: 0 0 44px; height: 26px; border-radius: 13px; background: #3a3a3c; transition: background-color .2s; }
+body.tide .tide-pm-toggle i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .25s var(--tide-sp); }
+body.tide .tide-pm-opt.on .tide-pm-toggle { background: #fff; }
+body.tide .tide-pm-opt.on .tide-pm-toggle i { background: #000; transform: translateX(18px); }
+body.tide .tide-pm-wait { display: flex; justify-content: center; padding: 22px; }
+body.tide .tide-pm-spin { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #48484a; border-top-color: #fff; animation: tide-pm-spin .8s linear infinite; }
+@keyframes tide-pm-spin { to { transform: rotate(360deg); } }
+body.tide .tide-pm-empty { padding: 14px; color: #8e8e93; font-size: 14px; }
+@media (max-width: 699px) { body.tide .tide-pmenu { bottom: 96px; } }
+
+/* Settings (M1): main list and submenu share one fixed-height box; the submenu slides in (transform only). */
+body.tide .tide-pmset { width: 340px; }
+body.tide .tide-pmset-panes { position: relative; height: var(--tide-pm-h, 380px); max-height: calc(100vh - 220px); }
+body.tide .tide-pmset-pane { position: absolute; inset: 0; display: flex; flex-direction: column; transition: transform .36s var(--tide-sp), opacity .3s var(--tide-sp); }
+body.tide .tide-pmset-pane .tide-pm-list { flex: 1; min-height: 0; }
+body.tide .tide-pmset-sub { transform: translateX(100%); opacity: 0; pointer-events: none; }
+body.tide .tide-pmset.drill .tide-pmset-main { transform: translateX(-30%); opacity: 0; pointer-events: none; }
+body.tide .tide-pmset.drill .tide-pmset-sub { transform: none; opacity: 1; pointer-events: auto; }
+body.tide .tide-pmset-subhd { display: flex; align-items: center; gap: 6px; padding: 10px 10px 4px; font-size: 16px; }
+body.tide .tide-pmset-back { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer; }
+body.tide .tide-pmset-back:hover { background: #2a2a2e; }
+
+/* Subtitles (B): smaller, with search, collapsible "In this file" / "Online" sections, Size + Timing footer. */
+body.tide .tide-pmsub { width: 300px; display: flex; flex-direction: column; max-height: min(470px, calc(100vh - 200px)); }
+body.tide .tide-pmsub-search { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 40px; margin: 12px 12px 6px; padding: 0 6px 0 12px; border-radius: 12px; background: #2a2a2e; }
+body.tide .tide-pmsub-search > .tide-ms { font-size: 20px; color: #8e8e93; }
+body.tide .tide-pmsub-search input { flex: 1; min-width: 0; border: 0; background: none; color: #fff; font: 500 14.5px var(--tide-font); outline: none; }
+body.tide .tide-pmsub-search input::placeholder { color: #8e8e93; }
+body.tide .tide-pmsub-clear { display: inline-flex; padding: 4px; border: 0; background: none; color: #8e8e93; cursor: pointer; }
+body.tide .tide-pmsub-body { flex: 1 1 auto; min-height: 0; }
+body.tide .tide-pmsub-hd { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 10px 6px 14px; border: 0; border-radius: 10px; background: #141416; color: #8e8e93; font: 800 11.5px var(--tide-font); letter-spacing: .1em; text-align: left; cursor: pointer; }
+body.tide .tide-pmsub-hd:hover { color: #fff; }
+body.tide .tide-pmsub-n { padding: 2px 7px; border-radius: 8px; background: #2a2a2e; color: #d1d1d6; font-size: 11px; letter-spacing: 0; }
+body.tide .tide-pmsub-cur { flex: 1; min-width: 0; text-align: right; color: #d1d1d6; font: 600 12.5px var(--tide-font); letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity .2s; }
+body.tide .tide-pmsub-hd.col .tide-pmsub-cur { opacity: 1; }
+body.tide .tide-pmsub-hd > .tide-ms { font-size: 20px; transition: transform .3s var(--tide-sp); }
+body.tide .tide-pmsub-hd.col > .tide-ms { transform: rotate(-90deg); }
+body.tide .tide-pmsub-sec { animation: tide-pmsub-in .28s var(--tide-sp); }
+@keyframes tide-pmsub-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+body.tide .tide-pmsub-dl { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 30px; height: 30px; border-radius: 50%; background: #2a2a2e; }
+body.tide .tide-pmsub-dl .tide-ms, body.tide .tide-pmsub-ok, body.tide .tide-pmsub-err { font-size: 20px; }
+body.tide .tide-pmsub-err { color: #ff453a; }
+body.tide .tide-pmsub-foot { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid #2a2a2e; }
+body.tide .tide-pmsub-row { display: flex; align-items: center; gap: 10px; color: #d1d1d6; font: 600 13.5px var(--tide-font); }
+body.tide .tide-pmsub-row > span:first-child { flex: 1; }
+body.tide .tide-pmsub-chips, body.tide .tide-pmsub-step { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; background: #2a2a2e; }
+body.tide .tide-pmsub-chips button { min-width: 30px; height: 26px; border: 0; border-radius: 8px; background: none; color: #d1d1d6; font: 700 12.5px var(--tide-font); cursor: pointer; }
+body.tide .tide-pmsub-chips button.on { background: #fff; color: #000; }
+body.tide .tide-pmsub-step button { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 26px; border: 0; border-radius: 8px; background: none; color: #fff; cursor: pointer; }
+body.tide .tide-pmsub-step button:hover { background: #3a3a3c; }
+body.tide .tide-pmsub-step .tide-ms { font-size: 18px; }
+body.tide .tide-pmsub-step output { min-width: 54px; text-align: center; font: 700 12.5px var(--tide-font); font-variant-numeric: tabular-nums; }
+/* Stock "Playback info" overlay, restyled as a solid Tide card. */
+body.tide:has(.tide-player) .playerStats { top: 120px !important; left: var(--tide-pg) !important; right: auto !important; background: #141416 !important; border-radius: 16px !important; box-shadow: 0 0 0 1px #2a2a2e, 0 24px 60px rgba(0,0,0,.6) !important; color: #d1d1d6 !important; font: 500 13px/1.6 var(--tide-font) !important; z-index: 22 !important; }

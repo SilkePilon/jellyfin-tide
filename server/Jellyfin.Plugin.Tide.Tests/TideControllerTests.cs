@@ -66,4 +66,13 @@ public class TideControllerTests
     [InlineData("00000000-0000-0000-0000-000000000001", "Tide", true, false)]
     public void IntroSkipperDetection(string id, string name, bool active, bool expected)
         => Assert.Equal(expected, IntroSkipperProbe.IsActive(new[] { (Guid.Parse(id), name, active) }));
+
+    [Fact]
+    public void ClientConfigCarriesEnableSearch()
+    {
+        using var on = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(new PluginConfiguration(), "0.5.0")));
+        Assert.True(on.RootElement.GetProperty("enableSearch").GetBoolean());
+        using var off = JsonDocument.Parse(JsonSerializer.Serialize(TideController.BuildClientConfig(new PluginConfiguration { EnableSearch = false }, "0.5.0")));
+        Assert.False(off.RootElement.GetProperty("enableSearch").GetBoolean());
+    }
 }

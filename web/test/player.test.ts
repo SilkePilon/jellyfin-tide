@@ -97,7 +97,7 @@ test('wheel over Tide panels scrolls them instead of reaching the stock volume h
   card.dispatchEvent(overShelf);
   expect(stockVolume).not.toHaveBeenCalled();
   expect(overShelf.defaultPrevented).toBe(true); // vertical notch over the episode row pages it sideways
-  document.querySelector('.tide-pset')!.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+  document.querySelector('.tide-pmset')!.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
   expect(stockVolume).not.toHaveBeenCalled();
   document.querySelector('.tide-player')!.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
   expect(stockVolume).toHaveBeenCalledTimes(1); // over the video itself the stock wheel-volume stays
@@ -127,4 +127,41 @@ test('Jellyfin Desktop (no web <video>): play/pause button and paused screen fol
   expect(root.classList.contains('tide-pz-on')).toBe(false);
   un();
   vi.useRealTimers();
+});
+
+test('subtitles and settings buttons open their own menus, one at a time; Esc closes; stock missing shows the fallback row', async () => {
+  const host = stockOsd();
+  const un = await mountPlayer(host, cfg as any);
+  await vi.waitFor(() => expect(document.querySelector('.tide-pc-ep')?.textContent).toBe('S3 · E1 · Who Are You?'));
+  document.querySelector<HTMLElement>('.tide-pc-set')!.click();
+  expect(document.querySelector('.tide-pmset.open')).not.toBeNull();
+  await vi.waitFor(() => expect(document.querySelector('.tide-pmset [data-stock]')).not.toBeNull(), { timeout: 3000 });
+  expect(document.querySelector('.tide-pmset [data-go="audio"]')).not.toBeNull();
+  document.querySelector<HTMLElement>('.tide-pc-subs')!.click();
+  expect(document.querySelector('.tide-pmset.open')).toBeNull();
+  expect(document.querySelector('.tide-pmsub.open')).not.toBeNull();
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  expect(document.querySelector('.tide-pmsub.open')).toBeNull();
+  un();
+});
+
+test('shelf opens the current season with NOW PLAYING and no synopsis', async () => {
+  const { createShelf } = await import('../src/player/shelf');
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+    const u = String(url);
+    if (u.includes('/Seasons')) return new Response(JSON.stringify({ Items: [{ Id: 's1', Name: 'Season 1', Type: 'Season', IndexNumber: 1, ChildCount: 2 }] }));
+    if (u.includes('/Episodes')) return new Response(JSON.stringify({ Items: [
+      { Id: 'a', Name: 'A', Type: 'Episode', SeriesId: 'ser', ParentIndexNumber: 1, IndexNumber: 1, Overview: 'x' },
+      { Id: 'b', Name: 'B', Type: 'Episode', SeriesId: 'ser', ParentIndexNumber: 1, IndexNumber: 2, Overview: 'y' }] }));
+    return new Response(JSON.stringify({ Id: 'b', Name: 'B', Type: 'Episode', ParentIndexNumber: 1 }));
+  });
+  const changes: boolean[] = [];
+  const sh = createShelf((o) => changes.push(o));
+  document.body.append(sh.el);
+  await sh.setEpisode('ser', 'b');
+  sh.open();
+  expect(sh.el.querySelector('[data-id="b"] .tide-wide-tag')?.textContent).toBe('NOW PLAYING');
+  expect(sh.el.querySelector('.tide-wide-syn')).toBeNull();
+  sh.close();
+  expect(changes).toEqual([true, false]);
 });

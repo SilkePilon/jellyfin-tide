@@ -30,6 +30,8 @@ export interface ClientConfig {
   enableDetails?: boolean; enableSmoothScroll?: boolean;
   /** 0.4.0+. Missing (older server) means on / 35 / false. */
   enablePlayer?: boolean; creditsFallbackSeconds?: number; introSkipper?: boolean;
+  /** 0.5.0+. Missing (older server) means on. */
+  enableSearch?: boolean;
 }
 
 /** Admin defaults from ClientConfig, falling back to the built-in order when the server is older. */

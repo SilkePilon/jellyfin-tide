@@ -2,15 +2,18 @@
 
 A streaming-app theme for Jellyfin 12.4+ (Modern web layout). Works in the browser, Jellyfin Desktop and the Android app.
 
+- **Top bar:** two floating islands (libraries as icons, the current one as a pill; actions and profile), see-through over a hero.
 - **Home:** a hero with trailers, large landscape cards, custom sections and rows each user can reorder or hide.
 - **Detail pages** for movies, series and episodes: floating poster/still, next-up strip, season dropdown, cast, more like this, and your file's quality.
 - **Player:** Tide's own controls over Jellyfin's player.
   - an episodes shelf
-  - a settings sheet (audio, subtitles, quality, speed)
+  - a settings menu with every option the default player offers on that device (audio, quality, speed, aspect ratio, repeat, playback info)
+  - a subtitles menu with search, size, timing and, with a subtitle provider such as OpenSubtitles, online download
   - a "You're watching" pause screen
   - a next-episode countdown
   - a loading screen with progress
   - phone gestures (double-tap to seek, swipe up for episodes)
+- **Search:** a quick search dialog (top-bar button, `/` or Ctrl+K) across movies, shows, episodes, people, music, collections and playlists.
 - **Skip intro and credits:** shown when the [Intro Skipper](https://github.com/intro-skipper/intro-skipper) plugin is installed.
   - On Android, the player applies when the app's video player is set to *Web player*.
 
@@ -20,7 +23,7 @@ A streaming-app theme for Jellyfin 12.4+ (Modern web layout). Works in the brows
 3. Optional but recommended: also install **File Transformation**. Without it, Tide patches `jellyfin-web/index.html` directly, so the web folder must be writable by Jellyfin.
 
 ## Configure
-Dashboard → Plugins → Tide: turn the theme, icons, home, trailers, detail pages, smooth scrolling and the player on or off; set hero length, the NEW window, the default row order and when credits start without Intro Skipper.
+Dashboard → Plugins → Tide: turn the theme, icons, home, trailers, detail pages, smooth scrolling, the player and the search dialog on or off; set hero length, the NEW window, the default row order and when credits start without Intro Skipper.
 Each user can reorder or hide rows with **Edit home** at the bottom of Home.
 
 ## Develop

@@ -77,7 +77,12 @@ public sealed record ClientConfig(
     [property: JsonPropertyName("enableSmoothScroll")] bool EnableSmoothScroll,
     [property: JsonPropertyName("enablePlayer")] bool EnablePlayer,
     [property: JsonPropertyName("creditsFallbackSeconds")] int CreditsFallbackSeconds,
-    [property: JsonPropertyName("introSkipper")] bool IntroSkipper);
+    [property: JsonPropertyName("introSkipper")] bool IntroSkipper,
+    [property: JsonPropertyName("enableSearch")] bool EnableSearch);
+
+public sealed record SubtitleCapabilityDto(
+    [property: JsonPropertyName("canSearch")] bool CanSearch,
+    [property: JsonPropertyName("providers")] string[] Providers);
 
 public sealed record HomeResponse(
     [property: JsonPropertyName("hero")] IReadOnlyList<HeroItemDto> Hero,
