@@ -5,13 +5,14 @@ import type { Bridge, PlayerState } from './bridge';
 import type { Segments } from './segments';
 
 export const IDLE_MS = 3000;
-export interface ControlsDeps { bridge: Bridge; onEpisodes(): void; onSettings(): void; onNext(): void; hasNext(): boolean; isSeries(): boolean; onBack?(): void }
+export interface ControlsDeps { bridge: Bridge; onEpisodes(): void; onSettings(): void; onSubtitles(): void; onNext(): void; hasNext(): boolean; isSeries(): boolean; onBack?(): void }
 export interface Controls {
   el: HTMLElement;
   setItem(info: { logoId: string; title: string; line: string; trickplay?: { id: string; mediaSourceId: string; info: TrickplayInfo } | null; stillId: string }): void;
   setSegments(s: Segments): void;
   update(s: PlayerState): void;
   wake(): void; isIdle(): boolean; setPinned(on: boolean): void; dispose(): void;
+  anchor(which: 'subs' | 'set'): HTMLElement; setSubsVisible(on: boolean): void;
 }
 
 const btn = (cls: string, name: string, label: string, onClick: () => void) =>
@@ -52,13 +53,15 @@ export function createControls(deps: ControlsDeps): Controls {
   const muteBtn = btn('tide-pc-mute', 'volume_up', 'Mute', () => bridge.toggleMute());
   const vol = h('input', { class: 'tide-pc-vol', type: 'range', min: '0', max: '100', 'aria-label': 'Volume', oninput: (e: Event) => bridge.setVolume(Number((e.target as HTMLInputElement).value)) }) as HTMLInputElement;
   vol.addEventListener('click', (e) => e.stopPropagation());
+  const subsBtn = btn('tide-pc-subs', 'subtitles', 'Subtitles', deps.onSubtitles);
+  const setBtn = btn('tide-pc-set', 'tune', 'Settings', deps.onSettings);
   const epBtn = pill('tide-pc-epbtn', 'video_library', 'Episodes', deps.onEpisodes);
   const nextBtn = pill('tide-pc-next', 'skip_next', 'Next episode', deps.onNext);
   const row = h('div', { class: 'tide-pc-row' },
     play, btn('tide-pc-rw', 'replay_10', 'Back 10 seconds', () => bridge.seekBy(-10)), btn('tide-pc-fw', 'forward_10', 'Forward 10 seconds', () => bridge.seekBy(10)),
     h('div', { class: 'tide-pc-volw' }, muteBtn, vol), h('span', { class: 'tide-pc-sp' }),
     epBtn, nextBtn,
-    btn('tide-pc-subs', 'subtitles', 'Subtitles', deps.onSettings), btn('tide-pc-set', 'tune', 'Settings', deps.onSettings),
+    subsBtn, setBtn,
     btn('tide-pc-full', 'fullscreen', 'Full screen', () => bridge.fullscreen()));
   const bottom = h('div', { class: 'tide-pc-bt tide-pc-ui' }, scr, h('div', { class: 'tide-pc-times' }, cur, rem), row);
   const skip = h('div', { class: 'tide-pc-skip tide-pc-float' },
@@ -151,7 +154,7 @@ export function createControls(deps: ControlsDeps): Controls {
       ' ': () => bridge.togglePlay(), k: () => bridge.togglePlay(),
       ArrowLeft: () => bridge.seekBy(-10), j: () => bridge.seekBy(-10),
       ArrowRight: () => bridge.seekBy(10), l: () => bridge.seekBy(10),
-      e: deps.onEpisodes, s: deps.onSettings, f: () => bridge.fullscreen(), m: () => bridge.toggleMute(), n: deps.onNext,
+      e: deps.onEpisodes, s: deps.onSettings, c: deps.onSubtitles, f: () => bridge.fullscreen(), m: () => bridge.toggleMute(), n: deps.onNext,
     };
     const fn = map[k];
     wake();
@@ -198,6 +201,8 @@ export function createControls(deps: ControlsDeps): Controls {
       if (pausedChanged) { if (s.paused) wake(); else arm(); }
     },
     wake,
+    anchor: (which) => (which === 'subs' ? subsBtn : setBtn),
+    setSubsVisible(on) { subsBtn.hidden = !on; },
     isIdle: () => idle,
     setPinned(on) { pinned = on; if (on) wake(); else arm(); },
     dispose() {

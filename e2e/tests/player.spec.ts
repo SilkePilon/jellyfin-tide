@@ -58,7 +58,7 @@ test('Tide controls replace the stock OSD and drive playback', async ({ page, re
   await expect.poll(async () => page.evaluate(() => { const v = document.querySelector('video')!; return v.currentTime / v.duration; })).toBeGreaterThan(0.4);
 });
 
-test('controls hide after 3 s and come back on mouse move; paused screen after 4 s', async ({ page, request }, info) => {
+test('controls hide after 3 s and come back on mouse move; paused screen after 3 s', async ({ page, request }, info) => {
   test.skip(info.project.name === 'phone', 'mouse idle');
   const id = await firstEpisode(request);
   await login(page);
@@ -81,8 +81,9 @@ test('episodes shelf plays another episode; settings lists real streams', async 
   await startPlayback(page, id);
   await page.mouse.move(700, 450);
   await page.keyboard.press('s');
-  await expect(page.locator('.tide-pset.open')).toBeVisible();
-  await expect(page.locator('.tide-pset [data-kind="audio"]').first()).toBeVisible();
+  await expect(page.locator('.tide-pmset.open')).toBeVisible();
+  await expect(page.locator('.tide-pmset [data-go="audio"]')).toBeVisible();
+  await expect(page.locator('.tide-pmset [data-go="playbackrate"]')).toBeVisible();
   await page.keyboard.press('Escape');
   await page.keyboard.press('e');
   await expect(page.locator('.tide-pshelf.open [data-id]').nth(1)).toBeVisible();
@@ -178,4 +179,49 @@ test('movies: no Episodes or Next episode buttons in the player', async ({ page,
   await expect(page.locator('.tide-pc-play')).toBeVisible();
   await expect(page.locator('.tide-pc-epbtn')).toBeHidden();
   await expect(page.locator('.tide-pc-next')).toBeHidden();
+});
+
+test('settings menu drives the default player: speed, aspect ratio, playback info; stock sheets stay hidden', async ({ page, request }, info) => {
+  test.skip(info.project.name === 'phone', 'desktop');
+  const id = await firstEpisode(request);
+  await login(page);
+  await startPlayback(page, id);
+  await page.mouse.move(700, 450);
+  await page.locator('.tide-pc-set').click();
+  await expect(page.locator('.tide-pmset.open [data-go="playbackrate"]')).toBeVisible();
+  await expect(page.locator('.tide-pmset [data-go="suboffset"]')).toHaveCount(0);
+  const visibleSheet = () => page.evaluate(() => [...document.querySelectorAll('.actionSheet')].some((s) => getComputedStyle(s.closest('.dialogContainer') ?? s).opacity !== '0'));
+  await page.locator('.tide-pmset [data-go="playbackrate"]').click();
+  expect(await visibleSheet()).toBe(false);
+  await page.locator('.tide-pmset-sub [data-pick="1.5"]').click();
+  await expect.poll(() => page.evaluate(() => document.querySelector('video')!.playbackRate)).toBe(1.5);
+  await expect(page.locator('.tide-pmset [data-go="playbackrate"] .tide-pm-val')).toHaveText('1.5x');
+  await page.locator('.tide-pmset [data-go="aspectratio"]').click();
+  await page.locator('.tide-pmset-sub [data-pick="cover"]').click();
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.querySelector('video')!).objectFit)).toBe('cover');
+  await page.locator('.tide-pmset [data-toggle="stats"]').click();
+  await expect(page.locator('.playerStats:not(.hide)')).toBeVisible();
+  expect(page.url()).toContain('#/video');
+  await expect(page.locator('.actionSheet.opened')).toHaveCount(0);
+});
+
+test('subtitles menu: filter, pick, Timing drives the stock offset', async ({ page, request }, info) => {
+  test.skip(info.project.name === 'phone', 'desktop');
+  const id = await firstEpisode(request);
+  await login(page);
+  await startPlayback(page, id);
+  await page.mouse.move(700, 450);
+  await page.keyboard.press('c');
+  const menu = page.locator('.tide-pmsub.open');
+  await expect(menu).toBeVisible();
+  await expect(menu.locator('[data-sub]').nth(1)).toBeVisible();
+  await menu.locator('input').fill('zzz');
+  await expect(menu.locator('.tide-pm-empty')).toContainText('zzz');
+  await menu.locator('input').fill('');
+  await menu.locator('[data-sub]').nth(1).click();
+  await expect(menu.locator('[data-sub]').nth(1)).toHaveClass(/\bon\b/);
+  await menu.locator('[data-sync="1"]').click();
+  await expect.poll(() => page.evaluate(() => (document.querySelector('.subtitleSyncSlider') as HTMLInputElement | null)?.value)).toBe('0.1');
+  await expect(menu.locator('output')).toHaveText('+0.1 s');
+  await expect(page.locator('.actionSheet.opened')).toHaveCount(0);
 });

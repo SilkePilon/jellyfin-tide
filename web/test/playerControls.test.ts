@@ -6,7 +6,7 @@ afterEach(() => { vi.useRealTimers(); document.body.innerHTML = ''; document.doc
 
 function setup() {
   const bridge = { seek: vi.fn(), seekBy: vi.fn(), togglePlay: vi.fn(), fullscreen: vi.fn(), toggleMute: vi.fn(), setVolume: vi.fn(), read: () => st } as any;
-  const deps = { bridge, onEpisodes: vi.fn(), onSettings: vi.fn(), onNext: vi.fn(), hasNext: () => true, isSeries: () => true };
+  const deps = { bridge, onEpisodes: vi.fn(), onSettings: vi.fn(), onSubtitles: vi.fn(), onNext: vi.fn(), hasNext: () => true, isSeries: () => true };
   const c = createControls(deps);
   const host = document.createElement('div'); host.className = 'tide-player'; host.append(c.el); document.body.append(host);
   c.setItem({ logoId: 'ser', title: 'Silo', line: 'S3 · E1 · Who Are You?', stillId: 'e1' });
@@ -88,9 +88,20 @@ test('scrubber: drag previews locally and seeks once on release', () => {
 test('back button exits via onBack (default: history.back)', () => {
   const onBack = vi.fn();
   const bridge = { seek: vi.fn(), seekBy: vi.fn(), togglePlay: vi.fn() } as any;
-  const c = createControls({ bridge, onEpisodes: vi.fn(), onSettings: vi.fn(), onNext: vi.fn(), hasNext: () => false, isSeries: () => false, onBack });
+  const c = createControls({ bridge, onEpisodes: vi.fn(), onSettings: vi.fn(), onSubtitles: vi.fn(), onNext: vi.fn(), hasNext: () => false, isSeries: () => false, onBack });
   document.body.append(c.el);
   c.el.querySelector<HTMLButtonElement>('.tide-pc-back')!.click();
   expect(onBack).toHaveBeenCalled();
   c.dispose();
+});
+
+test('subtitles button and the c key call onSubtitles; anchors and visibility', () => {
+  const { c, deps } = setup() as any;
+  document.querySelector<HTMLElement>('.tide-pc-subs')!.click();
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+  expect(deps.onSubtitles).toHaveBeenCalledTimes(2);
+  expect(c.anchor('subs')).toBe(document.querySelector('.tide-pc-subs'));
+  expect(c.anchor('set')).toBe(document.querySelector('.tide-pc-set'));
+  c.setSubsVisible(false);
+  expect(document.querySelector<HTMLElement>('.tide-pc-subs')!.hidden).toBe(true);
 });
