@@ -84,6 +84,11 @@ export function anySession(): Session | null {
   return getSession() ?? earlySession();
 }
 
+/** The Jellyfin server base before anyone is signed in (login page): Tide's script URL, else jellyfin-web's ApiClient. */
+export function serverBase(): string {
+  return (scriptServer ?? jfApiClient()?.serverAddress?.() ?? location.origin).replace(/\/$/, '');
+}
+
 type Query = Record<string, string | number | boolean | undefined | null>;
 
 function qs(query?: Query): string {

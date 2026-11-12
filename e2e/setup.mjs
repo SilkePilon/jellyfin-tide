@@ -43,6 +43,15 @@ export async function setup() {
       });
     }
   }
+  // Visible test profiles for the login picker: mila (password "mila") and noah (no password).
+  const users = await req('/Users', { token });
+  for (const [name, pw] of [['mila', 'mila'], ['noah', '']]) {
+    let u = users.find((x) => x.Name === name);
+    if (!u) u = await req('/Users/New', { method: 'POST', token, body: { Name: name, Password: pw } });
+    const full = await req(`/Users/${u.Id}`, { token });
+    if (full.Policy.IsHidden) await req(`/Users/${u.Id}/Policy`, { method: 'POST', token, body: { ...full.Policy, IsHidden: false } });
+    if (!pw) await req(`/Users/${u.Id}/Password`, { method: 'POST', token, body: { ResetPassword: true } });
+  }
   console.log('setup ok');
 }
 

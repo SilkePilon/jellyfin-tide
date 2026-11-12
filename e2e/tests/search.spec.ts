@@ -1,13 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { login } from './auth';
 
-async function login(page: Page) {
-  await page.goto('/web/');
-  await page.waitForSelector('input[type=password]');
-  await page.fill('input[type=text], #txtManualName', 'tide');
-  await page.fill('input[type=password]', 'tide');
-  await page.keyboard.press('Enter');
-  await page.waitForSelector('.tide-home', { timeout: 30_000 });
-}
 
 test('search: the app-bar button opens the dialog; typing shows grouped results; Enter opens details', async ({ page }) => {
   await login(page);
