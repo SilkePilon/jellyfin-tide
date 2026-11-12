@@ -206,3 +206,27 @@ body.tide .tide-player [hidden] { display: none !important; }
 html.tide-stock-hidden .dialogContainer, html.tide-stock-hidden .dialogBackdrop { opacity: 0 !important; pointer-events: none !important; }
 /* Subtitle offset is Tide's "Timing" control: the stock slider panel stays hidden while Tide's player is up. */
 body.tide:has(.tide-player) .subtitleSync { opacity: 0 !important; pointer-events: none !important; }
+
+/* ── 0.5.0 player menus (player/menu.ts): solid popover above its button, right edges lined up ── */
+body.tide .tide-pmenu { position: absolute; right: var(--tide-pg); bottom: 132px; z-index: 21; max-width: calc(100vw - 32px); background: #141416; color: #f5f5f7; border-radius: 20px; box-shadow: 0 0 0 1px #2a2a2e, 0 24px 60px rgba(0,0,0,.6); overflow: hidden; opacity: 0; transform: translateY(10px) scale(.97); transform-origin: bottom right; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+body.tide .tide-pmenu.open { opacity: 1; transform: none; pointer-events: auto; transition: opacity .26s var(--tide-sp), transform .34s var(--tide-sp); }
+body.tide .tide-pm-h6 { margin: 0; padding: 16px 18px 8px; font: 800 12px var(--tide-font); letter-spacing: .1em; color: #8e8e93; }
+body.tide .tide-pm-list { padding: 4px 6px 8px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #3a3a3c transparent; }
+body.tide .tide-pm-opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; border: 0; border-radius: 12px; background: none; color: inherit; font: 600 15px var(--tide-font); text-align: left; cursor: pointer; }
+body.tide .tide-pm-opt:is(:hover, :focus-visible) { background: #2a2a2e; outline: none; }
+body.tide .tide-pm-ic { width: 24px; font-size: 22px; color: #d1d1d6; }
+body.tide .tide-pm-lb { flex: 1; min-width: 0; }
+body.tide .tide-pm-lb small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 500; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.tide .tide-pm-val { max-width: 130px; color: #8e8e93; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.tide .tide-pm-chev { color: #636366; font-size: 20px; }
+body.tide .tide-pm-ck { font-size: 20px; visibility: hidden; }
+body.tide .tide-pm-opt.on .tide-pm-ck { visibility: visible; }
+body.tide .tide-pm-toggle { position: relative; flex: 0 0 44px; height: 26px; border-radius: 13px; background: #3a3a3c; transition: background-color .2s; }
+body.tide .tide-pm-toggle i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .25s var(--tide-sp); }
+body.tide .tide-pm-opt.on .tide-pm-toggle { background: #fff; }
+body.tide .tide-pm-opt.on .tide-pm-toggle i { background: #000; transform: translateX(18px); }
+body.tide .tide-pm-wait { display: flex; justify-content: center; padding: 22px; }
+body.tide .tide-pm-spin { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #48484a; border-top-color: #fff; animation: tide-pm-spin .8s linear infinite; }
+@keyframes tide-pm-spin { to { transform: rotate(360deg); } }
+body.tide .tide-pm-empty { padding: 14px; color: #8e8e93; font-size: 14px; }
+@media (max-width: 699px) { body.tide .tide-pmenu { bottom: 96px; } }
