@@ -29,7 +29,7 @@ public class TideControllerTests
         var order = root.GetProperty("defaultRowOrder").EnumerateArray().Select(e => e.GetString()).ToArray();
         Assert.Equal("topRated", order[0]);
         Assert.Equal(Array.IndexOf(order, "continue") + 1, Array.IndexOf(order, "nextUp"));
-        Assert.Equal(16, order.Length);
+        Assert.Equal(15, order.Length);
         Assert.Equal(new[] { "random" }, root.GetProperty("defaultHiddenRows").EnumerateArray().Select(e => e.GetString()));
     }
 

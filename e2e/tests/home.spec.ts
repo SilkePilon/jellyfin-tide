@@ -85,18 +85,10 @@ test('cards per row adapt to window width', async ({ browser }, info) => {
   }
 });
 
-test('discover: clicking a poster brings it to the centre and updates the reason (desktop)', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop');
+test('Discover section is gone (removed in 0.5.0)', async ({ page }) => {
   await login(page);
-  const sec = page.locator('section[data-row="discover"]');
-  await sec.scrollIntoViewIfNeeded();
-  await expect(sec.locator('.tide-disc-poster.center')).toHaveCount(1, { timeout: 15_000 });
-  await expect(sec.locator('.tide-row-title')).toHaveText('Discover');
-  const other = sec.locator('.tide-disc-poster:not(.center)').first();
-  const name = await other.getAttribute('aria-label');
-  await other.click();
-  await expect(sec.locator('.tide-disc-poster.center')).toHaveAttribute('aria-label', name!);
-  await expect(sec.locator('.tide-disc-meta')).toContainText(name!);
+  await expect(page.locator('section[data-row="newThisWeek"], section[data-row="continue"]').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('section[data-row="discover"], .tide-disc')).toHaveCount(0);
 });
 
 test('new this week bento shows NEW tiles (desktop)', async ({ page }, info) => {

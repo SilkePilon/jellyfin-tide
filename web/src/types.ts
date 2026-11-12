@@ -1,5 +1,5 @@
 export const ROW_IDS = [
-  'continue', 'nextUp', 'newThisWeek', 'latestMovies', 'topRated', 'discover', 'latestShows', 'becauseYouWatched',
+  'continue', 'nextUp', 'newThisWeek', 'latestMovies', 'topRated', 'latestShows', 'becauseYouWatched',
   'genre1', 'genre2', 'genre3', 'favourites', 'random', 'collections', 'musicAlbums', 'musicArtists',
 ] as const;
 export type RowId = (typeof ROW_IDS)[number];

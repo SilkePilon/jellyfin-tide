@@ -99,4 +99,4 @@ html.tide-smooth { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html.tide-smooth { scroll-behavior: auto; } }
 
 /* No hover reveals while scrolling (see theme/scrolling.ts). */
-html.tide-is-scrolling body.tide :is(.tide-card, .tide-bento-tile, .tide-disc-poster, .tide-chipp, .tide-nu) { pointer-events: none; }
+html.tide-is-scrolling body.tide :is(.tide-card, .tide-bento-tile, .tide-chipp, .tide-nu) { pointer-events: none; }

@@ -1,7 +1,7 @@
 import { h, icon } from '../ui/dom';
 import { squareCard, wideCard } from '../ui/cards';
 import { createScroller } from './scroller';
-import { renderBento, renderDiscover } from './sections';
+import { renderBento } from './sections';
 import type { RowContext, RowDef } from './rows';
 import type { JfItem } from '../types';
 
@@ -15,7 +15,6 @@ export interface RenderedRow { el: HTMLElement; dispose(): void }
 
 /** Renders a lazy section. `dispose` disconnects its observers (call before rebuilding / on unmount). */
 export function renderRow(def: RowDef, ctx: RowContext): RenderedRow {
-  if (def.id === 'discover') return renderDiscover(def, ctx);
   if (def.id === 'newThisWeek') return renderBento(def, ctx);
 
   const titleText = def.title(ctx);
