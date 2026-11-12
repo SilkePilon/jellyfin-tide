@@ -68,3 +68,17 @@ test('declined mount (null) is not retried for the same host and key', async () 
     await vi.waitFor(() => expect(calls).toBe(2));
   } finally { stop(); }
 });
+
+test('a host that appears a frame after the route change mounts at once (no 250 ms sleep)', async () => {
+  const { initTakeover } = await import('../src/router/hook');
+  location.hash = '#/x';
+  document.body.innerHTML = '';
+  const mount = vi.fn(async (host: HTMLElement) => { host.append(Object.assign(document.createElement('div'), { className: 'tide-q' })); return () => {}; });
+  const stop = initTakeover({ id: 'q', rootClass: 'tide-q', matches: () => location.hash === '#/x', key: () => 'k', findHost: () => document.getElementById('qh'), mount }, {} as never);
+  const t0 = performance.now();
+  requestAnimationFrame(() => { document.body.append(Object.assign(document.createElement('div'), { id: 'qh' })); });
+  await vi.waitFor(() => expect(mount).toHaveBeenCalled(), { interval: 5 });
+  expect(performance.now() - t0).toBeLessThan(150);
+  stop();
+  location.hash = '';
+});

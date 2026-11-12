@@ -87,3 +87,15 @@ test('renderRow dispose disconnects its observers', () => {
     (globalThis as any).ResizeObserver = prevRO;
   }
 });
+
+test('a row whose data is still cached renders its cards synchronously (no skeleton frame on back-navigation)', async () => {
+  const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ Items: [{ Id: 'a', Name: 'A', Type: 'Movie' }] })));
+  const ctx = { userId: 'u', prefs: prefs(), newDays: 14, genres: [] };
+  const first = renderRow(ROWS.latestMovies, ctx);
+  await vi.waitFor(() => expect(first.el.querySelectorAll('.tide-wide').length).toBe(1));
+  const calls = fetchSpy.mock.calls.length;
+  const again = renderRow(ROWS.latestMovies, ctx);
+  expect(again.el.querySelectorAll('.tide-wide').length).toBe(1);
+  expect(again.el.querySelector('.tide-row-skeleton')).toBeNull();
+  expect(fetchSpy.mock.calls.length).toBe(calls);
+});

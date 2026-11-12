@@ -14,7 +14,9 @@ export interface HeroItem {
   runtimeMinutes?: number | null; seasonCount?: number | null; overview: string;
   episode?: { id: string; season: number; number: number; name: string } | null;
   progress?: { percent: number; minutesLeft: number } | null;
-  quality?: Quality | null; hasLogo: boolean; hasThumb: boolean; isFavorite: boolean; youtube: string[]; playTargetId: string;
+  quality?: Quality | null; hasLogo: boolean; hasThumb: boolean;
+  /** 0.4.2+ server: Jellyfin image cache tags ("Backdrop", "Logo", "Thumb"), making the URLs long-cacheable. */
+  imageTags?: Record<string, string>; isFavorite: boolean; youtube: string[]; playTargetId: string;
 }
 
 export interface UserPrefs { rowOrder: string[]; hidden: string[]; genres: Record<string, string | null>; edited: boolean }
@@ -44,6 +46,7 @@ export interface JfItem {
   CommunityRating?: number; CriticRating?: number; RunTimeTicks?: number; ChildCount?: number;
   SeriesId?: string; SeriesName?: string; ParentIndexNumber?: number; IndexNumber?: number;
   DateCreated?: string; ImageTags?: Record<string, string>; BackdropImageTags?: string[];
-  ParentBackdropItemId?: string; AlbumArtist?: string; Overview?: string;
+  ParentBackdropItemId?: string; ParentBackdropImageTags?: string[]; ParentLogoItemId?: string; ParentLogoImageTag?: string;
+  AlbumArtist?: string; Overview?: string;
   UserData?: { Played?: boolean; PlayedPercentage?: number; UnplayedItemCount?: number; IsFavorite?: boolean; PlaybackPositionTicks?: number };
 }

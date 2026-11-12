@@ -48,6 +48,8 @@ public sealed class HeroItemDto
     [JsonPropertyName("quality")] public QualityDto? Quality { get; init; }
     [JsonPropertyName("hasLogo")] public bool HasLogo { get; init; }
     [JsonPropertyName("hasThumb")] public bool HasThumb { get; init; }
+    /// <summary>0.4.2+: cache tags by image type ("Backdrop", "Logo", "Thumb"); missing types have no tag.</summary>
+    [JsonPropertyName("imageTags")] public Dictionary<string, string> ImageTags { get; init; } = new();
     [JsonPropertyName("isFavorite")] public bool IsFavorite { get; init; }
     [JsonPropertyName("youtube")] public string[] Youtube { get; init; } = Array.Empty<string>();
     [JsonPropertyName("playTargetId")] public string PlayTargetId { get; init; } = "";

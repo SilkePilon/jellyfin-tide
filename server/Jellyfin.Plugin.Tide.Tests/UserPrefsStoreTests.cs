@@ -102,7 +102,7 @@ public sealed class UserPrefsStoreTests : IDisposable
     [Fact]
     public void RemovedDiscoverRowIsDroppedFromSavedPrefs()
     {
-        // 0.2.0 - 0.4.x shipped a "discover" row; 0.5.0 removed it.
+        // 0.2.0 - 0.4.2 shipped a "discover" row; 0.4.3 removed it.
         var saved = RowIds.All.Take(5).Append("discover").Concat(RowIds.All.Skip(5)).ToArray();
         var p = UserPrefsStore.Normalize(new UserPrefs { RowOrder = saved, Hidden = new[] { "discover", "random" } });
         Assert.DoesNotContain("discover", p.RowOrder);

@@ -1,10 +1,12 @@
 import './home.css';
-import { api, getSession } from '../api/client';
+import { api, getSession, imageUrl, type Session } from '../api/client';
 import { getHome, putPrefs } from '../api/tide';
+import { cached, HOME_TTL, invalidate } from '../api/cache';
 import { h, icon } from '../ui/dom';
-import { createHero } from './hero';
+import { backgroundUrl, createHero } from './hero';
 import { createAmbient } from '../ui/ambient';
 import { openEditPanel } from './editPanel';
+import { restoreScroll, savedHomeScroll, trackHomeScroll } from './scrollMemory';
 import { SELECTORS } from '../router/selectors';
 import { pickGenres, renderRow, ROWS, visibleRows } from './rows';
 import type { RowContext } from './rows';
@@ -17,6 +19,34 @@ function toast(message: string): void {
   t.onclick = () => t.remove();
   document.body.append(t);
   setTimeout(() => t.remove(), 6000);
+}
+
+/**
+ * Home's three startup requests, in parallel and briefly cached. Boot calls this as soon as the session is known (on
+ * the Home route), so the data is in flight while jellyfin-web is still rendering the page Tide mounts into.
+ */
+export function homeData(session: Session | null = getSession()): Promise<[HomeResponse | null, string[], JfItem | null]> {
+  const userId = session?.userId ?? '';
+  return Promise.all([
+    cached('home', HOME_TTL, () => getHome(session)).catch((e: unknown) => { console.warn('[Tide] /Tide/Home failed, rows only', e); return null; }),
+    cached('genreList', 10 * 60_000, () => api<{ Items: { Name: string }[] }>('/Genres', { session, query: { userId, IncludeItemTypes: 'Movie,Series', Recursive: true } }).then((r) => r.Items.map((g) => g.Name)))
+      .catch(() => [] as string[]),
+    cached('recent', HOME_TTL, () => api<{ Items: JfItem[] }>('/Items', { session, query: { userId, Recursive: true, IncludeItemTypes: 'Movie,Episode', IsPlayed: true, SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 1 } }).then((r) => r.Items[0] ?? null))
+      .catch(() => null),
+  ]);
+}
+
+/**
+ * Cold start on Home: fetch Home's data with the stored credentials while jellyfin-web is still loading, and warm the
+ * first hero slide's images, so Tide's Home is complete the moment its page exists.
+ */
+export function prefetchHome(session: Session): void {
+  void homeData(session).then(([home]) => {
+    const first = home?.hero[0];
+    if (!first) return;
+    new Image().src = backgroundUrl(first);
+    if (first.hasLogo) new Image().src = imageUrl(first.id, 'Logo', 800, first.imageTags?.Logo);
+  });
 }
 
 export async function mountHome(host: HTMLElement, cfg: ClientConfig): Promise<() => void> {
@@ -91,7 +121,9 @@ export async function mountHome(host: HTMLElement, cfg: ClientConfig): Promise<(
     rowDisposers = [];
   };
 
+  let stopScrollMemory: (() => void) | null = null;
   const unmount = () => {
+    stopScrollMemory?.();
     childObs.disconnect();
     window.removeEventListener('resize', settle);
     cancelAnimationFrame(settleFrame);
@@ -109,19 +141,10 @@ export async function mountHome(host: HTMLElement, cfg: ClientConfig): Promise<(
 
   try {
     const userId = getSession()?.userId ?? '';
-    let data: HomeResponse | null = null;
-    try {
-      data = await getHome();
-    } catch (e) {
-      console.warn('[Tide] /Tide/Home failed, rows only', e);
-    }
+    const [home, genres, recent] = await homeData();
+    let data: HomeResponse | null = home;
     const defaults = defaultPrefs(cfg);
     const prefs: UserPrefs = data?.prefs ?? defaults;
-
-    const [genres, recent] = await Promise.all([
-      api<{ Items: { Name: string }[] }>('/Genres', { query: { userId, IncludeItemTypes: 'Movie,Series', Recursive: true } }).then((r) => r.Items.map((g) => g.Name)).catch(() => [] as string[]),
-      api<{ Items: JfItem[] }>('/Items', { query: { userId, Recursive: true, IncludeItemTypes: 'Movie,Episode', IsPlayed: true, SortBy: 'DatePlayed', SortOrder: 'Descending', Limit: 1 } }).then((r) => r.Items[0] ?? null).catch(() => null),
-    ]);
 
     if (!data) {
       const first = await api<{ Items: JfItem[] }>('/UserItems/Resume', { query: { userId, Limit: 1, MediaTypes: 'Video', Fields: 'Genres,Overview' } })
@@ -144,7 +167,7 @@ export async function mountHome(host: HTMLElement, cfg: ClientConfig): Promise<(
       disposeRows();
       root.replaceChildren(ambient);
       if (data?.hero.length) {
-        heroApi = createHero(data.hero, cfg, (item) => setAmbient(item.id));
+        heroApi = createHero(data.hero, cfg, (item) => setAmbient(item.id, item.imageTags ? (item.imageTags.Backdrop ? imageUrl(item.id, 'Backdrop/0', 160, item.imageTags.Backdrop) : null) : undefined));
         root.append(heroApi.el);
       } else {
         root.append(h('div', { class: 'tide-hero-spacer' }));
@@ -158,7 +181,7 @@ export async function mountHome(host: HTMLElement, cfg: ClientConfig): Promise<(
       root.append(h('div', { class: 'tide-edit-home' },
         h('button', { class: 'tide-btn', onclick: () => {
           closePanel = openEditPanel(p, genres, async (np) => {
-            try { build(await putPrefs(np)); } catch (e) {
+            try { const saved = await putPrefs(np); invalidate(); build(saved); } catch (e) {
               console.warn('[Tide] save prefs failed', e);
               toast('Couldn\u2019t save \u2014 try again');
             }
@@ -168,6 +191,10 @@ export async function mountHome(host: HTMLElement, cfg: ClientConfig): Promise<(
 
     build(prefs);
     settle();
+    // Back from a details page: return to where Home was scrolled.
+    const y = savedHomeScroll();
+    if (y !== null && y > 0) restoreScroll(y);
+    stopScrollMemory = trackHomeScroll(() => root.isConnected);
   } catch (e) {
     unmount(); // never leave the page blank
     throw e;

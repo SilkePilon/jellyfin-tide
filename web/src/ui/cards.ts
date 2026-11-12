@@ -1,7 +1,7 @@
 import './cards.css';
 import { fmtRuntime, h, icon } from './dom';
 import { toggleButton } from './toggle';
-import { imageUrl } from '../api/client';
+import { backdropOf, chain, logoOf, primaryOf, sources } from './images';
 import { openDetails, play, setFavourite } from '../api/actions';
 import type { JfItem } from '../types';
 
@@ -90,14 +90,14 @@ export function wideCard(item: JfItem, opts: WideCardOpts = {}): HTMLElement {
   const ud = { ...item.UserData };
   const pct = !ud.Played && (ud.PlaybackPositionTicks ?? 0) > 0 ? Math.round(ud.PlayedPercentage ?? ((ud.PlaybackPositionTicks ?? 0) / (item.RunTimeTicks || 1)) * 100) : 0;
 
-  const art = h('img', { class: 'tide-wide-art', alt: '', loading: 'lazy', decoding: 'async',
-    src: isEp ? imageUrl(item.Id, 'Primary', 720) : imageUrl(item.Id, 'Backdrop/0', 720) }) as HTMLImageElement;
-  art.onerror = () => {
-    // Items without a backdrop fall back to their primary image once (episodes: to the series backdrop).
-    if (art.dataset.fallback) { art.remove(); return; }
-    art.dataset.fallback = '1';
-    art.src = imageUrl(isEp ? (item.SeriesId as string) : item.Id, isEp ? 'Backdrop/0' : 'Primary', 720);
-  };
+  const art = h('img', { class: 'tide-wide-art', alt: '', loading: 'lazy', decoding: 'async' }) as HTMLImageElement;
+  // Movies/series: backdrop, else primary. Episodes: their still, else the series backdrop. No image: the card's
+  // plain surface (logo / title still show).
+  const seriesId = item.SeriesId as string;
+  const hasArt = chain(art, isEp
+    ? sources([primaryOf(item, 720), item.Id, 'Primary', 720], [backdropOf(item, 720), seriesId, 'Backdrop/0', 720])
+    : sources([backdropOf(item, 720), item.Id, 'Backdrop/0', 720], [primaryOf(item, 720), item.Id, 'Primary', 720]),
+  () => art.remove());
   let rest: HTMLElement;
   if (epMode) {
     rest = h('span', { class: 'tide-wide-ep' },
@@ -105,8 +105,8 @@ export function wideCard(item: JfItem, opts: WideCardOpts = {}): HTMLElement {
       h('span', { class: 'tide-wide-ep-n' }, item.Name));
   } else {
     const textLogo = () => h('span', { class: 'tide-wide-logo tide-wide-logo-text' }, title);
-    rest = h('img', { class: 'tide-wide-logo', src: imageUrl(logoId, 'Logo', 360), alt: title, loading: 'lazy', decoding: 'async' });
-    (rest as HTMLImageElement).onerror = () => rest.replaceWith(textLogo());
+    const img = h('img', { class: 'tide-wide-logo', alt: title, loading: 'lazy', decoding: 'async' }) as HTMLImageElement;
+    rest = chain(img, sources([logoOf(item, 360), logoId, 'Logo', 360]), () => img.replaceWith(textLogo())) ? img : textLogo();
   }
 
   const fav = toggleButton({ icon: 'favorite', label: 'Favourite', on: !!ud.IsFavorite, cls: 'tide-fav-toggle tide-wide-btn',
@@ -130,7 +130,7 @@ export function wideCard(item: JfItem, opts: WideCardOpts = {}): HTMLElement {
     },
   },
     h('span', { class: 'tide-card-shadow', 'aria-hidden': 'true' }),
-    art, rest,
+    hasArt ? art : null, rest,
     epMode && opts.episode?.tag ? h('span', { class: 'tide-wide-tag' }, opts.episode.tag) : null,
     epMode && ud.Played ? h('span', { class: 'tide-wide-done', 'aria-label': 'Watched' }, icon('check')) : null,
     h('span', { class: 'tide-wide-info' },
@@ -143,8 +143,10 @@ export function wideCard(item: JfItem, opts: WideCardOpts = {}): HTMLElement {
 }
 
 export function squareCard(item: JfItem, round = false): HTMLElement {
+  // An <img> (not a CSS background) so it lazy-loads like the wide cards.
   const img = h('div', { class: `tide-sq-img${round ? ' tide-round' : ''}` });
-  img.style.backgroundImage = `url("${imageUrl(item.Id, 'Primary', 400)}")`;
+  const pic = h('img', { alt: '', loading: 'lazy', decoding: 'async' }) as HTMLImageElement;
+  if (chain(pic, sources([primaryOf(item, 400), item.Id, 'Primary', 400]), () => pic.remove())) img.append(pic);
   return h('a', { class: 'tide-card tide-card-sq', href: '#', 'data-id': item.Id, onclick: stop(() => openDetails(item.Id)) },
     img,
     h('div', { class: 'tide-card-title' }, item.Name),

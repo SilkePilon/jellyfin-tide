@@ -84,3 +84,23 @@ test('map covers core navigation icons', () => {
     expect(MUI_ICON_MAP[k]).toBeTruthy();
   }
 });
+
+test('leaves stock font icons that the subset font lacks on the stock font', () => {
+  document.body.innerHTML = '<span class="material-icons">bathtub</span>';
+  swapIcons(document);
+  const el = document.querySelector('span')!;
+  expect(el.classList.contains('material-icons')).toBe(true);
+  expect(el.classList.contains('tide-ms')).toBe(false);
+});
+
+test('observer swaps icons added later, scanning only the changed subtree', async () => {
+  const { initIcons } = await import('../src/icons/swap');
+  document.body.innerHTML = '<div id="a"></div><div id="b"><svg data-testid="HomeIcon"></svg></div>';
+  initIcons({ enableIcons: true } as never);
+  document.getElementById('a')!.innerHTML = '<button><svg data-testid="SearchIcon"></svg></button>';
+  await new Promise((r) => requestAnimationFrame(() => r(null)));
+  expect([...document.querySelectorAll('span.tide-ms')].map((s) => s.textContent).sort()).toEqual(['home', 'search']);
+  document.querySelector('#a svg')!.setAttribute('data-testid', 'MenuIcon');
+  await new Promise((r) => requestAnimationFrame(() => r(null)));
+  expect(document.querySelector('#a span.tide-ms')!.textContent).toBe('menu');
+});

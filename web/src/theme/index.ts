@@ -1,5 +1,4 @@
 import '@fontsource-variable/inter';
-import 'material-symbols/rounded.css';
 import './tokens.css';
 import './global.css';
 import { onLocationChange } from '../router/location';

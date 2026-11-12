@@ -94,9 +94,8 @@ body.tide-theme .detailRibbon { background-color: var(--tide-s1); }
 @media (max-width: 699px) {
   body.tide-theme:is(.tide-on-home, .tide-on-details):not(.tide-scrolled) .MuiAppBar-root .MuiAvatar-root { background: none; }
 }
-/* Keyboard / anchor scrolling eases too (wheel is handled in smoothScroll.ts). */
-html.tide-smooth { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) { html.tide-smooth { scroll-behavior: auto; } }
+/* No global `scroll-behavior: smooth`: it also animated jellyfin-web's own scroll-to-top on every page change (the page
+   visibly slid up while navigating). Keyboard scrolling is smooth natively; the wheel is eased in smoothScroll.ts. */
 
 /* No hover reveals while scrolling (see theme/scrolling.ts). */
 html.tide-is-scrolling body.tide :is(.tide-card, .tide-bento-tile, .tide-chipp, .tide-nu) { pointer-events: none; }

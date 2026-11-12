@@ -6,6 +6,7 @@ import { fmtRuntime, h, icon } from '../ui/dom';
 import { minutesLeft, progressRing } from '../ui/cards';
 import { toggleButton } from '../ui/toggle';
 import { qualityBadge } from '../ui/quality';
+import { chain, logoOf, primaryOf, sources } from '../ui/images';
 import { menuItem, openPopover } from '../ui/popover';
 import { openYouTubeModal } from '../ui/trailerModal';
 import { endsAt, epLabel, yearSpan, youtubeId } from './logic';
@@ -49,19 +50,21 @@ export function renderHeader(item: JfDetail): Header {
   if (isEp) {
     // Episode page: the episode's own 16:9 still (with progress) instead of the 2:3 poster.
   const still = h('div', { class: 'tide-dh-still' });
-  still.style.backgroundImage = `url("${imageUrl(item.Id, 'Primary', 900)}")`;
+  still.style.backgroundImage = `url("${primaryOf(item, 900) || imageUrl(item.Id, 'Primary', 900)}")`;
   const pos = item.UserData?.PlaybackPositionTicks ?? 0;
   if (pos && item.RunTimeTicks) still.append(h('span', { class: 'tide-dh-pb' }, h('i', { style: `transform:scaleX(${pos / item.RunTimeTicks})` })));
     poster = still;
   } else {
     poster = h('div', { class: 'tide-dh-poster' });
-    const pimg = h('img', { src: imageUrl(item.Id, 'Primary', 700), alt: '' }) as HTMLImageElement;
-    pimg.onerror = () => pimg.replaceWith(h('span', { class: 'tide-dh-poster-t' }, item.Name));
-    poster.append(pimg);
+    const pimg = h('img', { alt: '', fetchpriority: 'high' }) as HTMLImageElement;
+    const noPoster = () => h('span', { class: 'tide-dh-poster-t' }, item.Name);
+    if (chain(pimg, sources([primaryOf(item, 700), item.Id, 'Primary', 700]), () => pimg.replaceWith(noPoster()))) poster.append(pimg);
+    else poster.append(noPoster());
   }
   const titleText = () => h('h1', { class: 'tide-dh-title' }, isEp ? item.SeriesName ?? item.Name : item.Name);
-  const logo: HTMLElement = h('img', { class: 'tide-dh-logo', src: imageUrl(isEp ? item.SeriesId ?? item.Id : item.Id, 'Logo', 900), alt: isEp ? item.SeriesName ?? item.Name : item.Name });
-  (logo as HTMLImageElement).onerror = () => logo.replaceWith(titleText());
+  const logoImg = h('img', { class: 'tide-dh-logo', alt: isEp ? item.SeriesName ?? item.Name : item.Name }) as HTMLImageElement;
+  const logo: HTMLElement = chain(logoImg, sources([logoOf(item, 900), isEp ? item.SeriesId ?? item.Id : item.Id, 'Logo', 900]), () => logoImg.replaceWith(titleText()))
+    ? logoImg : titleText();
 
   const desc = h('p', { class: 'tide-dh-desc', tabindex: '0' }, item.Overview ?? '');
   desc.addEventListener('click', () => desc.classList.toggle('open'));
