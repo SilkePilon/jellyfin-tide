@@ -1,5 +1,6 @@
 /* Q1 Spotlight search dialog (search/dialog.ts). Solid panel over a dim scrim; transform/opacity motion only. */
 html.tide-sd-on { overflow: hidden; }
+body.tide .tide-sd [hidden] { display: none !important; }
 body.tide .tide-sd-wrap { position: fixed; inset: 0; z-index: 1400; pointer-events: none; font-family: var(--tide-font); color: #f5f5f7; }
 body.tide .tide-sd-wrap.open { pointer-events: auto; }
 body.tide .tide-sd-scrim { position: absolute; inset: 0; background: rgba(0,0,0,.72); opacity: 0; transition: opacity .3s ease; }

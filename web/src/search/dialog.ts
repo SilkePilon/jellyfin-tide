@@ -63,7 +63,8 @@ export function createSearchDialog(deps: SearchDeps = {}): SearchDialog {
   const scrim = h('div', { class: 'tide-sd-scrim' });
   const panel = h('div', { class: 'tide-sd', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Search' },
     h('div', { class: 'tide-sd-in' }, icon('search'), input, clear, esc), chipsBox, body, foot);
-  const el = h('div', { class: 'tide-sd-wrap', 'aria-hidden': 'true' }, scrim, panel);
+  // Closed = inert: its input can never keep keyboard focus (a `/` typed later would land in it, not reopen search).
+  const el = h('div', { class: 'tide-sd-wrap', 'aria-hidden': 'true', inert: true }, scrim, panel);
 
   let open = false;
   let chip: Chip = 'all';
@@ -122,7 +123,7 @@ export function createSearchDialog(deps: SearchDeps = {}): SearchDialog {
     if (g.top) {
       const t = g.top;
       nodes.push(h('div', { class: 'tide-sd-hd' }, 'TOP RESULT'), h('div', { class: `tide-sd-row tide-sd-top${sel === 0 ? ' sel' : ''}`, role: 'button', tabindex: '-1', 'data-i': '0' },
-        thumb(t, true), h('span', { class: 'tide-sd-tt' }, h('b', {}, ...highlight(t.Name, q)), h('small', {}, [TYPE_LABEL[t.Type], subline(t)].filter(Boolean).join(' · '))),
+        thumb(t, true), h('span', { class: 'tide-sd-tt' }, h('b', {}, ...highlight(t.Name, q)), h('small', {}, [TYPE_LABEL[t.Type], subline(t)].filter((v, n, all) => v && all.indexOf(v) === n).join(' · '))),
         PLAYABLE.has(t.Type) ? h('button', { class: 'tide-sd-play', type: 'button', 'data-play': '0' }, icon('play_arrow'), 'Play') : null));
       i = 1;
     }
@@ -159,10 +160,12 @@ export function createSearchDialog(deps: SearchDeps = {}): SearchDialog {
     open = false;
     el.classList.remove('open');
     el.setAttribute('aria-hidden', 'true');
+    if (el.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
+    el.setAttribute('inert', '');
     document.documentElement.classList.remove('tide-sd-on');
     ctrl?.abort();
     if (timer) clearTimeout(timer);
-    returnFocus?.focus?.();
+    if (returnFocus && returnFocus !== document.body && returnFocus.isConnected) returnFocus.focus();
   };
 
   const activate = async (x: Hint | undefined, playIt: boolean) => {
@@ -246,6 +249,7 @@ export function createSearchDialog(deps: SearchDeps = {}): SearchDialog {
       render();
       el.classList.add('open');
       el.removeAttribute('aria-hidden');
+      el.removeAttribute('inert');
       document.documentElement.classList.add('tide-sd-on');
       if (!tiles) genres().then((t) => { tiles = t; if (open && !input.value.trim() && !genre) render(); }).catch(() => { tiles = []; });
       setTimeout(() => input.focus(), 30);

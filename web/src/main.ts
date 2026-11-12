@@ -9,6 +9,7 @@ import { initRouter, registerTakeover } from './router/hook';
 import { DETAILS_TAKEOVER } from './details/details';
 import { initPlayLoading, PLAYER_TAKEOVER } from './player/player';
 import { initTabbar } from './mobile/tabbar';
+import { initSearch } from './search/index';
 import { preloadFonts, readHint, release, releaseAll, saveHint, startBootCloak, wouldTakeOver } from './boot/cloak';
 import { onLocationChange } from './router/location';
 import { ROUTES } from './router/selectors';
@@ -89,6 +90,7 @@ registerTakeover(PLAYER_TAKEOVER);
 registerFeature((cfg) => void initPlayLoading(cfg));
 registerFeature((cfg) => void initRouter(cfg));
 registerFeature(() => void initTabbar());
+registerFeature((cfg) => void initSearch(cfg));
 
 if (typeof window !== 'undefined' && !(window as unknown as { __TIDE_TEST__?: boolean }).__TIDE_TEST__) {
   startBootCloak();

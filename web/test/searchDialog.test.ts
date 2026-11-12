@@ -122,3 +122,25 @@ test('scrim click closes', () => {
   d.el.querySelector<HTMLElement>('.tide-sd-scrim')!.click();
   expect(d.isOpen()).toBe(false);
 });
+
+test('closing gives focus back: the hidden input is blurred and the closed dialog is inert', async () => {
+  const { d, input } = setup();
+  d.open();
+  await vi.advanceTimersByTimeAsync(40);
+  expect(document.activeElement).toBe(input());
+  expect(d.el.hasAttribute('inert')).toBe(false);
+  d.close();
+  expect(document.activeElement).not.toBe(input());
+  expect(d.el.hasAttribute('inert')).toBe(true);
+});
+
+test('a person as top result reads "Person" once', async () => {
+  const search = vi.fn(async () => [{ Id: 'p1', Name: 'Sacha', Type: 'Person' }] as Hint[]);
+  const d = createSearchDialog({ search, genres: async () => [], genreTitles: async () => [], userId: () => 'u1' });
+  document.body.append(d.el);
+  d.open();
+  const i = d.el.querySelector<HTMLInputElement>('.tide-sd-q')!;
+  i.value = 'sa'; i.dispatchEvent(new Event('input'));
+  await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 5);
+  expect(d.el.querySelector('.tide-sd-top small')?.textContent).toBe('Person');
+});
