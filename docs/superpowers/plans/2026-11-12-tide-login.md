@@ -1073,6 +1073,15 @@ export function createLoginScreen(d: LoginDeps): LoginScreen {
 `web/src/login/login.css`:
 ```css
 /* Tide login (L3 poster wall). Runs before sign-in: no body.tide tokens, literal colours only. */
+/* Before sign-in there is no body.tide: the box model and the icon rules (theme/tokens.css) are repeated here. */
+:is(.tide-lg, .tide-sw), :is(.tide-lg, .tide-sw) *, :is(.tide-lg, .tide-sw) *::before, :is(.tide-lg, .tide-sw) *::after { box-sizing: border-box; }
+:is(.tide-lg, .tide-sw) .tide-ms {
+  font-family: 'Tide Symbols'; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none;
+  display: inline-block; white-space: nowrap; direction: ltr; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 100, 'opsz' 24; font-size: 22px; vertical-align: middle;
+}
+:is(.tide-lg, .tide-sw) .tide-svg { width: 1em; height: 1em; display: inline-flex; align-items: center; justify-content: center; }
+:is(.tide-lg, .tide-sw) .tide-svg > svg { width: 100%; height: 100%; fill: currentColor; }
 html.tide-login #loginPage, html.tide-login #forgotPasswordPage, html.tide-login .forgotPasswordPinPage,
 html.tide-login .toast, html.tide-login .dialogContainer, html.tide-login .dialogBackdrop,
 html.tide-login .MuiAppBar-root, html.tide-login .skinHeader { opacity: 0 !important; pointer-events: none !important; }
@@ -1090,7 +1099,9 @@ html.tide-cloak :is(#loginPage, #forgotPasswordPage, .forgotPasswordPinPage) { v
 .tide-lg-in { display: flex; flex-direction: column; gap: 22px; animation: tide-lg-in .45s cubic-bezier(.22,1,.36,1) both; }
 @keyframes tide-lg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .tide-lg h2 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.03em; text-align: center; }
-.tide-lg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 10px; }
+/* Up to four per row, centred (two profiles sit in the middle, not on the left). */
+.tide-lg-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 10px; }
+.tide-lg-grid > .tide-lg-person { flex: 0 0 calc(25% - 8px); }
 .tide-lg-person { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px 0; border: 0; border-radius: 18px; background: none; color: #d1d1d6; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
 .tide-lg-person:is(:hover, :focus-visible) { background: #1c1c1e; color: #fff; outline: none; }
 .tide-lg-person:focus-visible .tide-lg-av { box-shadow: 0 0 0 3px #fff; }
@@ -1134,7 +1145,7 @@ html.tide-cloak :is(#loginPage, #forgotPasswordPage, .forgotPasswordPinPage) { v
 .tide-lg [hidden] { display: none !important; }
 @media (max-width: 699px) {
   .tide-lg-card { padding: 28px 20px 22px; border-radius: 24px; }
-  .tide-lg-grid { grid-template-columns: repeat(3, 1fr); }
+  .tide-lg-grid > .tide-lg-person { flex-basis: calc(33.333% - 7px); }
   .tide-lg h2 { font-size: 26px; }
   .tide-lg-brand { left: 20px; top: 20px; }
   .tide-lg-code b { width: 44px; height: 56px; font-size: 26px; }

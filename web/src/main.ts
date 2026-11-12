@@ -10,6 +10,7 @@ import { DETAILS_TAKEOVER } from './details/details';
 import { initPlayLoading, PLAYER_TAKEOVER } from './player/player';
 import { initTabbar } from './mobile/tabbar';
 import { initSearch } from './search/index';
+import { initLogin } from './login/index';
 import { preloadFonts, readHint, release, releaseAll, saveHint, startBootCloak, wouldTakeOver } from './boot/cloak';
 import { onLocationChange } from './router/location';
 import { ROUTES } from './router/selectors';
@@ -95,6 +96,8 @@ registerFeature((cfg) => void initSearch(cfg));
 if (typeof window !== 'undefined' && !(window as unknown as { __TIDE_TEST__?: boolean }).__TIDE_TEST__) {
   startBootCloak();
   preloadFonts();
+  // Before any session: Tide's sign-in screen on the stock login routes.
+  initLogin();
   // Cold start on Home: start Home's data now with the stored login, not seconds later once jellyfin-web is up.
   const early = earlySession();
   if (early && readHint().home && ROUTES.isHome()) prefetchHome(early);
