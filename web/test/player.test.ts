@@ -81,3 +81,26 @@ test('paused screen stays up on mouse move and leaves only when playback resumes
   un();
   vi.useRealTimers();
 });
+
+test('wheel over Tide panels scrolls them instead of reaching the stock volume handler', async () => {
+  const host = stockOsd();
+  const un = await mountPlayer(host, cfg as any);
+  const stockVolume = vi.fn();
+  document.addEventListener('wheel', stockVolume);
+  const shelf = document.querySelector<HTMLElement>('.tide-pshelf')!;
+  const track = document.createElement('div');
+  track.className = 'tide-row-track';
+  const card = document.createElement('button');
+  track.append(card);
+  shelf.append(track);
+  const overShelf = new WheelEvent('wheel', { deltaY: 100, bubbles: true, cancelable: true });
+  card.dispatchEvent(overShelf);
+  expect(stockVolume).not.toHaveBeenCalled();
+  expect(overShelf.defaultPrevented).toBe(true); // vertical notch over the episode row pages it sideways
+  document.querySelector('.tide-pset')!.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+  expect(stockVolume).not.toHaveBeenCalled();
+  document.querySelector('.tide-player')!.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }));
+  expect(stockVolume).toHaveBeenCalledTimes(1); // over the video itself the stock wheel-volume stays
+  document.removeEventListener('wheel', stockVolume);
+  un();
+});

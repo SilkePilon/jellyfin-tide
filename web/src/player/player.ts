@@ -17,6 +17,8 @@ import { pollSession, type NowPlaying } from './session';
 import { applySetting, qualityChoices } from './commands';
 import { loadSegments, type Segments } from './segments';
 import type { TrickplayInfo } from './format';
+import { animator } from '../ui/scrollAnim';
+import { isMouseNotch, wheelPixels, WHEEL_MS } from '../theme/smoothScroll';
 import type { ClientConfig, JfItem } from '../types';
 
 const loading = createLoading();
@@ -157,6 +159,21 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
     if ((e as PointerEvent).pointerType === 'touch') return;
     bridge.togglePlay();
   });
+  // Stock 12.4 turns every wheel event into volume (videoosd listens on `document`). Over Tide's panels the wheel
+  // scrolls instead: stop it at our root (native list scrolling still happens), and page the episode row sideways.
+  const onWheel = (e: WheelEvent) => {
+    const t = e.target as Element;
+    if (!t.closest?.('.tide-pshelf, .tide-pset, .tide-pop')) return;
+    e.stopPropagation();
+    const track = t.closest<HTMLElement>('.tide-row-track');
+    if (!track || t.closest('.tide-pop') || e.shiftKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+    e.preventDefault();
+    const a = animator(track, 'x');
+    const px = wheelPixels(e, track, 'x');
+    if (isMouseNotch(e)) a.to((a.target() ?? track.scrollLeft) + px, WHEEL_MS);
+    else a.jump(track.scrollLeft + px);
+  };
+  root.addEventListener('wheel', onWheel, { passive: false });
   const onEsc = (e: KeyboardEvent) => {
     if (e.key !== 'Escape') return;
     if (sheet.isOpen()) sheet.close(); else if (shelf.isOpen()) shelf.close(); else return;
