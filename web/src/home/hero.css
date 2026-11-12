@@ -12,6 +12,12 @@ body.tide .tide-hero-slide.vidplay .tide-hero-vid { opacity: 1; }
 body.tide .tide-hero-bg { transition: opacity .8s ease; }
 body.tide .tide-hero-slide.vidplay .tide-hero-bg { opacity: 0; }
 body.tide .tide-hero-vid iframe, body.tide .tide-hero-vid video { position: absolute; top: 50%; left: 50%; width: 100%; aspect-ratio: 16/9; min-height: 100%; transform: translate(-50%, -50%) scale(1.18); border: 0; pointer-events: none; object-fit: cover; }
+/* While the trailer is visible: no masks. A mask re-renders every video frame off-screen (measured: most of the trailer's
+   compositing cost, together with the ambient layer). The video fades to black with a plain gradient instead and the
+   ambient glow behind the page fades out, so the page under the hero is black too and no seam shows. */
+body.tide .tide-hero-slide.vidplay :is(.tide-hero-vid, .tide-hero-shade) { -webkit-mask-image: none; mask-image: none; }
+body.tide .tide-hero-vid::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to bottom, transparent 52%, rgba(0,0,0,.4) 72%, rgba(0,0,0,.8) 88%, #000 100%); }
+body.tide .tide-home:has(.tide-hero-slide.on.vidplay) .tide-ambient.on { opacity: 0; }
 /* Shades are translucent (no opaque bottom) so the hero melts into the ambient glow behind the page. */
 body.tide .tide-hero-shade { position: absolute; inset: 0; z-index: 2; background:
   radial-gradient(ellipse 46% 42% at 100% 100%, rgba(0,0,0,.72) 0%, rgba(0,0,0,.45) 45%, rgba(0,0,0,0) 100%),

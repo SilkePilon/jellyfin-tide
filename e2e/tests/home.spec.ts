@@ -87,7 +87,7 @@ test('cards per row adapt to window width', async ({ browser }, info) => {
 
 test('Discover section is gone (removed in 0.5.0)', async ({ page }) => {
   await login(page);
-  await expect(page.locator('section[data-row="newThisWeek"], section[data-row="continue"]').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('.tide-home section.tide-row:not([hidden])').first()).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('section[data-row="discover"], .tide-disc')).toHaveCount(0);
 });
 
@@ -343,4 +343,21 @@ test('row title link and details route open real pages (desktop)', async ({ page
   await expect.poll(() => new URL(page.url()).hash).toBe(`#/details?id=${id}`);
   await expect(page.locator('.itemDetailPage:not(.hide), #itemDetailPage:not(.hide)').first()).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('.itemDetailPage:not(.hide) .itemName').filter({ hasText: /\S/ }).first()).toBeVisible({ timeout: 15_000 });
+});
+
+test('playing trailer: no masks on the video layer and the ambient glow fades out (compositing cost)', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await login(page);
+  await page.locator('.tide-hero-slide.on').waitFor();
+  const read = () => page.evaluate(() => {
+    const vid = document.querySelector('.tide-hero-slide.on .tide-hero-vid')!;
+    const amb = document.querySelector('.tide-ambient.on');
+    const cs = getComputedStyle(vid);
+    return { mask: cs.maskImage || (cs as any).webkitMaskImage, ambient: amb ? getComputedStyle(amb).opacity : null };
+  });
+  const before = await read();
+  expect(before.mask).not.toBe('none');
+  await page.evaluate(() => document.querySelector('.tide-hero-slide.on')!.classList.add('vidon', 'vidplay'));
+  await expect.poll(async () => (await read()).mask).toBe('none');
+  await expect.poll(async () => Number((await read()).ambient ?? 0), { timeout: 3000 }).toBe(0);
 });
