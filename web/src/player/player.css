@@ -230,3 +230,15 @@ body.tide .tide-pm-spin { flex: 0 0 auto; width: 18px; height: 18px; border-radi
 @keyframes tide-pm-spin { to { transform: rotate(360deg); } }
 body.tide .tide-pm-empty { padding: 14px; color: #8e8e93; font-size: 14px; }
 @media (max-width: 699px) { body.tide .tide-pmenu { bottom: 96px; } }
+
+/* Settings (M1): main list and submenu share one fixed-height box; the submenu slides in (transform only). */
+body.tide .tide-pmset { width: 340px; }
+body.tide .tide-pmset-panes { position: relative; height: var(--tide-pm-h, 380px); max-height: calc(100vh - 220px); }
+body.tide .tide-pmset-pane { position: absolute; inset: 0; display: flex; flex-direction: column; transition: transform .36s var(--tide-sp), opacity .3s var(--tide-sp); }
+body.tide .tide-pmset-pane .tide-pm-list { flex: 1; min-height: 0; }
+body.tide .tide-pmset-sub { transform: translateX(100%); opacity: 0; pointer-events: none; }
+body.tide .tide-pmset.drill .tide-pmset-main { transform: translateX(-30%); opacity: 0; pointer-events: none; }
+body.tide .tide-pmset.drill .tide-pmset-sub { transform: none; opacity: 1; pointer-events: auto; }
+body.tide .tide-pmset-subhd { display: flex; align-items: center; gap: 6px; padding: 10px 10px 4px; font-size: 16px; }
+body.tide .tide-pmset-back { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer; }
+body.tide .tide-pmset-back:hover { background: #2a2a2e; }
