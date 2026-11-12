@@ -104,3 +104,27 @@ test('wheel over Tide panels scrolls them instead of reaching the stock volume h
   document.removeEventListener('wheel', stockVolume);
   un();
 });
+
+test('Jellyfin Desktop (no web <video>): play/pause button and paused screen follow the class-based stock icon', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const host = stockOsd();
+  document.querySelector('.videoPlayerContainer')!.remove(); // mpv renders outside the page
+  const stockIcon = host.querySelector('.btnPause')!;
+  stockIcon.innerHTML = '<span class="xlargePaperIconButton material-icons pause" aria-hidden="true"></span>';
+  const un = await mountPlayer(host, cfg as any);
+  const root = document.querySelector('.tide-player')!;
+  const shown = () => { const i = root.querySelector('.tide-pc-play > :first-child')!; return i.getAttribute('data-icon') ?? i.textContent; };
+  await vi.advanceTimersByTimeAsync(100);
+  expect(shown()).toBe('pause');
+  stockIcon.querySelector('span')!.className = 'xlargePaperIconButton material-icons play_arrow'; // what videoosd does on pause
+  await vi.advanceTimersByTimeAsync(100);
+  expect(shown()).toBe('play_arrow');
+  await vi.advanceTimersByTimeAsync(3_100);
+  expect(root.classList.contains('tide-pz-on')).toBe(true);
+  stockIcon.querySelector('span')!.className = 'xlargePaperIconButton material-icons pause';
+  await vi.advanceTimersByTimeAsync(100);
+  expect(shown()).toBe('pause');
+  expect(root.classList.contains('tide-pz-on')).toBe(false);
+  un();
+  vi.useRealTimers();
+});
