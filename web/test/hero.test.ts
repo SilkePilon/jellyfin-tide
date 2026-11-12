@@ -315,10 +315,26 @@ test('fix a/b: youtube state messages drive vidplay; silent player falls back to
     origin: 'https://www.youtube-nocookie.com', source: f.contentWindow, data: JSON.stringify({ event: 'onStateChange', info }),
   }));
   msg(1);
+  // YouTube draws its own controls (centre pause, title, logo) for ~4 s after playback starts: stay on the backdrop.
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  expect(slide.classList.contains('vidon')).toBe(false);
+  await vi.advanceTimersByTimeAsync(4_400);
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  await vi.advanceTimersByTimeAsync(200);
   expect(slide.classList.contains('vidplay')).toBe(true);
+  expect(slide.classList.contains('vidon')).toBe(true); // logo/description change together with the reveal
   msg(2);
   await vi.advanceTimersByTimeAsync(350);
   expect(slide.classList.contains('vidplay')).toBe(false);
+  // Resume shows YouTube's controls again: the full wait starts over, and an interruption restarts it.
+  msg(1);
+  await vi.advanceTimersByTimeAsync(3_000);
+  msg(3);
+  msg(1);
+  await vi.advanceTimersByTimeAsync(3_000);
+  expect(slide.classList.contains('vidplay')).toBe(false);
+  await vi.advanceTimersByTimeAsync(1_600);
+  expect(slide.classList.contains('vidplay')).toBe(true);
   hero.destroy();
 
   const silent = createHero([base, { ...base, id: 'h2' }], cfg);
@@ -326,6 +342,8 @@ test('fix a/b: youtube state messages drive vidplay; silent player falls back to
   const s2 = silent.el.querySelector('.tide-hero-slide.on')!;
   s2.querySelector('iframe')!.dispatchEvent(new Event('load'));
   await vi.advanceTimersByTimeAsync(1_600 + 2_500);
+  expect(s2.classList.contains('vidplay')).toBe(false);
+  await vi.advanceTimersByTimeAsync(4_600);
   expect(s2.classList.contains('vidplay')).toBe(true);
   silent.destroy();
 });

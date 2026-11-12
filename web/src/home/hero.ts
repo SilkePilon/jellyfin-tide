@@ -11,6 +11,8 @@ export type TrailerSource = { kind: 'local'; url: string } | { kind: 'youtube'; 
 const START_DELAY = 3000;
 const LOAD_TIMEOUT = 6000;
 const YT_ORIGIN = 'https://www.youtube-nocookie.com';
+/** YouTube draws its own controls (centre pause button, title bar, logo) for ~4 s after every start / resume (measured). */
+export const YT_REVEAL_MS = 4500;
 
 export function reasonLine(item: HeroItem): { chip: string | null; episode: string | null; button: string } {
   const ep = item.episode;
@@ -136,6 +138,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
   let hsTimer: ReturnType<typeof setInterval> | undefined;
   let playOffTimer: ReturnType<typeof setTimeout> | undefined;
   let silentTimer: ReturnType<typeof setTimeout> | undefined;
+  let revealTimer: ReturnType<typeof setTimeout> | undefined;
   let tabHidden = typeof document !== 'undefined' && document.hidden === true;
   let offscreen = false;
   let paused = tabHidden;
@@ -154,7 +157,8 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     slotTimer = startTimer = loadTimer = hsTimer = undefined;
     if (playOffTimer !== undefined) clearTimeout(playOffTimer);
     if (silentTimer !== undefined) clearTimeout(silentTimer);
-    playOffTimer = silentTimer = undefined;
+    if (revealTimer !== undefined) clearTimeout(revealTimer);
+    playOffTimer = silentTimer = revealTimer = undefined;
     attempt = null;
     deferred = null;
   };
@@ -162,17 +166,29 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
   /** `.tide-hero-playing` on the hero while the active slide shows a trailer (phone shows the mute button only then). */
   const syncPlaying = () => el.classList.toggle('tide-hero-playing', cur >= 0 && slides[cur]!.classList.contains('vidon'));
 
-  /** `vidplay`: the trailer is really playing (backdrop hidden, video shown). Leaving it waits 300 ms (debounced). */
-  function setPlay(i: number, on: boolean): void {
+  /**
+   * `vidplay`: the trailer is really playing (backdrop hidden, video shown); the first reveal also sets `vidon` (logo and
+   * description make room). `revealAfter`: how long it must play uninterrupted first (YouTube: its own controls must
+   * have faded). Leaving waits 300 ms (debounced); an interruption before the reveal restarts the wait.
+   */
+  function setPlay(i: number, on: boolean, revealAfter = 0): void {
     const s = slides[i];
     if (!s || i !== cur) return;
     if (playOffTimer !== undefined) { clearTimeout(playOffTimer); playOffTimer = undefined; }
-    if (on) s.classList.add('vidplay');
-    else playOffTimer = setTimeout(() => { playOffTimer = undefined; s.classList.remove('vidplay'); }, 300);
+    if (!on) {
+      if (revealTimer !== undefined) { clearTimeout(revealTimer); revealTimer = undefined; }
+      playOffTimer = setTimeout(() => { playOffTimer = undefined; s.classList.remove('vidplay'); }, 300);
+      return;
+    }
+    if (s.classList.contains('vidplay') || revealTimer !== undefined) return;
+    const reveal = () => { revealTimer = undefined; s.classList.add('vidplay', 'vidon'); syncPlaying(); };
+    if (revealAfter > 0) revealTimer = setTimeout(reveal, revealAfter);
+    else reveal();
   }
   function clearPlay(s: HTMLElement): void {
     if (playOffTimer !== undefined) { clearTimeout(playOffTimer); playOffTimer = undefined; }
     if (silentTimer !== undefined) { clearTimeout(silentTimer); silentTimer = undefined; }
+    if (revealTimer !== undefined) { clearTimeout(revealTimer); revealTimer = undefined; }
     s.classList.remove('vidplay');
   }
 
@@ -252,8 +268,6 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
       done = true;
       if (loadTimer !== undefined) { clearTimeout(loadTimer); loadTimer = undefined; }
       box.classList.add('show');
-      s.classList.add('vidon');
-      syncPlaying();
     };
     attempt = { fail: () => fail(), pending: () => !done };
     loadTimer = setTimeout(() => fail(), LOAD_TIMEOUT);
@@ -296,7 +310,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
           if (g !== gen) return;
           ok();
           if (silentTimer !== undefined) clearTimeout(silentTimer);
-          silentTimer = setTimeout(() => { silentTimer = undefined; if (g === gen && !f._tideHeard) setPlay(i, true); }, 2500);
+          silentTimer = setTimeout(() => { silentTimer = undefined; if (g === gen && !f._tideHeard) setPlay(i, true, YT_REVEAL_MS); }, 2500);
           if (!muted) ytCommand(f, 'unMute');
           if (paused) ytCommand(f, 'pauseVideo');
         }, 1500);
@@ -321,7 +335,7 @@ export function createHero(items: HeroItem[], cfg: ClientConfig, onChange?: (ite
     const state = d.event === 'onStateChange' && typeof d.info === 'number'
       ? d.info
       : typeof d.info === 'object' && d.info !== null ? (d.info as { playerState?: number }).playerState : undefined;
-    if (state === 1) setPlay(cur, true);
+    if (state === 1) setPlay(cur, true, YT_REVEAL_MS);
     else if (state === 2 || state === 3) setPlay(cur, false);
     else if (state === 0) go(cur + 1); // ended
   }
