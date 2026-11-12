@@ -201,3 +201,8 @@ body.tide .iconOsdProgressOuter { background: #48484a !important; height: 6px !i
 body.tide .iconOsdProgressInner { background: #fff !important; border-radius: 3px !important; }
 /* `hidden` must win over the buttons' own display (e.g. Episodes / Next episode for movies). */
 body.tide .tide-player [hidden] { display: none !important; }
+
+/* 0.5.0: Tide drives the stock settings sheets invisibly (player/stockMenu.ts). */
+html.tide-stock-hidden .dialogContainer, html.tide-stock-hidden .dialogBackdrop { opacity: 0 !important; pointer-events: none !important; }
+/* Subtitle offset is Tide's "Timing" control: the stock slider panel stays hidden while Tide's player is up. */
+body.tide:has(.tide-player) .subtitleSync { opacity: 0 !important; pointer-events: none !important; }
