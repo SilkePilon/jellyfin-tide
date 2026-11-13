@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "0.6.1.0",
+        "changelog": "v0.6.1",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/SilkePilon/jellyfin-tide/releases/download/v0.6.1/tide_0.6.1.zip",
+        "checksum": "eb81648f3315224d0ab78e5b9f1e46dd",
+        "timestamp": "2026-11-13T14:40:35Z"
+      },
+      {
         "version": "0.6.0.0",
         "changelog": "v0.6.0",
         "targetAbi": "12.4.0.0",
