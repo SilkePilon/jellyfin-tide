@@ -11,7 +11,7 @@ export interface Controls {
   setItem(info: { logoId: string; title: string; line: string; trickplay?: { id: string; mediaSourceId: string; info: TrickplayInfo } | null; stillId: string }): void;
   setSegments(s: Segments): void;
   update(s: PlayerState): void;
-  wake(): void; isIdle(): boolean; setPinned(on: boolean): void; dispose(): void;
+  wake(): void; hide(): void; isIdle(): boolean; setPinned(on: boolean): void; dispose(): void;
   anchor(which: 'subs' | 'set'): HTMLElement; setSubsVisible(on: boolean): void;
 }
 
@@ -85,6 +85,7 @@ export function createControls(deps: ControlsDeps): Controls {
     timer = setTimeout(() => setIdle(true), IDLE_MS);
   };
   const wake = () => { if (idle) setIdle(false); arm(); };
+  const hide = () => { if (timer) clearTimeout(timer); timer = undefined; setIdle(true); };
 
   /** Write text only when it changed: update() runs ~10×/s and each write is a DOM mutation + layout. */
   const setText = (n: HTMLElement, t: string) => { if (n.textContent !== t) n.textContent = t; };
@@ -167,6 +168,10 @@ export function createControls(deps: ControlsDeps): Controls {
   };
   document.addEventListener('keydown', onKey, true);
   el.addEventListener('pointermove', wake);
+  // Pressing a control keeps the controls up: a still mouse (or a finger) sends no pointermove, so rapid presses on
+  // ±10 used to let them hide mid-press and the next press fell through to the video and paused it. Capture phase:
+  // the scrubber stops its pointerdown. The bare surface is excluded (a touch tap there toggles the controls).
+  el.addEventListener('pointerdown', (e) => { if ((e.target as Element | null)?.closest?.('.tide-pc-ui, .tide-pc-float')) wake(); }, true);
 
   return {
     el,
@@ -207,7 +212,7 @@ export function createControls(deps: ControlsDeps): Controls {
       if (nextBtn.hidden !== noNext) nextBtn.hidden = noNext;
       if (pausedChanged) { if (s.paused) wake(); else arm(); }
     },
-    wake,
+    wake, hide,
     anchor: (which) => (which === 'subs' ? subsBtn : setBtn),
     setSubsVisible(on) { subsBtn.hidden = !on; },
     isIdle: () => idle,

@@ -194,7 +194,7 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
 
   const ripple = (side: -1 | 1) => { const r = side < 0 ? ripL : ripR; r.classList.remove('go'); void r.offsetWidth; r.classList.add('go'); };
   const stopTouch = attachTouch(root, {
-    toggleControls: () => (controls.isIdle() ? controls.wake() : root.classList.add('tide-pc-idle')),
+    toggleControls: () => (controls.isIdle() ? controls.wake() : controls.hide()),
     togglePlay: () => bridge.togglePlay(), seekBy: (d) => bridge.seekBy(d), openShelf: openShelf, ripple,
   });
   // The paused screen leaves only when playback resumes (paused.arm(false) on the next state); moving the mouse keeps it.
