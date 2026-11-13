@@ -51,6 +51,35 @@ test('Tide controls replace the stock OSD and drive playback', async ({ page, re
   await expect.poll(async () => page.evaluate(() => { const v = document.querySelector('video')!; return v.currentTime / v.duration; })).toBeGreaterThan(0.4);
 });
 
+test('one skip button: Tide\'s pill names each segment and Jellyfin\'s own skip button stays hidden', async ({ page, request }, info) => {
+  test.skip(info.project.name === 'phone', 'desktop controls');
+  const id = await firstEpisode(request);
+  // Like a server with Intro Skipper: a recap from the start, then the intro. Jellyfin's player reads the same list.
+  await page.route('**/MediaSegments/**', (r) => r.fulfill({ json: { Items: [
+    { Id: 'a', ItemId: id, Type: 'Recap', StartTicks: 0, EndTicks: 8e7 },
+    { Id: 'b', ItemId: id, Type: 'Intro', StartTicks: 8e7, EndTicks: 20e7 }], TotalRecordCount: 2, StartIndex: 0 } }));
+  // Jellyfin's player only asks for segments when the server says the media has some.
+  await page.route('**/Items/*/PlaybackInfo**', async (r) => {
+    const res = await r.fetch();
+    const j = await res.json();
+    for (const m of j.MediaSources ?? []) m.HasSegments = true;
+    await r.fulfill({ response: res, json: j });
+  });
+  await login(page);
+  await startPlayback(page, id);
+  const pill = page.locator('.tide-pc-skip.show');
+  await expect(pill).toContainText('Skip recap');
+  await pill.locator('button').click();
+  await expect(pill).toContainText('Skip intro', { timeout: 15_000 });
+  // Jellyfin asks to skip intros by default, so it has made its own button by now; it never shows.
+  await expect(page.locator('.skip-button-container .skip-button')).toHaveCount(1);
+  await expect(page.locator('.skip-button-container')).toBeHidden();
+  await pill.locator('button').click();
+  await expect.poll(() => page.evaluate(() => document.querySelector('video')!.currentTime)).toBeGreaterThan(19);
+  await expect(page.locator('.tide-pc-skip.show')).toHaveCount(0);
+  await expect(page.locator('.skip-button-container')).toBeHidden();
+});
+
 test('controls hide after 3 s and come back on mouse move; paused screen after 3 s', async ({ page, request }, info) => {
   test.skip(info.project.name === 'phone', 'mouse idle');
   const id = await firstEpisode(request);

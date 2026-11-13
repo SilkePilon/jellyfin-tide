@@ -46,13 +46,29 @@ test('idle after 3 s while playing; wake shows; pinned never hides', () => {
 
 test('skip intro shows inside the intro and seeks to its end', () => {
   const { c, bridge } = setup();
-  c.setSegments({ intro: [45, 95], credits: 2960 });
+  c.setSegments({ skips: [{ kind: 'intro', start: 45, end: 95 }], credits: 2960 });
   c.update({ ...st, position: 50 });
   const skip = c.el.querySelector<HTMLButtonElement>('.tide-pc-skip')!;
   expect(skip.classList.contains('show')).toBe(true);
   skip.querySelector('button')!.click();
   expect(bridge.seek).toHaveBeenCalledWith(95);
   c.update({ ...st, position: 120 });
+  expect(skip.classList.contains('show')).toBe(false);
+  expect(c.el.querySelectorAll('.tide-pc-seg').length).toBe(2);
+});
+
+test('the skip pill covers recaps, previews and commercials too, labelled by type', () => {
+  const { c, bridge } = setup();
+  c.setSegments({ skips: [{ kind: 'recap', start: 0, end: 40 }, { kind: 'commercial', start: 600, end: 660 }], credits: null });
+  const skip = c.el.querySelector<HTMLElement>('.tide-pc-skip')!;
+  c.update({ ...st, position: 10 });
+  expect(skip.classList.contains('show')).toBe(true);
+  expect(skip.textContent).toContain('Skip recap');
+  c.update({ ...st, position: 620 });
+  expect(skip.textContent).toContain('Skip commercial');
+  skip.querySelector('button')!.click();
+  expect(bridge.seek).toHaveBeenCalledWith(660);
+  c.update({ ...st, position: 300 });
   expect(skip.classList.contains('show')).toBe(false);
   expect(c.el.querySelectorAll('.tide-pc-seg').length).toBe(2);
 });

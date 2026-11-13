@@ -37,7 +37,7 @@ export async function mountPlayer(host: HTMLElement, cfg: ClientConfig): Promise
   let np: NowPlaying | null = null;
   let itemKey = '';
   let next: JfItem | null = null;
-  let segments: Segments = { intro: null, credits: null };
+  let segments: Segments = { skips: [], credits: null };
   let subSize: SubSize = 'M';
   let online: OnlineSubs | null = null;
   let pendingAudio: number | undefined;

@@ -2,7 +2,7 @@ import { imageUrl, getSession } from '../api/client';
 import { h, icon } from '../ui/dom';
 import { clock, trickplayFrame, type TrickplayInfo } from './format';
 import type { Bridge, PlayerState } from './bridge';
-import type { Segments } from './segments';
+import { SKIP_LABEL, skipAt, type Segments, type Skip } from './segments';
 
 export const IDLE_MS = 3000;
 export interface ControlsDeps { bridge: Bridge; onEpisodes(): void; onSettings(): void; onSubtitles(): void; onNext(): void; hasNext(): boolean; isSeries(): boolean; onBack?(): void }
@@ -23,7 +23,8 @@ const pill = (cls: string, name: string, text: string, onClick: () => void) =>
 export function createControls(deps: ControlsDeps): Controls {
   const { bridge } = deps;
   let state: PlayerState | null = null;
-  let segs: Segments = { intro: null, credits: null };
+  let segs: Segments = { skips: [], credits: null };
+  let skipNow: Skip | null = null;
   let trick: { id: string; mediaSourceId: string; info: TrickplayInfo } | null = null;
   let stillId = '';
   let idle = false;
@@ -64,8 +65,9 @@ export function createControls(deps: ControlsDeps): Controls {
     subsBtn, setBtn,
     btn('tide-pc-full', 'fullscreen', 'Full screen', () => bridge.fullscreen()));
   const bottom = h('div', { class: 'tide-pc-bt tide-pc-ui' }, scr, h('div', { class: 'tide-pc-times' }, cur, rem), row);
+  const skipText = document.createTextNode(SKIP_LABEL.intro);
   const skip = h('div', { class: 'tide-pc-skip tide-pc-float' },
-    h('button', { class: 'tide-pc-p tide-pc-w', type: 'button', onclick: (e: Event) => { e.stopPropagation(); if (segs.intro) bridge.seek(segs.intro[1]); } }, icon('fast_forward'), 'Skip intro'));
+    h('button', { class: 'tide-pc-p tide-pc-w', type: 'button', onclick: (e: Event) => { e.stopPropagation(); if (skipNow) bridge.seek(skipNow.end); } }, icon('fast_forward'), skipText));
   const centre = h('div', { class: 'tide-pc-ctr tide-pc-ui' },
     btn('', 'replay_10', 'Back 10 seconds', () => bridge.seekBy(-10)), btn('tide-pc-big', 'pause', 'Play/pause', () => bridge.togglePlay()), btn('', 'forward_10', 'Forward 10 seconds', () => bridge.seekBy(10)));
   const el = h('div', { class: 'tide-pc' }, h('div', { class: 'tide-pc-shade tide-pc-ui' }), head, centre, skip, bottom);
@@ -100,7 +102,7 @@ export function createControls(deps: ControlsDeps): Controls {
     segBox.replaceChildren();
     if (!state || state.duration <= 0) return;
     const add = (a: number, b: number) => { const s = h('i', { class: 'tide-pc-seg' }); s.style.left = `${pctOf(a)}%`; s.style.width = `${Math.max(0.4, pctOf(b) - pctOf(a))}%`; segBox.append(s); };
-    if (segs.intro) add(segs.intro[0], segs.intro[1]);
+    for (const k of segs.skips) add(k.start, k.end);
     if (segs.credits !== null && segs.credits < state.duration) add(segs.credits, state.duration);
   };
 
@@ -195,7 +197,12 @@ export function createControls(deps: ControlsDeps): Controls {
       const mute = s.muted || s.volume === 0 ? 'volume_off' : 'volume_up';
       if (mute !== muteIcon) { muteIcon = mute; muteBtn.replaceChildren(icon(mute)); }
       if (document.activeElement !== vol) vol.value = String(s.volume);
-      skip.classList.toggle('show', !!segs.intro && s.position >= segs.intro[0] && s.position < segs.intro[1]);
+      const k = skipAt(segs, s.position);
+      if (k !== skipNow) {
+        skipNow = k;
+        if (k) skipText.data = SKIP_LABEL[k.kind]; // a fading-out pill keeps its last label
+      }
+      skip.classList.toggle('show', !!k);
       const noNext = !deps.hasNext();
       if (nextBtn.hidden !== noNext) nextBtn.hidden = noNext;
       if (pausedChanged) { if (s.paused) wake(); else arm(); }

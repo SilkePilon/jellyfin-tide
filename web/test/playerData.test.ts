@@ -51,11 +51,17 @@ test('audio: POST ok -> applied (optimistic); POST fails -> stock dialog fallbac
   expect(b.opened).toEqual(['subtitles']);
 });
 
-test('segments: intro skipper on reads media segments; off uses the fallback credits', async () => {
+test('segments: every skippable media segment, any provider; Outro sets the credits, else the fallback', async () => {
   vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ Items: [
-    { Type: 'Intro', StartTicks: 45e7, EndTicks: 95e7 }, { Type: 'Outro', StartTicks: 2900e7, EndTicks: 3000e7 }] })));
-  expect(await loadSegments('e1', 3060, { introSkipper: true, creditsFallbackSeconds: 35 })).toEqual({ intro: [45, 95], credits: 2900 });
-  expect(await loadSegments('e1', 3060, { introSkipper: false, creditsFallbackSeconds: 35 })).toEqual({ intro: null, credits: 3025 });
+    { Type: 'Outro', StartTicks: 2900e7, EndTicks: 3000e7 }, { Type: 'Intro', StartTicks: 45e7, EndTicks: 95e7 },
+    { Type: 'Recap', StartTicks: 0, EndTicks: 30e7 }, { Type: 'Unknown', StartTicks: 100e7, EndTicks: 200e7 },
+    { Type: 'Preview', StartTicks: 3000e7, EndTicks: 3050e7 }, { Type: 'Commercial', StartTicks: 500e7, EndTicks: 500e7 }] })));
+  expect(await loadSegments('e1', 3060, { creditsFallbackSeconds: 35 })).toEqual({
+    skips: [{ kind: 'recap', start: 0, end: 30 }, { kind: 'intro', start: 45, end: 95 }, { kind: 'preview', start: 3000, end: 3050 }],
+    credits: 2900,
+  });
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ Items: [] })));
+  expect(await loadSegments('e1', 3060, { creditsFallbackSeconds: 35 })).toEqual({ skips: [], credits: 3025 });
   vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('x'));
-  expect(await loadSegments('e1', 100, { introSkipper: true })).toEqual({ intro: null, credits: 65 });
+  expect(await loadSegments('e1', 100, {})).toEqual({ skips: [], credits: 65 });
 });
