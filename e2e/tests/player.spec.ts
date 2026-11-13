@@ -126,6 +126,15 @@ test('countdown card appears at the credits and starts the next episode', async 
     await page.evaluate(() => { const v = document.querySelector('video')!; v.currentTime = v.duration - 8; });
     await expect(page.locator('.tide-end.show')).toBeVisible({ timeout: 20_000 });
     await expect(page.locator('.tide-end-cd')).toContainText('Next episode in');
+    // The ring fills every frame, not in steps at each position update.
+    const fill = await page.evaluate(async () => {
+      const arc = document.querySelector('.tide-end.show .tide-end-ar')!;
+      const out: number[] = [];
+      for (let i = 0; i < 12; i++) { out.push(parseFloat(getComputedStyle(arc).strokeDashoffset)); await new Promise((r) => setTimeout(r, 50)); }
+      return out;
+    });
+    expect(new Set(fill).size).toBeGreaterThanOrEqual(10);
+    expect(fill[fill.length - 1]).toBeLessThan(fill[0]);
     await expect(page.locator('.tide-pc-ep')).toContainText('E2', { timeout: 60_000 });
   } finally {
     await request.post(cfgUrl, { headers: (await auth(request)).headers, data: { ...original, CreditsFallbackSeconds: original.CreditsFallbackSeconds ?? 35 } });
