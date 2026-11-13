@@ -39,11 +39,41 @@ test('end card: shows at credits, counts down only while playing with autoplay, 
   c.update(2900, 2900, true, 0.1);
   expect(c.isShowing()).toBe(true);
   expect(c.el.querySelector('.tide-end-cd')?.textContent).toBe('Next episode in 10s');
-  c.update(2901, 2900, false, 5); // paused: no countdown
+  c.update(2901, 2900, false, 0.2); // paused now
+  c.update(2901, 2900, true, 30); // resumed 30 s later: the paused time does not count
   expect(c.el.querySelector('.tide-end-cd')?.textContent).toBe('Next episode in 10s');
   for (let i = 0; i < 12; i++) c.update(2902 + i, 2900, true, 1);
   expect(next).toHaveBeenCalledTimes(1);
   expect(c.el.querySelector('.tide-end-card')).toBe(card); // built once
+});
+
+test('end card ring: drawn every frame between position updates; never runs ahead through a stall or a pause', () => {
+  vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
+  const next = vi.fn();
+  const c = createEndCard(next);
+  document.body.append(c.el);
+  c.setNext({ id: 'e2', title: 'T', runtime: '1m', stillId: 'e2' }, true);
+  const arc = c.el.querySelector<SVGCircleElement>('.tide-end-ar')!;
+  const fill = () => Math.round((100 - parseFloat(arc.getAttribute('stroke-dashoffset')!)) * 10) / 10; // % of the ring
+  expect(arc.getAttribute('pathLength')).toBe('100');
+  c.update(2900, 2900, true, 0.4); // shows: starts empty (time before showing is not counted)
+  expect(fill()).toBe(0);
+  vi.advanceTimersByTime(500);
+  expect(fill()).toBeCloseTo(5, 0); // 0.5 s of 10 s, with no position update yet
+  vi.advanceTimersByTime(500);
+  c.update(2901, 2900, true, 1);
+  expect(fill()).toBeCloseTo(10, 0); // the update lands where the drawing already was
+  vi.advanceTimersByTime(3000); // stalled: no updates
+  expect(fill()).toBeCloseTo(25, 0); // at most 1.5 s past the last update
+  c.update(2902, 2900, true, 3);
+  expect(fill()).toBeCloseTo(25, 0); // the stall counts 1.5 s, matching the drawing
+  c.update(2902, 2900, false, 0.2);
+  vi.advanceTimersByTime(2000);
+  expect(fill()).toBeCloseTo(27, 0); // paused: holds
+  c.update(2902, 2900, true, 2);
+  expect(fill()).toBeCloseTo(27, 0);
+  expect(c.el.querySelector('.tide-end-cd')?.textContent).toBe('Next episode in 8s');
+  expect(next).not.toHaveBeenCalled();
 });
 
 test('end card: Watch credits dismisses; no autoplay = no countdown', () => {
