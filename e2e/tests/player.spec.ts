@@ -141,6 +141,34 @@ test('countdown card appears at the credits and starts the next episode', async 
   }
 });
 
+test('pressing a skip button over and over keeps the controls up and never pauses', async ({ page, request }, info) => {
+  const id = await firstEpisode(request);
+  await login(page);
+  await startPlayback(page, id);
+  const phone = info.project.name === 'phone';
+  // Back 10 s stays near the start of the 52 s test clip however often it is pressed.
+  const back = page.locator(phone ? '.tide-pc-ctr .tide-pc-b >> nth=0' : '.tide-pc-rw');
+  const box = (await back.boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  if (!phone) await page.mouse.move(x, y);
+  // Count every pause and every hide: a press landing after the controls hid used to pause, and a later press on
+  // the paused screen played again, so only the event log shows it.
+  await page.evaluate(() => {
+    const w = window as any; w.__pauses = 0; w.__hides = 0;
+    document.querySelector('video')!.addEventListener('pause', () => w.__pauses++);
+    const root = document.querySelector('.tide-player')!;
+    new MutationObserver(() => { if (root.classList.contains('tide-pc-idle')) w.__hides++; }).observe(root, { attributes: true, attributeFilter: ['class'] });
+  });
+  // A still pointer pressing for longer than the 3 s idle delay: no pointermove ever arrives.
+  for (let i = 0; i < 18; i++) {
+    if (phone) await page.touchscreen.tap(x, y);
+    else { await page.mouse.down(); await page.mouse.up(); }
+    await page.waitForTimeout(350);
+  }
+  expect(await page.evaluate(() => ({ pauses: (window as any).__pauses, hides: (window as any).__hides }))).toEqual({ pauses: 0, hides: 0 });
+  expect(await page.evaluate(() => document.querySelector('video')!.paused)).toBe(false);
+});
+
 test('phone: double-tap right seeks forward', async ({ page, request }, info) => {
   test.skip(info.project.name !== 'phone', 'phone only');
   const id = await firstEpisode(request);

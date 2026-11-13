@@ -44,6 +44,44 @@ test('idle after 3 s while playing; wake shows; pinned never hides', () => {
   expect(c.isIdle()).toBe(false); // never hides while paused
 });
 
+test('pressing a control restarts the hide delay (a still mouse sends no pointermove)', () => {
+  vi.useFakeTimers();
+  const { c } = setup();
+  c.update(st);
+  c.wake();
+  const back = c.el.querySelector<HTMLElement>('.tide-pc-rw')!;
+  const scrub = c.el.querySelector<HTMLElement>('.tide-pc-track')!;
+  for (const target of [back, back, scrub]) {
+    vi.advanceTimersByTime(IDLE_MS - 500);
+    target.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  }
+  vi.advanceTimersByTime(IDLE_MS - 500);
+  expect(c.isIdle()).toBe(false);
+  vi.advanceTimersByTime(600);
+  expect(c.isIdle()).toBe(true);
+  // Pressing the bare video surface is not a control press: it must not wake (touch taps toggle the controls).
+  c.el.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  expect(c.isIdle()).toBe(true);
+});
+
+test('hide() (a touch tap) is real idle: the next tap or control press brings them back at once', () => {
+  vi.useFakeTimers();
+  const { c, host } = setup();
+  c.update(st);
+  c.wake();
+  vi.advanceTimersByTime(500);
+  c.hide();
+  expect(c.isIdle()).toBe(true);
+  expect(host.classList.contains('tide-pc-idle')).toBe(true);
+  c.wake();
+  expect(host.classList.contains('tide-pc-idle')).toBe(false);
+  c.hide();
+  vi.advanceTimersByTime(IDLE_MS * 2); // the pending hide delay must not undo or redo anything
+  expect(c.isIdle()).toBe(true);
+  c.el.querySelector('.tide-pc-rw')!.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  expect(host.classList.contains('tide-pc-idle')).toBe(false);
+});
+
 test('skip intro shows inside the intro and seeks to its end', () => {
   const { c, bridge } = setup();
   c.setSegments({ skips: [{ kind: 'intro', start: 45, end: 95 }], credits: 2960 });

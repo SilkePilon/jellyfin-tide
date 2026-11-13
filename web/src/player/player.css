@@ -6,7 +6,9 @@ body.tide .tide-player { position: fixed; inset: 0; z-index: 1000; color: #fff; 
 body.tide .tide-player > * { pointer-events: auto; }
 body.tide .tide-pc { position: absolute; inset: 0; }
 body.tide .tide-pc-ui { transition: opacity .45s var(--tide-sp), transform .6s var(--tide-sp); }
-body.tide .tide-pc-idle .tide-pc-ui { opacity: 0; pointer-events: none; transition: opacity .35s ease, transform .45s ease; }
+/* Hidden controls stay pressable while they fade (visibility flips at the end), so a press on a still-visible button
+   does what it shows instead of landing on the video and toggling play. */
+body.tide .tide-pc-idle .tide-pc-ui { opacity: 0; visibility: hidden; transition: opacity .35s ease, transform .45s ease, visibility 0s linear .35s; }
 body.tide .tide-pc-idle .tide-pc-hd { transform: translateY(-16px); }
 body.tide .tide-pc-idle .tide-pc-bt { transform: translateY(22px); }
 body.tide .tide-pc-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,.65), transparent 26%), linear-gradient(0deg, rgba(0,0,0,.85), rgba(0,0,0,.3) 30%, transparent 55%); }
