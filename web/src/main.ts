@@ -17,7 +17,7 @@ import { onLocationChange } from './router/location';
 import { ROUTES } from './router/selectors';
 import { homeData, prefetchHome } from './home/home';
 
-export const TIDE_VERSION = '0.6.1';
+export const TIDE_VERSION = '0.6.2';
 
 export type Feature = (cfg: ClientConfig) => void;
 const features: Feature[] = [];
