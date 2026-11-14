@@ -261,3 +261,49 @@ body.tide .tide-pmsub-step .tide-ms { font-size: 18px; }
 body.tide .tide-pmsub-step output { min-width: 54px; text-align: center; font: 700 12.5px var(--tide-font); font-variant-numeric: tabular-nums; }
 /* Stock "Playback info" overlay, restyled as a solid Tide card. */
 body.tide:has(.tide-player) .playerStats { top: 120px !important; left: var(--tide-pg) !important; right: auto !important; background: #141416 !important; border-radius: 16px !important; box-shadow: 0 0 0 1px #2a2a2e, 0 24px 60px rgba(0,0,0,.6) !important; color: #d1d1d6 !important; font: 500 13px/1.6 var(--tide-font) !important; z-index: 22 !important; }
+
+/* Short screen (a phone held sideways leaves ~250–400 px with the browser bars): compact player. Last in the file: it overrides the sections above.
+   Times flank the scrubber on one line, menus and the shelf fit between the top and the control row. */
+@media (max-height: 500px) {
+  body.tide .tide-player { --tide-lift: -70px; --tide-pb: 10px; --tide-pg: 16px; }
+  body.tide .tide-pc-hd { top: 10px; gap: 10px; }
+  body.tide .tide-pc-logo { height: 20px; max-width: 220px; } body.tide .tide-pc-title { font-size: 18px; } body.tide .tide-pc-ep { font-size: 11.5px; margin-top: 2px; }
+  body.tide .tide-pc-bt { bottom: 8px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: 12px; }
+  body.tide .tide-pc-times { display: contents; font-size: 12px; }
+  body.tide .tide-pc-cur { grid-area: 1 / 1; } body.tide .tide-pc-scr { grid-area: 1 / 2; } body.tide .tide-pc-rem { grid-area: 1 / 3; }
+  body.tide .tide-pc-row { grid-column: 1 / -1; margin-top: 4px; gap: 8px; }
+  body.tide .tide-pc-b { width: 36px; height: 36px; } body.tide .tide-pc-b .tide-ms { font-size: 19px; }
+  body.tide .tide-pc-p { height: 34px; gap: 6px; padding: 0 12px; font-size: 12.5px; } body.tide .tide-pc-p .tide-ms { font-size: 19px; }
+  body.tide .tide-pc-skip .tide-pc-p { height: 36px; padding: 0 16px; }
+  body.tide .tide-pc-ctr { gap: 40px; } body.tide .tide-pc-ctr .tide-pc-b { width: 40px; height: 40px; }
+  body.tide .tide-pc-ctr .tide-pc-big { width: 54px; height: 54px; } body.tide .tide-pc-ctr .tide-pc-big .tide-ms { font-size: 32px; }
+  body.tide .tide-pc-tipimg { width: 128px; }
+  body.tide .tide-pmenu { top: 8px; bottom: 54px; display: flex; flex-direction: column; }
+  body.tide .tide-pmset-panes { flex: 1; height: auto; max-height: none; }
+  body.tide .tide-pmsub { max-height: none; } body.tide .tide-pmsub-search { margin-top: 8px; }
+  body.tide .tide-pm-h6 { padding-top: 12px; } body.tide .tide-pm-opt { padding: 8px 12px; font-size: 14px; }
+  /* The shelf takes the space above the scrubber; the title makes room for it. */
+  body.tide .tide-pshelf { bottom: 74px; --tide-cw: 176px; --tide-gap: 10px; --tide-gutter: 16px; }
+  body.tide .tide-pshelf .tide-dsec-h h2, body.tide .tide-pshelf .tide-ep-dd { font-size: 14px; }
+  body.tide .tide-pshelf .tide-row-track { padding-top: 12px; padding-bottom: 14px; }
+  /* Small cards: the card itself plays, so its Play/♥ buttons go and the text gets the full width. */
+  body.tide .tide-pshelf .tide-wide-acts { display: none; }
+  body.tide .tide-pshelf :is(.tide-wide-info, .tide-wide-ep) { left: 10px; right: 10px; bottom: 9px; gap: 1px; }
+  body.tide .tide-pshelf :is(.tide-wide-title, .tide-wide-ep-n) { font-size: 13px; } body.tide .tide-pshelf .tide-wide-sub { font-size: 11px; }
+  body.tide .tide-pshelf .tide-wide-ep-k { font-size: 9.5px; }
+  body.tide .tide-pshelf .tide-wide-tag { left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; font-size: 9px; }
+  body.tide .tide-pshelf .tide-wide-done { right: 8px; top: 8px; width: 20px; height: 20px; } body.tide .tide-pshelf .tide-wide-done .tide-ms { font-size: 14px; }
+  body.tide .tide-player.tide-ps-open .tide-pc-hd { opacity: 0; visibility: hidden; }
+  body.tide .tide-pz-block { left: 24px; gap: 16px; } body.tide .tide-pz-poster { flex-basis: 76px; border-radius: 10px; }
+  body.tide .tide-pz-text { width: min(380px, calc(100vw - 400px)); gap: 6px; }
+  body.tide .tide-pz-kick { font-size: 10px; } body.tide .tide-pz-logo { height: 24px; } body.tide .tide-pz-line { font-size: 14px; } body.tide .tide-pz-meta { font-size: 12px; }
+  body.tide .tide-pz-syn { font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+  body.tide .tide-pz-paused { top: 10px; font-size: 12px; } body.tide .tide-pz-paused .tide-ms { font-size: 22px; }
+  body.tide .tide-pz-next { width: 230px; gap: 10px; padding: 8px; border-radius: 14px; } body.tide .tide-pz-th { flex-basis: 84px; border-radius: 8px; } body.tide .tide-pz-next b { font-size: 13px; }
+  body.tide .tide-end-card { width: 290px; gap: 10px; padding: 10px; border-radius: 16px; } body.tide .tide-end-th { flex-basis: 96px; border-radius: 8px; }
+  body.tide .tide-end-ring { width: 36px; height: 36px; } body.tide .tide-end-tx b { font-size: 13px; }
+  body.tide .tide-ld-in { gap: 20px; } body.tide .tide-ld-poster { width: 76px; border-radius: 10px; } body.tide .tide-ld-tx { gap: 10px; }
+  body.tide .tide-ld-logo { height: 24px; } body.tide .tide-ld-line { font-size: 13px; } body.tide .tide-ld-row { gap: 16px; }
+  body.tide .tide-ld-ring { width: 60px; height: 60px; } body.tide .tide-ld-pct { font-size: 15px; } body.tide .tide-ld-steps { gap: 4px; font-size: 11px; }
+  body.tide .tide-buf .tide-ld-ring { width: 56px; height: 56px; } body.tide .tide-buf small { height: 28px; font-size: 12px; }
+}

@@ -284,3 +284,46 @@ test('subtitles menu: filter, pick, Timing drives the stock offset', async ({ pa
   await expect(menu.locator('output')).toHaveText('+0.1 s');
   await expect(page.locator('.actionSheet.opened')).toHaveCount(0);
 });
+
+test.describe('phone held sideways (short screen)', () => {
+  // A landscape phone with the browser bars showing leaves about 760 × 250 CSS px.
+  test.use({ viewport: { width: 760, height: 250 } });
+  test('controls, menus and the episode shelf fit without overlapping', async ({ page, request }, info) => {
+    test.skip(info.project.name !== 'phone', 'touch landscape');
+    const id = await firstEpisode(request);
+    await login(page);
+    await startPlayback(page, id);
+    const box = async (sel: string) => (await page.locator(sel).first().boundingBox())!;
+    const hd = await box('.tide-pc-hd'), ctr = await box('.tide-pc-ctr'), scr = await box('.tide-pc-scr'), row = await box('.tide-pc-row');
+    expect(hd.y).toBeGreaterThanOrEqual(0);
+    expect(hd.y + hd.height).toBeLessThanOrEqual(ctr.y);
+    expect(ctr.y + ctr.height).toBeLessThanOrEqual(scr.y);
+    expect(scr.y + scr.height).toBeLessThanOrEqual(row.y);
+    expect(row.y + row.height).toBeLessThanOrEqual(250);
+
+    const fits = async (sel: string) => {
+      const m = await box(sel);
+      expect(m.y).toBeGreaterThanOrEqual(0);
+      expect(m.y + m.height).toBeLessThanOrEqual(row.y);
+      expect(m.height).toBeGreaterThanOrEqual(140);
+    };
+    await page.locator('.tide-pc-set').tap();
+    await expect(page.locator('.tide-pmset.open [data-go="playbackrate"]')).toBeVisible();
+    await fits('.tide-pmset');
+    await page.locator('.tide-pc-set').tap();
+    await expect(page.locator('.tide-pmset.open')).toHaveCount(0);
+
+    await page.locator('.tide-pc-subs').tap();
+    await expect(page.locator('.tide-pmsub.open')).toHaveCount(1);
+    await fits('.tide-pmsub');
+    await page.locator('.tide-pc-subs').tap();
+    await expect(page.locator('.tide-pmsub.open')).toHaveCount(0);
+
+    await page.locator('.tide-pc-epbtn').tap();
+    await expect(page.locator('.tide-pshelf.open')).toHaveCount(1);
+    await page.waitForTimeout(700); // the shelf slides up
+    const sh = await box('.tide-pshelf .tide-eps');
+    expect(sh.y).toBeGreaterThanOrEqual(0);
+    expect(sh.y + sh.height).toBeLessThanOrEqual(scr.y);
+  });
+});
